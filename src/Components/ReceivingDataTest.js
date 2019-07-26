@@ -49,7 +49,8 @@ class ReceivingDataTest extends Component {
                   reminder: '',
                   reccurency: '',
                   labels: [],
-                  projectId: ''
+                  projectId: '',
+                  position: -1
             });
       };
 

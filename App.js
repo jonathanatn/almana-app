@@ -16,6 +16,7 @@ import Login from './src/Components/Login';
 import SignUp from './src/Components/SignUp';
 import LoadingScreen from './src/Components/LoadingScreen';
 import ReceivingDataTest from './src/Components/ReceivingDataTest';
+import AgendaViewSort from './src/Components/AgendaViewTestSortAlgo';
 
 import './src/Utils/fixtimerbug';
 
@@ -45,11 +46,12 @@ export default class App extends Component {
 
 const StackNav = createStackNavigator(
       {
+            AgendaViewSort,
+            ReceivingDataTest,
             CalendarMenuFlatList,
             LoadingScreen,
             SignUp,
-            Login,
-            ReceivingDataTest
+            Login
       },
       {
             headerMode: 'none'

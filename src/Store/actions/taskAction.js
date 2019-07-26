@@ -5,6 +5,7 @@ export const RECEIVE_TASKS = 'RECEIVE_TASKS';
 export const ADD_TASK = 'ADD_TASK';
 export const EDIT_TASK_DATE = 'EDIT_TASK_DATE';
 export const EDIT_TASK_TIME = 'EDIT_TASK_TIME';
+export const EDIT_TASKS_POSITION = 'EDIT_TASKS_POSITION';
 export const DELETE_TASK = 'DELETE_TASK';
 
 export function receiveTasksAction(date) {
@@ -18,13 +19,8 @@ export function receiveTasksAction(date) {
                   .then(function(querySnapshot) {
                         let tasks = {};
                         querySnapshot.forEach(function(doc) {
-                              // doc.data() is never undefined for query doc snapshots
-                              // console.log(doc.id, ' => ', doc.data());
-                              // tasksId.push({ [doc.id]: doc.data() });
-
                               tasks = Object.assign(tasks, { [doc.id]: doc.data() });
                         });
-                        // console.log(tasks);
                         dispatch({
                               type: RECEIVE_TASKS,
                               tasks: tasks,
@@ -33,30 +29,6 @@ export function receiveTasksAction(date) {
                   });
       };
 }
-
-// docRef.get().then(function(doc) {
-//       if (doc.exists) {
-//           console.log("Document data:", doc.data());
-//       } else {
-//           // doc.data() will be undefined in this case
-//           console.log("No such document!");
-//       }
-//   }).catch(function(error) {
-//       console.log("Error getting document:", error);
-//   });
-
-// db.collection('cities')
-//       .where('capital', '==', true)
-//       .get()
-//       .then(function(querySnapshot) {
-//             querySnapshot.forEach(function(doc) {
-//                   // doc.data() is never undefined for query doc snapshots
-//                   console.log(doc.id, ' => ', doc.data());
-//             });
-//       })
-//       .catch(function(error) {
-//             console.log('Error getting documents: ', error);
-//       });
 
 export function addTask(task) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
@@ -76,7 +48,8 @@ export function addTask(task) {
                         reccurency: task.reccurency,
                         labels: task.labels, //Array
                         projectId: task.projectId,
-                        dateAdded: task.dateAdded
+                        dateAdded: task.dateAdded,
+                        position: task.position
                   })
                   .then(function(docRef) {
                         dispatch({
@@ -189,5 +162,44 @@ export function editTaskDateAction(date, id, previousDate) {
                   .catch(err => {
                         console.log(err);
                   });
+      };
+}
+
+// Receive an object who is the date and replace it in the store
+// Send something different on firestore
+
+export function editTasksPositionAction(tasks, date) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
+            dispatch({
+                  type: EDIT_TASKS_POSITION,
+                  tasks: tasks,
+                  date: date
+            });
+
+            tasks.map(item => {
+                  firestore
+                        .collection('tasks')
+                        .doc(item.id)
+                        .set({ position: item.position }, { merge: true })
+                        .catch(err => {
+                              console.log(err);
+                        });
+            });
+            // firestore
+            //       .collection('tasks')
+            //       .doc(id)
+            //       .set({ position: position }, { merge: true })
+            //       .then(
+            //             dispatch({
+            //                   type: EDIT_TASKS_POSITION,
+            //                   tasks: tasks,
+            //                   date: date,
+            //             })
+            //       )
+            //       .catch(err => {
+            //             console.log(err);
+            //       });
       };
 }
