@@ -23,14 +23,13 @@ export function receiveTasksAction(date) {
                         });
                         dispatch({
                               type: RECEIVE_TASKS,
-                              tasks: tasks,
-                              date: date
+                              tasks: tasks
                         });
                   });
       };
 }
 
-export function addTask(task) {
+export function addTaskAction(task) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
             const userId = getState().firebase.auth.uid;
@@ -54,7 +53,7 @@ export function addTask(task) {
                   .then(function(docRef) {
                         dispatch({
                               type: ADD_TASK,
-                              taskId: docRef.id,
+                              id: docRef.id,
                               task: task
                         });
                   })
@@ -64,7 +63,8 @@ export function addTask(task) {
       };
 }
 
-export function editTaskName(name, id) {
+// TODO: Make the dispatch
+export function editTaskNameAction(name, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
@@ -86,7 +86,8 @@ export function editTaskName(name, id) {
       };
 }
 
-export function toggleCompletion(state, id) {
+// TODO: Make the dispatch
+export function editTaskCompletionAction(state, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
@@ -111,7 +112,6 @@ export function deleteTaskAction(date, id) {
                   .then(
                         dispatch({
                               type: DELETE_TASK,
-                              date: date,
                               id: id
                         })
                   )
@@ -121,7 +121,7 @@ export function deleteTaskAction(date, id) {
       };
 }
 
-export function editTaskTimeAction(time, id, date) {
+export function editTaskTimeAction(time, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
@@ -132,7 +132,6 @@ export function editTaskTimeAction(time, id, date) {
                   .then(
                         dispatch({
                               type: EDIT_TASK_TIME,
-                              date: date,
                               time: time,
                               id: id
                         })
@@ -143,7 +142,7 @@ export function editTaskTimeAction(time, id, date) {
       };
 }
 
-export function editTaskDateAction(date, id, previousDate) {
+export function editTaskDateAction(date, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
@@ -155,8 +154,7 @@ export function editTaskDateAction(date, id, previousDate) {
                         dispatch({
                               type: EDIT_TASK_DATE,
                               date: date,
-                              id: id,
-                              previousDate: previousDate
+                              id: id
                         })
                   )
                   .catch(err => {
@@ -168,15 +166,9 @@ export function editTaskDateAction(date, id, previousDate) {
 // Receive an object who is the date and replace it in the store
 // Send something different on firestore
 
-export function editTasksPositionAction(tasks, date) {
+export function editTasksPositionAction(tasks) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
-
-            dispatch({
-                  type: EDIT_TASKS_POSITION,
-                  tasks: tasks,
-                  date: date
-            });
 
             tasks.map(item => {
                   firestore
@@ -187,19 +179,13 @@ export function editTasksPositionAction(tasks, date) {
                               console.log(err);
                         });
             });
-            // firestore
-            //       .collection('tasks')
-            //       .doc(id)
-            //       .set({ position: position }, { merge: true })
-            //       .then(
-            //             dispatch({
-            //                   type: EDIT_TASKS_POSITION,
-            //                   tasks: tasks,
-            //                   date: date,
-            //             })
-            //       )
-            //       .catch(err => {
-            //             console.log(err);
-            //       });
+
+            tasks.map(item => {
+                  dispatch({
+                        type: EDIT_TASKS_POSITION,
+                        id: item.id,
+                        position: item.position
+                  });
+            });
       };
 }

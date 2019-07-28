@@ -15,63 +15,54 @@ function tasks(state = {}, action) {
             case RECEIVE_TASKS:
                   return {
                         ...state,
-                        [action.date]: {
-                              ...state[action.date],
-                              ...action.tasks
-                        }
+                        ...action.tasks
+                        // [action.date]: {
+                        //       ...state[action.date],
+                        //       ...action.tasks
+                        // }
                   };
             case ADD_TASK:
-                  // TODO: Something seems wrong here
-                  console.log(action.task);
-                  // console.log(action.taskId);
                   return {
                         ...state,
-                        [action.taskId]: action.task
+                        [action.id]: action.task
+                        // tasks: {
+                        //       ...state.tasks,
+                        //       [action.id]: action.task
+                        // }
                   };
             case DELETE_TASK:
-                  const { [action.id]: taskToDelete, ...dateObjectWithoutTask } = state[action.date];
+                  const { [action.id]: taskToDelete, ...tasksObjectWithoutTask } = state.tasks;
                   return {
                         ...state,
-                        [action.date]: dateObjectWithoutTask
+                        ...tasksObjectWithoutTask
+                        // tasks: {
+                        //       ...tasksObjectWithoutTask,
+                        // }
+                        // [action.id]:
+                        // [action.date]: dateObjectWithoutTask
                   };
             case EDIT_TASK_DATE:
-                  const taskId = action.id;
-                  const date = action.date;
-                  const previousDate = action.previousDate;
-                  // The object at the previous that without the current item
-                  //https://stackoverflow.com/questions/34401098/remove-a-property-in-an-object-immutably
-                  const { [taskId]: taskToDeleteFromPreviousDate, ...previousDateWithoutTask } = state[previousDate];
-                  //Copy the object and edit it
-                  const item = state[previousDate][taskId];
-                  item.date = date;
                   return {
                         ...state,
-                        //Removing the item in the previousDate in the store
-                        [previousDate]: previousDateWithoutTask,
-                        //Adding the item in the new date in the store
-                        [date]: {
-                              ...state[date],
-                              [taskId]: item
+                        [action.id]: {
+                              ...state[action.id],
+                              date: action.date
                         }
                   };
             case EDIT_TASK_TIME:
-                  // console.log('REDUCER', 'ID: ', action.id, 'DATE: ', action.date);
                   return {
                         ...state,
-                        [action.date]: {
-                              ...state[action.date],
-                              [action.id]: {
-                                    ...state[action.date][action.id],
-                                    time: action.time
-                              }
+                        [action.id]: {
+                              ...state[action.id],
+                              time: action.time
                         }
                   };
             case EDIT_TASKS_POSITION:
                   return {
                         ...state,
-                        [action.date]: {
-                              ...state[action.date]
-                              // action.tasks
+                        [action.id]: {
+                              ...state[action.id],
+                              position: action.position
                         }
                   };
             default:

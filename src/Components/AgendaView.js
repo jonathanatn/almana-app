@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
 import { connect } from 'react-redux';
 import { getToday } from '../Utils/helpers';
-import { addTask, receiveTasksAction } from '../Store/actions/taskAction';
+import { addTaskAction, receiveTasksAction } from '../Store/actions/taskAction';
 
 import Task from './Elements/Task';
 import BottomMenu from './Elements/BottomMenu';
@@ -75,7 +75,7 @@ function mapStateToProp(state, ownProps) {
 function mapDispatchToProps(dispatch) {
       return {
             receiveTasksProp: date => dispatch(receiveTasksAction(date)),
-            addTask: task => dispatch(addTask(task))
+            addTaskProp: task => dispatch(addTaskAction(task))
       };
 }
 
