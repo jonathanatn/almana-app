@@ -22,7 +22,7 @@ export default class ViewToTestMenuOpening extends PureComponent {
             visibleMonth: 0,
             formattedDate: 0
       };
-
+      //
       toggleDateMover = () => {
             console.log(this.state.isDateMoverOpen);
             if (this.state.isDateMoverOpen === false) {
