@@ -12,8 +12,8 @@ import { connect } from 'react-redux';
 import { compose } from 'redux';
 
 import {
-      editTaskName,
-      toggleCompletion,
+      editTaskNameAction,
+      editTaskCompletionAction,
       editTaskTimeAction,
       editTaskDateAction,
       deleteTaskAction
@@ -70,9 +70,8 @@ class BottomMenu extends Component {
 
       handleDatePicked = dateReceived => {
             let date = moment(dateReceived).format('L');
-            let previousDate = this.state.date;
 
-            this.editTaskDate(date, previousDate);
+            this.editTaskDateAction(date);
             this.hideDatePicker();
       };
 
@@ -91,7 +90,7 @@ class BottomMenu extends Component {
             this.setState({
                   time: time
             });
-            this.editTaskTime(this.state.time, this.props.id);
+            this.editTaskTimeAction(this.state.time, this.props.id);
 
             this.hideTimePicker();
       };
@@ -105,14 +104,14 @@ class BottomMenu extends Component {
                   name: name
             });
 
-            this.props.editTaskName(name, this.props.id);
+            this.props.editTaskNameProp(name, this.props.id);
       };
 
       toggleCompletion = () => {
             this.setState({
                   completed: !this.state.completed
             });
-            this.props.toggleCompletion(this.state.completed, this.props.id);
+            this.props.editTaskCompletionActionProp(this.state.completed, this.props.id);
       };
 
       editTaskTime = time => {
@@ -120,19 +119,19 @@ class BottomMenu extends Component {
                   time: time
             });
 
-            this.props.editTaskTimeProps(time, this.props.id, this.state.date);
+            this.props.editTaskTimeProp(time, this.props.id);
       };
 
-      editTaskDate = (date, previousDate) => {
+      editTaskDate = date => {
             this.setState({
                   date: date
             });
 
-            this.props.editTaskDateProps(date, this.props.id, previousDate);
+            this.props.editTaskDateProp(date, this.props.id);
       };
 
       deleteTask = () => {
-            this.props.deleteTaskProps(this.state.date, this.props.id);
+            this.props.deleteTaskProp(this.props.id);
 
             this.setState({
                   yValue: new Animated.Value(-menuheight), //TODO: delete that line if unecessary
@@ -318,11 +317,11 @@ const styles = StyleSheet.create({
 
 function mapDispatchToProps(dispatch) {
       return {
-            editTaskName: (name, id) => dispatch(editTaskName(name, id)),
-            toggleCompletion: (state, id) => dispatch(toggleCompletion(state, id)),
-            editTaskTimeProps: (hour, id, date) => dispatch(editTaskTimeAction(hour, id, date)),
-            editTaskDateProps: (date, id, previousDate) => dispatch(editTaskDateAction(date, id, previousDate)),
-            deleteTaskProps: (date, id) => dispatch(deleteTaskAction(date, id))
+            editTaskNameProp: (name, id) => dispatch(editTaskNameAction(name, id)),
+            editTaskCompletionActionProp: (state, id) => dispatch(editTaskCompletionAction(state, id)),
+            editTaskTimeProp: (hour, id) => dispatch(editTaskTimeAction(hour, id)),
+            editTaskDateProp: (date, id) => dispatch(editTaskDateAction(date, id)),
+            deleteTaskProp: id => dispatch(deleteTaskAction(id))
       };
 }
 

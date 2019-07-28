@@ -1,61 +1,30 @@
 //Before Validating
 //TODO:
-// Make it work with redux and store firebase data (review how you create a new day to add category (morning, etc..))
-// Make it work when we delete item
-// Make it work with category (morning, afternoon, evening)
-// Make 3 versions (without drag and drop, with drag and drop, and with native drag and drop)
+// Be carefulf every time you change a prop to an item like date or time it should become -1 of the position
 
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { getToday } from '../Utils/helpers';
 
 import { connect } from 'react-redux';
-import { addTask, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+
+import Task from './Elements/Task';
+import BottomMenu from './Elements/BottomMenu';
 
 class AgendaViewSort extends Component {
       state = {
-            // Send a new date to store without index position (setState)
-            //make it comeback to the store ( pass through a map )
-            //give an index ( sort )
-            //My fake store
-            dataRedux: [],
-            areTasksSorted: false
+            isBottomMenuOpen: false
       };
 
       componentDidMount() {
             this.props.receiveTasksProp(getToday);
-
-            // this.props.tasks.length > 0 &&
-            //       this.props.tasks.map(item => {
-            //             this.props.editTaskPositionProp(item.id, getToday, item.position);
-            //       });
       }
 
-      // componentDidUpdate(prevProps) {
-      //       // prevProps.tasks[0] && console.log(prevProps.tasks[0].position);
-      //       this.props.tasks.length > 0 &&
-      //             this.props.tasks.map((item, index) => {
-      //                   if (prevProps.tasks[index]) {
-      //                         if (prevProps.tasks[index].position !== this.props.tasks[index].position) {
-      //                               console.log('componentdidupdate');
-      //                               this.props.editTaskPositionProp(item.id, getToday, item.position);
-      //                         }
-      //                   }
-
-      //                   // if (prevProps.tasks[item.id].position !== this.props.tasks[item.id].position) {
-      //                   //       // this.props.editTaskPositionProp(item.id, getToday, item.position);
-      //                   //       console.log('componentdidupdate');
-      //                   // }
-      //             });
-      // }
-
-      componentDidUpdate() {
-            !this.props.areTasksSorted && this.props.editTasksPositionProp(this.props.tasks, getToday);
-            // this.props.tasks.map((item, index) => {
-            //       console.log(this.props.tasks);
-            //       console.log(item);
-            //       this.props.editTaskPositionProp(item.id, getToday, item.position);
-            // });
+      componentDidUpdate(prevProps) {
+            if (!this.props.areTasksSorted && this.props.tasks.length > 0) {
+                  this.props.editTasksPositionProp(this.props.tasks);
+            }
       }
 
       render() {
@@ -66,8 +35,6 @@ class AgendaViewSort extends Component {
                               <Text> Add task </Text>
                         </TouchableOpacity>
                         {this.props.tasks.map((item, index) => {
-                              // !this.props.areTasksSorted &&
-                              //       this.props.editTaskPositionProp(item.id, getToday, item.position);
                               return (
                                     <Text key={index} style={{ marginVertical: 5 }}>
                                           {item.name}, index: {item.position}, time: {item.time}{' '}
@@ -80,7 +47,7 @@ class AgendaViewSort extends Component {
 }
 
 function mapStateToProp(state) {
-      let tasks = state.tasks[getToday] ? state.tasks[getToday] : {};
+      let tasks = state.tasks ? state.tasks : {};
 
       let tasksArray = Object.values(tasks);
       let tasksIdArray = Object.keys(tasks);
@@ -92,16 +59,16 @@ function mapStateToProp(state) {
 
       //Check if tasks are all sorted
       //If one object as a -1 position areTasksSorted is false
-      let areTasksSorted;
+      let areTasksSorted = true;
       tasksArray.map((item, index) => {
+            // console.log(item);
             if (item.position === -1) {
                   areTasksSorted = false;
-            } else {
-                  areTasksSorted = true;
             }
       });
 
       // console.log('ARETASKSSORTED', areTasksSorted);
+      //FIXME: If there is not item with -1 position no need to sort the tasks
 
       ////////////////////////////////////////////////////////////////////////////////////////////////
       ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -191,8 +158,8 @@ function mapStateToProp(state) {
 function mapDispatchToProps(dispatch) {
       return {
             receiveTasksProp: date => dispatch(receiveTasksAction(date)),
-            addTask: task => dispatch(addTask(task)),
-            editTasksPositionProp: (tasks, date) => dispatch(editTasksPositionAction(tasks, date))
+            addTaskProp: task => dispatch(addTaskAction(task)),
+            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks))
       };
 }
 

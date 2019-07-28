@@ -10,7 +10,7 @@ import {
       TouchableWithoutFeedback
 } from 'react-native';
 import { connect } from 'react-redux';
-import { addTask, receiveTasksAction } from '../Store/actions/taskAction';
+import { addTaskAction, receiveTasksAction } from '../Store/actions/taskAction';
 // import { firestoreConnect } from 'react-redux-firebase';
 // import { compose } from 'redux';
 import { getToday } from '../Utils/helpers';
@@ -39,7 +39,7 @@ class ReceivingDataTest extends Component {
             const date = new Date();
             const taskName = this.state.taskName;
 
-            this.props.addTask({
+            this.props.addTaskProp({
                   name: taskName,
                   dateAdded: date,
                   completed: false,
@@ -153,7 +153,7 @@ function mapStateToProp(state) {
 function mapDispatchToProps(dispatch) {
       return {
             receiveTasksProp: date => dispatch(receiveTasksAction(date)),
-            addTask: task => dispatch(addTask(task))
+            addTaskProp: task => dispatch(addTaskAction(task))
       };
 }
 
