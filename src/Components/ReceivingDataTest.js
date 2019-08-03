@@ -16,7 +16,7 @@ import { addTaskAction, receiveTasksAction } from '../Store/actions/taskAction';
 import { getToday } from '../Utils/helpers';
 
 import Task from './Elements/Task';
-import BottomMenu from './Elements/BottomMenu';
+import ItemMenu from './Elements/ItemMenu';
 
 class ReceivingDataTest extends Component {
       state = {
@@ -71,10 +71,10 @@ class ReceivingDataTest extends Component {
 
             return (
                   <View style={styles.container}>
-                        <TouchableOpacity style={styles.addButtonContainer} onPress={this.toggleAddItemView}>
-                              <View style={styles.addButton}>{/* <Text>hey</Text> */}</View>
-                        </TouchableOpacity>
-                        <Text style={{ fontWeight: '900', fontSize: 36 }}>Today</Text>
+                        {/* <TouchableOpacity style={styles.addButtonContainer} onPress={this.toggleAddItemView}>
+                              <View style={styles.addButton}></View>
+                        </TouchableOpacity> */}
+                        {/* <Text style={{ fontWeight: '900', fontSize: 36 }}>Today</Text> */}
                         <TextInput
                               style={{ height: 40, borderColor: 'gray', borderWidth: 1 }}
                               onChangeText={text => this.setState({ taskName: text })}
@@ -96,7 +96,7 @@ class ReceivingDataTest extends Component {
                         })}
 
                         {this.state.isBottomMenuOpen ? (
-                              <BottomMenu {...this.state.bottomMenuProps} id={this.state.BottomMenuId} />
+                              <ItemMenu {...this.state.bottomMenuProps} id={this.state.BottomMenuId} />
                         ) : null}
                   </View>
             );
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
 });
 
 function mapStateToProp(state) {
-      let tasks = state.tasks[getToday] ? state.tasks[getToday] : {};
+      let tasks = state.tasks ? state.tasks : {};
 
       return {
             tasks: Object.values(tasks),

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
 import { connect } from 'react-redux';
-import { signIn, signOut } from '../Store/actions/authAction';
+import { signUp } from '../../Store/actions/authAction';
 
 class Login extends Component {
       state = {
@@ -10,13 +10,15 @@ class Login extends Component {
       };
 
       handleSubmit = () => {
-            this.props.signIn(this.state);
+            this.props.signUp(this.state);
       };
 
       render() {
             console.log(this.props.signOut);
+            // if (auth.uid) navigate to ..
             return (
                   <View style={styles.container}>
+                        <Text>Sign Up</Text>
                         <Text>Email</Text>
                         <TextInput onChangeText={text => this.setState({ email: text })} value={this.state.text} />
                         <Text>Password</Text>
@@ -26,12 +28,9 @@ class Login extends Component {
                               value={this.state.text}
                         />
                         <TouchableOpacity onPress={this.handleSubmit} style={styles.button}>
-                              <Text>Sign In</Text>
+                              <Text>Sign Up</Text>
                         </TouchableOpacity>
                         <Text>{this.props.authError && this.props.authError}</Text>
-                        <TouchableOpacity onPress={this.props.signOut} style={[styles.button, { marginTop: 20 }]}>
-                              <Text>Sign Out</Text>
-                        </TouchableOpacity>
                   </View>
             );
       }
@@ -40,14 +39,14 @@ class Login extends Component {
 function mapStateToProp(state) {
       console.log(state.firebase);
       return {
+            auth: state.firebase.auth,
             authError: state.auth.authError
       };
 }
 
 function mapDispatchToProps(dispatch) {
       return {
-            signIn: credentials => dispatch(signIn(credentials)),
-            signOut: () => dispatch(signOut())
+            signUp: newUser => dispatch(signUp(newUser))
       };
 }
 

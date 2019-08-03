@@ -3,6 +3,7 @@
 
 export const RECEIVE_TASKS = 'RECEIVE_TASKS';
 export const ADD_TASK = 'ADD_TASK';
+export const EDIT_TASK_NAME = 'EDIT_TASK_NAME';
 export const EDIT_TASK_DATE = 'EDIT_TASK_DATE';
 export const EDIT_TASK_TIME = 'EDIT_TASK_TIME';
 export const EDIT_TASKS_POSITION = 'EDIT_TASKS_POSITION';
@@ -11,11 +12,15 @@ export const DELETE_TASK = 'DELETE_TASK';
 export function receiveTasksAction(date) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
+            const collection = 'tasks';
 
             firestore
-                  .collection('tasks')
+                  .collection(collection)
                   .where('date', '==', date)
                   .get()
+                  .catch(error => {
+                        throw new Error('Error: Getting document:');
+                  })
                   .then(function(querySnapshot) {
                         let tasks = {};
                         querySnapshot.forEach(function(doc) {
@@ -25,6 +30,9 @@ export function receiveTasksAction(date) {
                               type: RECEIVE_TASKS,
                               tasks: tasks
                         });
+                  })
+                  .catch(err => {
+                        throw new Error(err);
                   });
       };
 }
@@ -33,9 +41,10 @@ export function addTaskAction(task) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
             const userId = getState().firebase.auth.uid;
+            const collection = 'tasks';
 
             firestore
-                  .collection('tasks')
+                  .collection(collection)
                   .add({
                         uid: userId,
                         name: task.name,
@@ -68,18 +77,17 @@ export function editTaskNameAction(name, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
-            // console.log(name, id);
-
             firestore
                   .collection('tasks')
                   .doc(id)
                   .set({ name: name }, { merge: true })
-                  // .then(() => {
-                  //       dispatch({
-                  //             type: ADD_TASK,
-                  //             task
-                  //       });
-                  // })
+                  .then(() => {
+                        dispatch({
+                              type: EDIT_TASK_NAME,
+                              name: name,
+                              id: id
+                        });
+                  })
                   .catch(err => {
                         console.log(err);
                   });
@@ -91,6 +99,9 @@ export function editTaskCompletionAction(state, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
+            console.log(state);
+            console.log(id);
+
             firestore
                   .collection('tasks')
                   .doc(id)
@@ -101,7 +112,7 @@ export function editTaskCompletionAction(state, id) {
       };
 }
 
-export function deleteTaskAction(date, id) {
+export function deleteTaskAction(id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 

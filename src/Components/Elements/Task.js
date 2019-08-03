@@ -1,24 +1,75 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { connect } from 'react-redux';
+
+import { editTaskCompletionAction } from '../../Store/actions/taskAction';
 
 class Task extends Component {
+      state = {
+            completed: ''
+      };
+
+      componentDidMount() {
+            this.setState({
+                  completed: this.props.completed
+            });
+      }
+
+      toggleCompletion = () => {
+            this.setState(
+                  {
+                        completed: !this.state.completed
+                  },
+                  () => {
+                        this.props.editTaskCompletionProp(this.state.completed, this.props.id);
+                  }
+            );
+      };
+
       render() {
             return (
                   <View style={styles.componentContainer}>
-                        <Ionicons
-                              name="ios-checkmark-circle-outline"
-                              size={30}
-                              color={this.props.completed ? 'red' : 'grey'}
-                        />
-                        <Text>{this.props.time}</Text>
-                        <Text style={{ fontSize: 18, marginLeft: 12, color: this.props.completed ? 'grey' : 'black' }}>
-                              {this.props.name}
-                        </Text>
+                        <View
+                              style={{
+                                    flexDirection: 'column',
+                                    width: 44,
+                                    justifyContent: 'center',
+                                    alignItems: 'center'
+                              }}
+                        >
+                              <TouchableOpacity onPress={() => this.toggleCompletion()}>
+                                    <Ionicons
+                                          name="ios-checkmark-circle-outline"
+                                          size={30}
+                                          color={this.props.completed ? 'red' : 'grey'}
+                                    />
+                                    {this.props.time !== '' && (
+                                          <Text style={{ fontSize: 11, color: 'grey', marginTop: -3 }}>
+                                                {this.props.time.substring(0, 5)}
+                                          </Text>
+                                    )}
+                              </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity onPress={() => this.props.toggleItemMenu()}>
+                              <Text
+                                    style={{
+                                          fontSize: 19,
+                                          marginLeft: 8,
+                                          color: this.props.completed ? 'grey' : 'black',
+                                          height: 40,
+                                          flex: 1
+                                    }}
+                              >
+                                    {this.props.name}
+                              </Text>
+                        </TouchableOpacity>
                   </View>
             );
       }
 }
+
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
       componentContainer: {
@@ -29,4 +80,13 @@ const styles = StyleSheet.create({
       }
 });
 
-export default Task;
+function mapDispatchToProps(dispatch) {
+      return {
+            editTaskCompletionProp: (state, id) => dispatch(editTaskCompletionAction(state, id))
+      };
+}
+
+export default connect(
+      null,
+      mapDispatchToProps
+)(Task);

@@ -12,12 +12,14 @@ import firebaseConfig from './src/Utils/firebaseConfig';
 import CalendarMenuPlugin from './src/Components/CalendarMenuPlugin';
 import CalendarMenuFlatList from './src/Components/CalendarMenuFlatList';
 
-import Login from './src/Components/Login';
-import SignUp from './src/Components/SignUp';
-import LoadingScreen from './src/Components/LoadingScreen';
+import Login from './src/Components/Login/Login';
+import SignUp from './src/Components/Login/SignUp';
+import LoadingScreen from './src/Components/Login/LoadingScreen';
 import ReceivingDataTest from './src/Components/ReceivingDataTest';
-import AgendaViewSort from './src/Components/AgendaViewTestSortAlgo';
-import ViewToTestMenuOpening from './src/Components/ViewToTestMenuOpening';
+import TodayView from './src/Components/TodayView';
+// TODO: To erase
+import TodayViewCopy from './src/Components/TodayView-copy';
+import MainScreen from './src/Components/MainScreen';
 
 import './src/Utils/fixtimerbug';
 
@@ -47,8 +49,8 @@ export default class App extends Component {
 
 const StackNav = createStackNavigator(
       {
-            ViewToTestMenuOpening,
-            AgendaViewSort,
+            // TodayViewCopy,
+            MainScreen,
             ReceivingDataTest,
             CalendarMenuFlatList,
             LoadingScreen,
@@ -65,9 +67,8 @@ const AppContainer = createAppContainer(StackNav);
 const styles = StyleSheet.create({
       container: {
             flex: 1,
-            backgroundColor: '#fff',
+            backgroundColor: 'white',
             alignItems: 'center',
-            justifyContent: 'center',
-            marginTop: 50
+            justifyContent: 'center'
       }
 });

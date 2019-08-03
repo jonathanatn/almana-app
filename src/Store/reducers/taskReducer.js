@@ -1,10 +1,8 @@
-// TODO: Find the most performant between all tasks in store state and after sort on the component what tasks you need
-// Or everytime a component mount, create a state in the store that represent the day (and if we change the date of the item, we should move from the day and after rewrite it in an other day)
-
 import {
       RECEIVE_TASKS,
       ADD_TASK,
       DELETE_TASK,
+      EDIT_TASK_NAME,
       EDIT_TASK_DATE,
       EDIT_TASK_TIME,
       EDIT_TASKS_POSITION
@@ -30,16 +28,21 @@ function tasks(state = {}, action) {
                         //       [action.id]: action.task
                         // }
                   };
-            case DELETE_TASK:
-                  const { [action.id]: taskToDelete, ...tasksObjectWithoutTask } = state.tasks;
+            case EDIT_TASK_NAME:
                   return {
                         ...state,
-                        ...tasksObjectWithoutTask
-                        // tasks: {
-                        //       ...tasksObjectWithoutTask,
-                        // }
-                        // [action.id]:
-                        // [action.date]: dateObjectWithoutTask
+                        [action.id]: {
+                              ...state[action.id],
+                              name: action.name
+                        }
+                  };
+            case DELETE_TASK:
+                  let newState = Object.assign({}, state);
+                  newState[action.id] = Object.assign({}, state[action.id]);
+                  delete newState[action.id];
+
+                  return {
+                        ...newState
                   };
             case EDIT_TASK_DATE:
                   return {

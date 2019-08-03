@@ -3,7 +3,16 @@
 // TODO: Only show date and time if they are set
 
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Animated, Dimensions, TextInput, ScrollView } from 'react-native';
+import {
+      StyleSheet,
+      Text,
+      View,
+      TouchableOpacity,
+      Animated,
+      Dimensions,
+      TextInput,
+      KeyboardAvoidingView
+} from 'react-native';
 import DateTimePicker from 'react-native-modal-datetime-picker';
 import moment from 'moment';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,10 +28,13 @@ import {
       deleteTaskAction
 } from '../../Store/actions/taskAction';
 
-class BottomMenu extends Component {
+import { getToday } from '../../Utils/helpers';
+
+class ItemMenu extends Component {
       state = {
-            yValue: new Animated.Value(-menuheight),
+            // yValue: new Animated.Value(-menuheight),
             subtaskPlaceholder: 'Add a subtask..',
+            id: '',
             name: '',
             completed: '',
             subtask: {},
@@ -37,7 +49,7 @@ class BottomMenu extends Component {
       };
 
       async componentDidMount() {
-            this.openBottomMenu();
+            // this.openBottomMenu();
 
             // console.log(this.props.name);
 
@@ -46,15 +58,9 @@ class BottomMenu extends Component {
                   completed: this.props.completed,
                   date: this.props.date != '' ? this.props.date : 'No date',
                   time: this.props.time != '' ? this.props.time : 'No time'
+                  // id: this.props.id != '' ? this.props.id : ''
             });
       }
-
-      openBottomMenu = () => {
-            Animated.timing(this.state.yValue, {
-                  toValue: 0,
-                  duration: 100
-            }).start();
-      };
 
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////      Date/Time Picker Func      //////////////////////////////////////
@@ -70,9 +76,15 @@ class BottomMenu extends Component {
 
       handleDatePicked = dateReceived => {
             let date = moment(dateReceived).format('L');
+            let previousDate = this.state.date;
 
-            this.editTaskDateAction(date);
+            this.editTaskDate(date);
             this.hideDatePicker();
+
+            // We need to close the item menu after changing the date of the task for another day
+            if (date !== previousDate) {
+                  this.props.closeItemMenu();
+            }
       };
 
       showTimePicker = () => {
@@ -86,11 +98,19 @@ class BottomMenu extends Component {
       handleTimePicked = timeReceived => {
             let time = moment(timeReceived).format('LT');
 
+            // console.log(time, time.length, typeof time);
+
+            if (time.length < 8) {
+                  console.log(time);
+                  time = '0' + time;
+                  console.log(time);
+            }
+
             //TODO: Erase that line
             this.setState({
                   time: time
             });
-            this.editTaskTimeAction(this.state.time, this.props.id);
+            this.editTaskTime(this.state.time, this.props.id);
 
             this.hideTimePicker();
       };
@@ -108,10 +128,14 @@ class BottomMenu extends Component {
       };
 
       toggleCompletion = () => {
-            this.setState({
-                  completed: !this.state.completed
-            });
-            this.props.editTaskCompletionActionProp(this.state.completed, this.props.id);
+            this.setState(
+                  {
+                        completed: !this.state.completed
+                  },
+                  () => {
+                        this.props.editTaskCompletionActionProp(this.state.completed, this.props.id);
+                  }
+            );
       };
 
       editTaskTime = time => {
@@ -133,27 +157,32 @@ class BottomMenu extends Component {
       deleteTask = () => {
             this.props.deleteTaskProp(this.props.id);
 
-            this.setState({
-                  yValue: new Animated.Value(-menuheight), //TODO: delete that line if unecessary
-                  subtaskPlaceholder: 'Add a subtask..',
-                  name: '',
-                  completed: '',
-                  subtask: {},
-                  date: '',
-                  time: '',
-                  reminder: '',
-                  recurrency: '',
-                  label: [],
-                  projectId: '',
-                  isDatePickerVisible: false,
-                  isTimePickerVisible: false
-            });
+            this.setState(
+                  {
+                        yValue: new Animated.Value(-menuheight), //TODO: delete that line if unecessary
+                        subtaskPlaceholder: 'Add a subtask..',
+                        name: '',
+                        completed: '',
+                        subtask: {},
+                        date: '',
+                        time: '',
+                        reminder: '',
+                        recurrency: '',
+                        label: [],
+                        projectId: '',
+                        isDatePickerVisible: false,
+                        isTimePickerVisible: false
+                  },
+                  () => {
+                        this.props.closeItemMenu();
+                  }
+            );
       };
 
       render() {
             let subtask = [0, 1, 2];
             return (
-                  <Animated.View style={[styles.container, { bottom: this.state.yValue }]}>
+                  <View style={[styles.container, { bottom: 0 }]}>
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Header          ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
@@ -172,8 +201,9 @@ class BottomMenu extends Component {
                                     onChangeText={name => this.changeTaskName(name)}
                                     value={this.state.name}
                               />
-                              <TouchableOpacity style={{ width: 30, alignItems: 'center' }}>
-                                    <Ionicons name="md-more" size={30} />
+
+                              <TouchableOpacity style={{ width: 30, alignItems: 'center' }} onPress={this.deleteTask}>
+                                    <Ionicons name="md-trash" size={30} />
                               </TouchableOpacity>
                         </View>
 
@@ -210,11 +240,6 @@ class BottomMenu extends Component {
                               onConfirm={this.handleTimePicked}
                               onCancel={this.hideTimePicker}
                         />
-
-                        {/*/////////////////////////////////////////         Delete       //////////////////////////////////////////// */}
-                        <TouchableOpacity onPress={this.deleteTask}>
-                              <Text>Click to Delete</Text>
-                        </TouchableOpacity>
 
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Subtask         ///////////////////////////////////////////// 
@@ -278,7 +303,7 @@ class BottomMenu extends Component {
                                     />
                               </TouchableOpacity>
                         </View> */}
-                  </Animated.View>
+                  </View>
             );
       }
 }
@@ -290,18 +315,18 @@ const styles = StyleSheet.create({
       container: {
             padding: 16,
             backgroundColor: 'white',
-            height: menuheight,
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            shadowRadius: 2,
-            shadowOffset: {
-                  width: 0,
-                  height: -3
-            },
-            shadowColor: '#000000',
-            elevation: 24,
-            shadowOpacity: 1,
+            // height: menuheight,
+            // position: 'absolute',
+            // left: 0,
+            // right: 0,
+            // shadowRadius: 2,
+            // shadowOffset: {
+            //       width: 0,
+            //       height: -3
+            // },
+            // shadowColor: '#000000',
+            // elevation: 24,
+            // shadowOpacity: 1,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20
       },
@@ -331,4 +356,4 @@ export default compose(
             mapDispatchToProps
       ),
       firestoreConnect([{ collection: 'tasks' }])
-)(BottomMenu);
+)(ItemMenu);
