@@ -7,7 +7,7 @@ import React, { Component, PureComponent } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Animated, Easing } from 'react-native';
 import moment from 'moment';
 
-import ParentComp from './FlatListTraining';
+import FlatListCalendar from './FlatListCalendar';
 import AgendaView from './AgendaView';
 
 const { width, height } = Dimensions.get('window');
@@ -79,7 +79,7 @@ export default class CalendarMenu extends PureComponent {
 
                         <AgendaView date={this.state.formattedDate} />
                         <Animated.View style={[styles.calendarMenu, { bottom: this.state.yValue }]}>
-                              <View
+                              {/* <View
                                     style={{
                                           flexDirection: 'row',
                                           height: 20,
@@ -97,9 +97,9 @@ export default class CalendarMenu extends PureComponent {
                                     <TouchableOpacity>
                                           <Text>Today</Text>
                                     </TouchableOpacity>
-                              </View>
+                              </View> */}
 
-                              <ParentComp
+                              <FlatListCalendar
                                     getSelectedDate={this.getSelectedDate}
                                     getVisibleMonth={this.getVisibleMonth}
                               />

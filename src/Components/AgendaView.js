@@ -6,7 +6,7 @@ import { getToday } from '../Utils/helpers';
 import { addTaskAction, receiveTasksAction } from '../Store/actions/taskAction';
 
 import Task from './Elements/Task';
-import BottomMenu from './Elements/BottomMenu';
+import ItemMenu from './Elements/ItemMenu';
 
 class AgendaView extends Component {
       state = {
@@ -50,7 +50,7 @@ class AgendaView extends Component {
                               );
                         })}
                         {this.state.isBottomMenuOpen ? (
-                              <BottomMenu {...this.state.bottomMenuProps} id={this.state.BottomMenuId} />
+                              <ItemMenu {...this.state.bottomMenuProps} id={this.state.BottomMenuId} />
                         ) : null}
                   </View>
             );
