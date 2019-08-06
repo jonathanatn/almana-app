@@ -3,6 +3,7 @@ import {
       ADD_TASK,
       DELETE_TASK,
       EDIT_TASK_NAME,
+      EDIT_TASK_COMPLETION,
       EDIT_TASK_DATE,
       EDIT_TASK_TIME,
       EDIT_TASKS_POSITION
@@ -14,19 +15,11 @@ function tasks(state = {}, action) {
                   return {
                         ...state,
                         ...action.tasks
-                        // [action.date]: {
-                        //       ...state[action.date],
-                        //       ...action.tasks
-                        // }
                   };
             case ADD_TASK:
                   return {
                         ...state,
-                        [action.id]: action.task
-                        // tasks: {
-                        //       ...state.tasks,
-                        //       [action.id]: action.task
-                        // }
+                        [action.id]: { ...action.task, id: action.id }
                   };
             case EDIT_TASK_NAME:
                   return {
@@ -34,6 +27,14 @@ function tasks(state = {}, action) {
                         [action.id]: {
                               ...state[action.id],
                               name: action.name
+                        }
+                  };
+            case EDIT_TASK_COMPLETION:
+                  return {
+                        ...state,
+                        [action.id]: {
+                              ...state[action.id],
+                              completed: action.completion
                         }
                   };
             case DELETE_TASK:
@@ -57,7 +58,8 @@ function tasks(state = {}, action) {
                         ...state,
                         [action.id]: {
                               ...state[action.id],
-                              time: action.time
+                              time: action.time,
+                              position: -1
                         }
                   };
             case EDIT_TASKS_POSITION:
