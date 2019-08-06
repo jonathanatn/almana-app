@@ -14,9 +14,9 @@ import Task from './Elements/Task';
 import TaskAdder from './Elements/TaskAdder';
 
 class TodayView extends Component {
-      componentDidMount() {
-            this.props.receiveTasksProp(getToday);
-      }
+      // componentDidMount() {
+      //       this.props.receiveTasksProp(getToday);
+      // }
 
       componentDidUpdate(prevProps) {
             if (!this.props.areTasksSorted && this.props.tasks.length > 0) {
@@ -27,7 +27,6 @@ class TodayView extends Component {
       render() {
             return (
                   <View style={styles.container}>
-                        {/* TODO: Hide the menu button near the DateMover */}
                         {/* ------------------------------------------ Add Task Button ------------------------------------------ */}
                         <TouchableOpacity style={styles.addButtonContainer} onPress={this.props.openItemAdder}>
                               <View style={styles.addButton}>
@@ -35,25 +34,17 @@ class TodayView extends Component {
                               </View>
                         </TouchableOpacity>
                         {/* ------------------------------------------------------------------------------------------------------------- */}
-                        <Text style={{ fontWeight: '900', fontSize: 36, marginBottom: 20 }}>Today</Text>
+                        <Text style={{ fontWeight: '900', fontSize: 36, marginBottom: 20, marginLeft: 12 }}>Today</Text>
                         <ScrollView>
                               {this.props.tasks.map((item, index) => {
-                                    //FIXME: Could cause weird behavior
-                                    if (item.date === getToday) {
-                                          return (
-                                                // <TouchableOpacity
-                                                //       key={index}
-                                                //       onPress={() => this.props.toggleItemMenu(item)}
-                                                //       style={{ zIndex: 0 }}
-                                                // >
-                                                <Task
-                                                      key={index}
-                                                      {...item}
-                                                      style={{ zIndex: 0 }}
-                                                      toggleItemMenu={() => this.props.toggleItemMenu(item)}
-                                                />
-                                          );
-                                    }
+                                    return (
+                                          <Task
+                                                key={index}
+                                                {...item}
+                                                style={{ zIndex: 0 }}
+                                                openItemMenu={() => this.props.openItemMenu(item)}
+                                          />
+                                    );
                               })}
                         </ScrollView>
                   </View>
@@ -68,17 +59,8 @@ function mapStateToProp(state) {
       let tasksIdArray = Object.keys(tasks);
 
       // Need to be sure we only sort task of Today
-      tasksArray = tasksArray.filter((item, index) => {
-            if (item.date !== getToday) {
-                  tasksIdArray.splice(index, 1);
-            } else {
-                  return item.date === getToday;
-            }
-      });
-
-      // Add an task id field to make objects simpler to manipulate
-      tasksArray.map((item, index) => {
-            item.id = tasksIdArray[index];
+      tasksArray = tasksArray.filter(item => {
+            return item.date === getToday;
       });
 
       //Check if tasks are all sorted
@@ -138,6 +120,10 @@ function mapStateToProp(state) {
 
       newDataArray.map((item, index) => {
             item.position = index;
+      });
+
+      newDataArray.sort(function(a, b) {
+            return a.position - b.position;
       });
 
       function convertTo24Hour(time) {

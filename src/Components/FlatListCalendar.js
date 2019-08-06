@@ -1,7 +1,9 @@
 // TODO: On back to today, update the calendar day selected
+// FIXME: The calendar height change alone, because it upload 3 month in advance so if there is 6 weeks in one of them the height will higher
 import React, { Component, PureComponent } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, FlatList, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import moment from 'moment';
 
 const { width } = Dimensions.get('window');
 
@@ -32,10 +34,8 @@ export default class FlatListCalendar extends PureComponent {
       }
 
       onDayPress = (day, dayNumber, monthNumber) => {
-            // this.props.getSelectedDay(dayNumber);
-            // this.props.getSelectedMonth(monthNumber);
+            // FIXME: Use the parent to recover the date make the component really slow, maybe use the store
             this.props.getSelectedDate(dayNumber, monthNumber);
-            // this.props
 
             //Keeping track on last date selected because on the re-render of the child component (because of too much swiper on the FlatList)
             // We will loose the selected day so we save it in the parent component
@@ -55,12 +55,17 @@ export default class FlatListCalendar extends PureComponent {
             });
       };
 
-      onViewableItemsChanged = async ({ viewableItems, changed }) => {
-            // console.log('Visible items are', viewableItems);
-            // console.log('Changed items are', changed);
+      onViewableItemsChanged = ({ viewableItems, changed }) => {
+            if (viewableItems[0].index) {
+                  let getMonth = moment()
+                        .add(viewableItems[0].index - 12, 'month')
+                        .format('MMMM YYYY');
 
-            // FIXME: Scroll to index bug if we call it more than 2 screen than the index
-            (await viewableItems[0].index) && this.props.getVisibleMonth(viewableItems[0].index);
+                  this.props.getVisibleMonth(getMonth);
+            }
+
+            // (viewableItems[0].index) && this.props.getVisibleMonth(viewableItems[0].index);
+            // (await viewableItems[0].index) && this.props.getVisibleMonth(viewableItems[0].index);
       };
 
       // FIXME:
@@ -77,10 +82,6 @@ export default class FlatListCalendar extends PureComponent {
             // });
       };
 
-      getAlert() {
-            alert('getAlert from Child');
-      }
-
       render() {
             const { width } = Dimensions.get('window');
             let data = [];
@@ -91,7 +92,7 @@ export default class FlatListCalendar extends PureComponent {
             }
             return (
                   <View style={[styles.container, { flexDirection: 'column' }]}>
-                        <View style={{ flexDirection: 'row', marginBottom: 5 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: -8 }}>
                               <View style={styles.dayContainer}>
                                     <Text style={{ color: 'grey', opacity: 0.6, fontSize: 9 }}>M</Text>
                               </View>
@@ -294,10 +295,12 @@ const styles = StyleSheet.create({
             // flex: 1,
             flexDirection: 'row',
             flexWrap: 'wrap',
-            width: width
+            width: width,
+            justifyContent: 'center'
       },
       dayContainer: {
-            width: width / 7,
+            width: width / 7.2,
+            height: 36,
             justifyContent: 'center',
             alignItems: 'center'
       },

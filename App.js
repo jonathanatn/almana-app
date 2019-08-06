@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, AsyncStorage } from 'react-native';
 import { createAppContainer, createStackNavigator } from 'react-navigation';
 import { createStore, applyMiddleware, compose } from 'redux';
 import { Provider } from 'react-redux';
@@ -9,22 +9,30 @@ import { reduxFirestore, getFirestore } from 'redux-firestore';
 import { reactReduxFirebase, getFirebase } from 'react-redux-firebase';
 import firebaseConfig from './src/Utils/firebaseConfig';
 
-import CalendarMenuPlugin from './src/Components/CalendarMenuPlugin';
-import CalendarMenuFlatList from './src/Components/CalendarMenuFlatList';
-
 import Login from './src/Components/Login/Login';
 import SignUp from './src/Components/Login/SignUp';
 import LoadingScreen from './src/Components/Login/LoadingScreen';
-import ReceivingDataTest from './src/Components/ReceivingDataTest';
 import TodayView from './src/Components/TodayView';
-// TODO: To erase
-import TodayViewCopy from './src/Components/TodayView-copy';
 import MainScreen from './src/Components/MainScreen';
 
 import './src/Utils/fixtimerbug';
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////  Redux Store & Redux Persist  ////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//https://www.youtube.com/watch?v=gKC4Hfp0zzU
+import { persistStore, persistReducer } from 'redux-persist';
+import { PersistGate } from 'redux-persist/integration/react';
+
+const persistConfig = {
+      key: 'root',
+      storage: AsyncStorage
+};
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
 const store = createStore(
-      rootReducer,
+      persistedReducer,
       compose(
             applyMiddleware(
                   thunk.withExtraArgument({
@@ -37,11 +45,15 @@ const store = createStore(
       )
 );
 
+const persistor = persistStore(store);
+
 export default class App extends Component {
       render() {
             return (
                   <Provider store={store}>
-                        <AppContainer />
+                        <PersistGate loading={null} persistor={persistor}>
+                              <AppContainer />
+                        </PersistGate>
                   </Provider>
             );
       }
@@ -49,10 +61,7 @@ export default class App extends Component {
 
 const StackNav = createStackNavigator(
       {
-            // TodayViewCopy,
             MainScreen,
-            ReceivingDataTest,
-            CalendarMenuFlatList,
             LoadingScreen,
             SignUp,
             Login

@@ -38,7 +38,10 @@ class Task extends Component {
                                     alignItems: 'center'
                               }}
                         >
-                              <TouchableOpacity onPress={() => this.toggleCompletion()}>
+                              <TouchableOpacity
+                                    onPress={() => this.toggleCompletion()}
+                                    style={{ alignItems: 'center' }}
+                              >
                                     <Ionicons
                                           name="ios-checkmark-circle-outline"
                                           size={30}
@@ -51,10 +54,11 @@ class Task extends Component {
                                     )}
                               </TouchableOpacity>
                         </View>
-                        <TouchableOpacity onPress={() => this.props.toggleItemMenu()}>
+                        <TouchableOpacity onPress={() => this.props.openItemMenu()}>
                               <Text
                                     style={{
                                           fontSize: 19,
+                                          lineHeight: 34,
                                           marginLeft: 8,
                                           color: this.props.completed ? 'grey' : 'black',
                                           height: 40,
@@ -75,8 +79,9 @@ const styles = StyleSheet.create({
       componentContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginVertical: 10,
-            paddingHorizontal: 12
+            marginVertical: 5,
+            paddingHorizontal: 12,
+            height: 44
       }
 });
 

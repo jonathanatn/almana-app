@@ -51,6 +51,8 @@ class TaskAdder extends Component {
       }
 
       addTask() {
+            let taskDate = this.state.date;
+
             if (this.state.textInput.length !== 0) {
                   const date = new Date();
                   this.props.addTaskProp({
@@ -58,7 +60,7 @@ class TaskAdder extends Component {
                         dateAdded: date,
                         completed: false,
                         subtask: {},
-                        date: this.state.date,
+                        date: taskDate,
                         time: '',
                         reminder: '',
                         reccurency: '',
@@ -70,7 +72,6 @@ class TaskAdder extends Component {
 
             this.setState({
                   textInput: '',
-                  date: '',
                   time: ''
             });
             this.inputRef.clear();

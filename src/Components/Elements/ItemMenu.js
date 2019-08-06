@@ -49,10 +49,6 @@ class ItemMenu extends Component {
       };
 
       async componentDidMount() {
-            // this.openBottomMenu();
-
-            // console.log(this.props.name);
-
             await this.setState({
                   name: this.props.name,
                   completed: this.props.completed,
@@ -98,12 +94,8 @@ class ItemMenu extends Component {
       handleTimePicked = timeReceived => {
             let time = moment(timeReceived).format('LT');
 
-            // console.log(time, time.length, typeof time);
-
             if (time.length < 8) {
-                  console.log(time);
                   time = '0' + time;
-                  console.log(time);
             }
 
             //TODO: Erase that line
@@ -128,14 +120,7 @@ class ItemMenu extends Component {
       };
 
       toggleCompletion = () => {
-            this.setState(
-                  {
-                        completed: !this.state.completed
-                  },
-                  () => {
-                        this.props.editTaskCompletionActionProp(this.state.completed, this.props.id);
-                  }
-            );
+            this.props.editTaskCompletionActionProp(!this.props.task.completed, this.props.task.id);
       };
 
       editTaskTime = time => {
@@ -155,28 +140,8 @@ class ItemMenu extends Component {
       };
 
       deleteTask = () => {
-            this.props.deleteTaskProp(this.props.id);
-
-            this.setState(
-                  {
-                        yValue: new Animated.Value(-menuheight), //TODO: delete that line if unecessary
-                        subtaskPlaceholder: 'Add a subtask..',
-                        name: '',
-                        completed: '',
-                        subtask: {},
-                        date: '',
-                        time: '',
-                        reminder: '',
-                        recurrency: '',
-                        label: [],
-                        projectId: '',
-                        isDatePickerVisible: false,
-                        isTimePickerVisible: false
-                  },
-                  () => {
-                        this.props.closeItemMenu();
-                  }
-            );
+            this.props.deleteTaskProp(this.props.task.id);
+            this.props.closeItemMenu();
       };
 
       render() {
@@ -192,7 +157,7 @@ class ItemMenu extends Component {
                                     <Ionicons
                                           name="ios-checkmark-circle-outline"
                                           size={30}
-                                          color={this.state.completed ? 'red' : 'grey'}
+                                          color={this.props.task && this.props.task.completed ? 'red' : 'grey'}
                                     />
                               </TouchableOpacity>
 
@@ -340,6 +305,14 @@ const styles = StyleSheet.create({
       }
 });
 
+function mapStateToProp(state, ownProps) {
+      let task = state.tasks[ownProps.id];
+
+      return {
+            task: task
+      };
+}
+
 function mapDispatchToProps(dispatch) {
       return {
             editTaskNameProp: (name, id) => dispatch(editTaskNameAction(name, id)),
@@ -352,7 +325,7 @@ function mapDispatchToProps(dispatch) {
 
 export default compose(
       connect(
-            null,
+            mapStateToProp,
             mapDispatchToProps
       ),
       firestoreConnect([{ collection: 'tasks' }])
