@@ -9,6 +9,7 @@ import { getToday } from '../Utils/helpers';
 import { connect } from 'react-redux';
 import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
 import { Ionicons } from '@expo/vector-icons';
+import moment from 'moment';
 
 import Task from './Elements/Task';
 import TaskAdder from './Elements/TaskAdder';
@@ -55,114 +56,143 @@ class TodayView extends Component {
 function mapStateToProp(state) {
       let tasks = state.tasks ? state.tasks : {};
 
-      let tasksArray = Object.values(tasks);
-      let tasksIdArray = Object.keys(tasks);
+      // console.log('ALL TASKS: ', tasks);
+      let areTasksSorted = false;
 
-      // Need to be sure we only sort task of Today
+      let tasksArray = Object.values(tasks);
+
+      // Get tasks of the day
+      // FIXME: Would change depdending the day
       tasksArray = tasksArray.filter(item => {
             return item.date === getToday;
       });
 
-      //Check if tasks are all sorted
-      //If one object as a -1 position areTasksSorted is false
-      let areTasksSorted = true;
-      tasksArray.map((item, index) => {
-            // console.log(item);
-            if (item.position === -1) {
-                  areTasksSorted = false;
-            }
-      });
+      let tasksArrayWithPosition = [];
+      let tasksArrayToSort = [];
+      let tasksArrayToSortWithTime = [];
 
-      // console.log('ARETASKSSORTED', areTasksSorted);
-      //FIXME: If there is not item with -1 position no need to sort the tasks
-
-      //TODO: Create a helper function to manage the sorting
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      let data = tasksArray;
-      let dataWithPosition = [];
-      let dataWithoutPosition = [];
-
-      let dataToInsert = [];
-      let dataToInsertWithTimeProp = [];
-
-      data.map(item => {
-            if (item.position !== -1) {
-                  dataWithPosition.push(item);
-            }
-      });
-
-      //Check if there is data without a position index
-      //It means it's a data that we moved from an other day
-      data.map(item => {
-            if (item.position === -1) {
-                  dataWithoutPosition.push(item);
-            }
-      });
-
-      dataWithoutPosition.map(item => {
-            //Check if there is data with a time prop and create an array with them
-            if (item.time !== '') {
-                  dataToInsertWithTimeProp.push(item);
+      // Create an array with positionned tasks and one with tasks to position
+      tasksArray.map(item => {
+            // Create an array with unpositioned task that DON'T have time property
+            if (item.position === -1 && item.time === '') {
+                  tasksArrayToSort.push(item);
+                  // Create an array with unpositioned task that HAVE time property
+            } else if (item.position === -1 && item.time !== '') {
+                  tasksArrayToSortWithTime.push(item);
+                  // Create an array with already positioned tasks
             } else {
-                  // Create an array with item that don't have time prop
-                  dataToInsert.push(item);
+                  tasksArrayWithPosition.push(item);
             }
       });
 
-      let newDataArray = [...dataToInsert, ...dataWithPosition, ...dataToInsertWithTimeProp];
-
-      newDataArray.sort(compareTime);
-      //For item with time prop, we need to compare them to all item with time prop
-      //Get the position of the very first next item and create a new array
-
-      newDataArray.map((item, index) => {
+      // Set the correct position because if we change the date of an item it inside the same day it will create a hole in the array
+      tasksArrayWithPosition.map((item, index) => {
             item.position = index;
       });
 
-      newDataArray.sort(function(a, b) {
-            return a.position - b.position;
-      });
-
-      function convertTo24Hour(time) {
-            var hours = parseInt(time.substr(0, 2));
-
-            if (time.indexOf('AM') != -1 && hours == 12) {
-                  time = time.replace('12', '0');
-            }
-            if (time.indexOf('PM') != -1 && hours < 12) {
-                  time = time.replace(hours, hours + 12);
-            }
-
-            return time.replace(/(AM|PM)/, '');
+      if (tasksArrayToSort.length === 0 && tasksArrayToSortWithTime.length === 0) {
+            areTasksSorted = true;
       }
 
-      function compareTime(a, b) {
-            //We don't care about the date, just used to make the sort
-            var atime = Date.parse('18/02/1992' + ' ' + convertTo24Hour(a.time));
-            var btime = Date.parse('18/02/1992' + ' ' + convertTo24Hour(b.time));
+      console.log('tasksArrayToSort', tasksArrayToSort);
+      console.log('tasksArrayToSortWithTime', tasksArrayToSortWithTime);
+      console.log('tasksArrayWithPosition', tasksArrayWithPosition);
 
-            if (atime < btime) {
-                  return -1;
-            }
-
-            if (atime > btime) {
-                  return 1;
-            }
-
-            return 0;
+      //SORTING the array with position if it's not empty
+      if (tasksArrayWithPosition.length > 0) {
+            tasksArrayWithPosition.sort(function(a, b) {
+                  return a.position - b.position;
+            });
       }
 
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
+      // We start by pushing at the end all unpositioned tasks that DON'T have time property
+      if (tasksArrayToSort.length > 0) {
+            tasksArrayToSort.map(item => {
+                  // Assigning position as the array length because it will be push to the end
+                  // FIXME: ASSIGNATION
+                  item.position = tasksArrayWithPosition.length;
+                  tasksArrayWithPosition.push(item);
+            });
+      }
+
+      // We position at the right every unpositioned task that HAVE a time property
+      if (tasksArrayToSortWithTime.length > 0) {
+            // Sort the tasksArrayToSortWithTime
+            tasksArrayToSortWithTime.sort(function(a, b) {
+                  let aDate = moment(a.time, 'h:mma');
+                  let bDate = moment(b.time, 'h:mma');
+
+                  if (aDate.isBefore(bDate)) {
+                        return -1;
+                  }
+                  if (!aDate.isBefore(bDate)) {
+                        return 1;
+                  }
+                  return 0;
+            });
+
+            let tasksPositionedToDelete = [];
+
+            tasksArrayToSortWithTime.map((item, index) => {
+                  for (let i = 0; i < tasksArrayWithPosition.length; i++) {
+                        if (item.time === tasksArrayWithPosition[i].time) {
+                              tasksPositionedToDelete.push(index);
+                              item.position = i;
+                              tasksArrayWithPosition.slice(i, 0, item);
+                              tasksArrayWithPosition.map((item, indexB) => {
+                                    if (indexB > i) {
+                                          item.position = item.position + 1;
+                                    }
+                              });
+                              break; // Break the loop for that item so we can test the next one
+                        }
+                  }
+            });
+            tasksPositionedToDelete.map(item => {
+                  tasksArrayToSortWithTime.splice(item, 1);
+            });
+            tasksPositionedToDelete = [];
+
+            tasksArrayToSortWithTime.map((item, index) => {
+                  let itemTimeToPositon = moment(item.time, 'h:mma');
+                  for (let i = 0; i < tasksArrayWithPosition.length; i++) {
+                        let itemTimePositioned = moment(tasksArrayWithPosition[i].time, 'h:mma');
+                        if (itemTimeToPositon.isBefore(itemTimePositioned)) {
+                              console.log(itemTimeToPositon);
+                              console.log('ISBEFORE');
+                              console.log(itemTimePositioned);
+                              tasksPositionedToDelete.push(index);
+                              item.position = i;
+                              tasksArrayWithPosition.slice(i, 0, item);
+                              tasksArrayWithPosition.map((item, indexB) => {
+                                    if (indexB > i) {
+                                          item.position = item.position + 1;
+                                    }
+                              });
+                              break; // Break the loop for that item so we can test the next one
+                        }
+                  }
+            });
+            tasksPositionedToDelete.map(item => {
+                  tasksArrayToSortWithTime.splice(item, 1);
+            });
+            tasksPositionedToDelete = [];
+
+            tasksArrayToSortWithTime.map((item, index) => {
+                  item.position = tasksArrayWithPosition.length + index;
+            });
+
+            tasksArrayWithPosition = [...tasksArrayWithPosition, ...tasksArrayToSortWithTime];
+      }
+
+      // Check if there the array tasksArrayToSort is not empty before doing everything
+      // TODO: Register all position change in the store (With an action)
+      // TODO: What if we don't have task unpositioned (sort the array tasksArrayWithPosition and send that)
 
       return {
-            tasks: newDataArray,
+            tasks: tasksArrayWithPosition,
             areTasksSorted: areTasksSorted
+            // tasks: tasksArray
       };
 }
 
