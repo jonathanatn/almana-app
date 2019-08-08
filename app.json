@@ -1,13 +1,13 @@
 {
       "expo": {
-            "name": "Almana-calendar",
+            "name": "Almana",
             "slug": "almana-calendar",
             "privacy": "public",
             "sdkVersion": "33.0.0",
             "platforms": ["ios", "android", "web"],
             "version": "1.0.0",
             "orientation": "portrait",
-            "icon": "./assets/icon.png",
+            "icon": "./assets/icon-app.png",
             "splash": {
                   "image": "./assets/splash.png",
                   "resizeMode": "contain",
