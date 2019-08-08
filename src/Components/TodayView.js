@@ -56,143 +56,104 @@ class TodayView extends Component {
 function mapStateToProp(state) {
       let tasks = state.tasks ? state.tasks : {};
 
-      // console.log('ALL TASKS: ', tasks);
       let areTasksSorted = false;
 
       let tasksArray = Object.values(tasks);
 
       // Get tasks of the day
-      // FIXME: Would change depdending the day
       tasksArray = tasksArray.filter(item => {
             return item.date === getToday;
       });
 
       let tasksArrayWithPosition = [];
       let tasksArrayToSort = [];
-      let tasksArrayToSortWithTime = [];
 
-      // Create an array with positionned tasks and one with tasks to position
+      //Make a distinction between tasks positioned and unpositioned
       tasksArray.map(item => {
-            // Create an array with unpositioned task that DON'T have time property
-            if (item.position === -1 && item.time === '') {
+            if (item.position === -1) {
                   tasksArrayToSort.push(item);
-                  // Create an array with unpositioned task that HAVE time property
-            } else if (item.position === -1 && item.time !== '') {
-                  tasksArrayToSortWithTime.push(item);
-                  // Create an array with already positioned tasks
             } else {
                   tasksArrayWithPosition.push(item);
             }
       });
 
-      // Set the correct position because if we change the date of an item it inside the same day it will create a hole in the array
-      tasksArrayWithPosition.map((item, index) => {
-            item.position = index;
-      });
-
-      if (tasksArrayToSort.length === 0 && tasksArrayToSortWithTime.length === 0) {
+      if (tasksArrayToSort.length === 0) {
             areTasksSorted = true;
       }
 
-      console.log('tasksArrayToSort', tasksArrayToSort);
-      console.log('tasksArrayToSortWithTime', tasksArrayToSortWithTime);
-      console.log('tasksArrayWithPosition', tasksArrayWithPosition);
-
       //SORTING the array with position if it's not empty
+      // Set the correct position because if we change the date of an item it inside the same day it will create a hole in the array
       if (tasksArrayWithPosition.length > 0) {
             tasksArrayWithPosition.sort(function(a, b) {
                   return a.position - b.position;
             });
+            tasksArrayWithPosition.map((item, index) => {
+                  item.position = index;
+            });
       }
 
-      // We start by pushing at the end all unpositioned tasks that DON'T have time property
-      if (tasksArrayToSort.length > 0) {
-            tasksArrayToSort.map(item => {
-                  // Assigning position as the array length because it will be push to the end
-                  // FIXME: ASSIGNATION
+      tasksArrayToSort.map((item, index) => {
+            let stopMapping = false;
+            if (item.time === '') {
                   item.position = tasksArrayWithPosition.length;
                   tasksArrayWithPosition.push(item);
-            });
-      }
+                  stopMapping = true;
+            }
+            if (item.time !== '' && stopMapping === false) {
+                  let stopMappingB = false;
 
-      // We position at the right every unpositioned task that HAVE a time property
-      if (tasksArrayToSortWithTime.length > 0) {
-            // Sort the tasksArrayToSortWithTime
-            tasksArrayToSortWithTime.sort(function(a, b) {
-                  let aDate = moment(a.time, 'h:mma');
-                  let bDate = moment(b.time, 'h:mma');
+                  if (stopMappingB === false) {
+                        let stopMappingC = false;
+                        tasksArrayWithPosition.map((itemB, indexB) => {
+                              if (item.time === itemB.time && stopMappingC === false) {
+                                    item.position = indexB;
+                                    tasksArrayWithPosition.splice(indexB, 0, item);
+                                    tasksArrayWithPosition.map((itemC, indexC) => {
+                                          if (indexC > indexB) {
+                                                itemC.position++;
+                                          }
+                                    });
 
-                  if (aDate.isBefore(bDate)) {
-                        return -1;
+                                    stopMappingC = true;
+                                    stopMappingB = true;
+                              }
+                        });
                   }
-                  if (!aDate.isBefore(bDate)) {
-                        return 1;
+
+                  if (stopMappingB === false) {
+                        let stopMappingC = false;
+                        tasksArrayWithPosition.map((itemB, indexB) => {
+                              let timeToSort = moment(item.time, 'h:mma');
+                              let timeWithPosition = moment(itemB.time, 'h:mma');
+
+                              if (timeToSort.isBefore(timeWithPosition) && stopMappingC === false) {
+                                    item.position = indexB;
+                                    tasksArrayWithPosition.splice(indexB, 0, item);
+                                    tasksArrayWithPosition.map((itemC, indexC) => {
+                                          if (indexC > indexB) {
+                                                itemC.position++;
+                                          }
+                                    });
+
+                                    stopMappingC = true;
+                                    stopMappingB = true;
+                              }
+                        });
                   }
-                  return 0;
-            });
 
-            let tasksPositionedToDelete = [];
-
-            tasksArrayToSortWithTime.map((item, index) => {
-                  for (let i = 0; i < tasksArrayWithPosition.length; i++) {
-                        if (item.time === tasksArrayWithPosition[i].time) {
-                              tasksPositionedToDelete.push(index);
-                              item.position = i;
-                              tasksArrayWithPosition.slice(i, 0, item);
-                              tasksArrayWithPosition.map((item, indexB) => {
-                                    if (indexB > i) {
-                                          item.position = item.position + 1;
-                                    }
-                              });
-                              break; // Break the loop for that item so we can test the next one
-                        }
+                  if (stopMappingB === false) {
+                        item.position = tasksArrayWithPosition.length;
+                        tasksArrayWithPosition.push(item);
                   }
-            });
-            tasksPositionedToDelete.map(item => {
-                  tasksArrayToSortWithTime.splice(item, 1);
-            });
-            tasksPositionedToDelete = [];
-
-            tasksArrayToSortWithTime.map((item, index) => {
-                  let itemTimeToPositon = moment(item.time, 'h:mma');
-                  for (let i = 0; i < tasksArrayWithPosition.length; i++) {
-                        let itemTimePositioned = moment(tasksArrayWithPosition[i].time, 'h:mma');
-                        if (itemTimeToPositon.isBefore(itemTimePositioned)) {
-                              console.log(itemTimeToPositon);
-                              console.log('ISBEFORE');
-                              console.log(itemTimePositioned);
-                              tasksPositionedToDelete.push(index);
-                              item.position = i;
-                              tasksArrayWithPosition.slice(i, 0, item);
-                              tasksArrayWithPosition.map((item, indexB) => {
-                                    if (indexB > i) {
-                                          item.position = item.position + 1;
-                                    }
-                              });
-                              break; // Break the loop for that item so we can test the next one
-                        }
-                  }
-            });
-            tasksPositionedToDelete.map(item => {
-                  tasksArrayToSortWithTime.splice(item, 1);
-            });
-            tasksPositionedToDelete = [];
-
-            tasksArrayToSortWithTime.map((item, index) => {
-                  item.position = tasksArrayWithPosition.length + index;
-            });
-
-            tasksArrayWithPosition = [...tasksArrayWithPosition, ...tasksArrayToSortWithTime];
-      }
-
-      // Check if there the array tasksArrayToSort is not empty before doing everything
-      // TODO: Register all position change in the store (With an action)
-      // TODO: What if we don't have task unpositioned (sort the array tasksArrayWithPosition and send that)
+            }
+            console.log('END', tasksArrayWithPosition);
+            //FIXME:
+            //areTasksSorted = true;
+      });
 
       return {
             tasks: tasksArrayWithPosition,
             areTasksSorted: areTasksSorted
-            // tasks: tasksArray
       };
 }
 
