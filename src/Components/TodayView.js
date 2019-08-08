@@ -9,6 +9,7 @@ import { getToday } from '../Utils/helpers';
 import { connect } from 'react-redux';
 import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
 import { Ionicons } from '@expo/vector-icons';
+import moment from 'moment';
 
 import Task from './Elements/Task';
 import TaskAdder from './Elements/TaskAdder';
@@ -55,113 +56,103 @@ class TodayView extends Component {
 function mapStateToProp(state) {
       let tasks = state.tasks ? state.tasks : {};
 
-      let tasksArray = Object.values(tasks);
-      let tasksIdArray = Object.keys(tasks);
+      let areTasksSorted = false;
 
-      // Need to be sure we only sort task of Today
+      let tasksArray = Object.values(tasks);
+
+      // Get tasks of the day
       tasksArray = tasksArray.filter(item => {
             return item.date === getToday;
       });
 
-      //Check if tasks are all sorted
-      //If one object as a -1 position areTasksSorted is false
-      let areTasksSorted = true;
-      tasksArray.map((item, index) => {
-            // console.log(item);
+      let tasksArrayWithPosition = [];
+      let tasksArrayToSort = [];
+
+      //Make a distinction between tasks positioned and unpositioned
+      tasksArray.map(item => {
             if (item.position === -1) {
-                  areTasksSorted = false;
-            }
-      });
-
-      // console.log('ARETASKSSORTED', areTasksSorted);
-      //FIXME: If there is not item with -1 position no need to sort the tasks
-
-      //TODO: Create a helper function to manage the sorting
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      let data = tasksArray;
-      let dataWithPosition = [];
-      let dataWithoutPosition = [];
-
-      let dataToInsert = [];
-      let dataToInsertWithTimeProp = [];
-
-      data.map(item => {
-            if (item.position !== -1) {
-                  dataWithPosition.push(item);
-            }
-      });
-
-      //Check if there is data without a position index
-      //It means it's a data that we moved from an other day
-      data.map(item => {
-            if (item.position === -1) {
-                  dataWithoutPosition.push(item);
-            }
-      });
-
-      dataWithoutPosition.map(item => {
-            //Check if there is data with a time prop and create an array with them
-            if (item.time !== '') {
-                  dataToInsertWithTimeProp.push(item);
+                  tasksArrayToSort.push(item);
             } else {
-                  // Create an array with item that don't have time prop
-                  dataToInsert.push(item);
+                  tasksArrayWithPosition.push(item);
             }
       });
 
-      let newDataArray = [...dataToInsert, ...dataWithPosition, ...dataToInsertWithTimeProp];
-
-      newDataArray.sort(compareTime);
-      //For item with time prop, we need to compare them to all item with time prop
-      //Get the position of the very first next item and create a new array
-
-      newDataArray.map((item, index) => {
-            item.position = index;
-      });
-
-      newDataArray.sort(function(a, b) {
-            return a.position - b.position;
-      });
-
-      function convertTo24Hour(time) {
-            var hours = parseInt(time.substr(0, 2));
-
-            if (time.indexOf('AM') != -1 && hours == 12) {
-                  time = time.replace('12', '0');
-            }
-            if (time.indexOf('PM') != -1 && hours < 12) {
-                  time = time.replace(hours, hours + 12);
-            }
-
-            return time.replace(/(AM|PM)/, '');
+      if (tasksArrayToSort.length === 0) {
+            areTasksSorted = true;
       }
 
-      function compareTime(a, b) {
-            //We don't care about the date, just used to make the sort
-            var atime = Date.parse('18/02/1992' + ' ' + convertTo24Hour(a.time));
-            var btime = Date.parse('18/02/1992' + ' ' + convertTo24Hour(b.time));
-
-            if (atime < btime) {
-                  return -1;
-            }
-
-            if (atime > btime) {
-                  return 1;
-            }
-
-            return 0;
+      //SORTING the array with position if it's not empty
+      // Set the correct position because if we change the date of an item it inside the same day it will create a hole in the array
+      if (tasksArrayWithPosition.length > 0) {
+            tasksArrayWithPosition.sort(function(a, b) {
+                  return a.position - b.position;
+            });
+            tasksArrayWithPosition.map((item, index) => {
+                  item.position = index;
+            });
       }
 
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////
+      tasksArrayToSort.map((item, index) => {
+            let stopMapping = false;
+            if (item.time === '') {
+                  item.position = tasksArrayWithPosition.length;
+                  tasksArrayWithPosition.push(item);
+                  stopMapping = true;
+            }
+            if (item.time !== '' && stopMapping === false) {
+                  let stopMappingB = false;
+
+                  if (stopMappingB === false) {
+                        let stopMappingC = false;
+                        tasksArrayWithPosition.map((itemB, indexB) => {
+                              if (item.time === itemB.time && stopMappingC === false) {
+                                    item.position = indexB;
+                                    tasksArrayWithPosition.splice(indexB, 0, item);
+                                    tasksArrayWithPosition.map((itemC, indexC) => {
+                                          if (indexC > indexB) {
+                                                itemC.position++;
+                                          }
+                                    });
+
+                                    stopMappingC = true;
+                                    stopMappingB = true;
+                              }
+                        });
+                  }
+
+                  if (stopMappingB === false) {
+                        let stopMappingC = false;
+                        tasksArrayWithPosition.map((itemB, indexB) => {
+                              let timeToSort = moment(item.time, 'h:mma');
+                              let timeWithPosition = moment(itemB.time, 'h:mma');
+
+                              if (timeToSort.isBefore(timeWithPosition) && stopMappingC === false) {
+                                    item.position = indexB;
+                                    tasksArrayWithPosition.splice(indexB, 0, item);
+                                    tasksArrayWithPosition.map((itemC, indexC) => {
+                                          if (indexC > indexB) {
+                                                itemC.position++;
+                                          }
+                                    });
+
+                                    stopMappingC = true;
+                                    stopMappingB = true;
+                              }
+                        });
+                  }
+
+                  if (stopMappingB === false) {
+                        item.position = tasksArrayWithPosition.length;
+                        tasksArrayWithPosition.push(item);
+                  }
+            }
+            console.log('END', tasksArrayWithPosition);
+            //FIXME:
+            //areTasksSorted = true;
+      });
 
       return {
-            tasks: newDataArray,
+            tasks: tasksArrayWithPosition,
             areTasksSorted: areTasksSorted
       };
 }
