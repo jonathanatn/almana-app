@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView } from
 
 import { connect } from 'react-redux';
 import { getToday } from '../Utils/helpers';
-import { addTaskAction, receiveTasksAction } from '../Store/actions/taskAction';
+import { addTaskAction, receiveTasksAction, editTasksPositionProp } from '../Store/actions/taskAction';
 import { Ionicons } from '@expo/vector-icons';
 import Task from './Elements/Task';
 import ItemMenu from './Elements/ItemMenu';
@@ -13,6 +13,12 @@ class AgendaView extends Component {
       state = {
             title: ''
       };
+
+      componentDidUpdate(prevProps) {
+            if (!this.props.areTasksSorted && this.props.tasks.length > 0) {
+                  this.props.editTasksPositionProp(this.props.tasks);
+            }
+      }
 
       // componentDidUpdate(prevProps) {
       //       if (this.props.date !== prevProps.date) {
@@ -91,92 +97,115 @@ class AgendaView extends Component {
 }
 
 function mapStateToProp(state, ownProps) {
-      let tasks = state.tasks ? Object.values(state.tasks) : [];
+      let tasks = state.tasks ? state.tasks : {};
 
-      tasks = tasks.filter(item => {
+      let areTasksSorted = false;
+
+      let tasksArray = Object.values(tasks);
+
+      // Get tasks of the day
+      tasksArray = tasksArray.filter(item => {
             return item.date === ownProps.date;
       });
 
-      console.log('TASKS', tasks);
+      let tasksArrayWithPosition = [];
+      let tasksArrayToSort = [];
 
-      let areTasksSorted = true;
-
-      tasks.map(item => {
+      //Make a distinction between tasks positioned and unpositioned
+      tasksArray.map(item => {
             if (item.position === -1) {
-                  areTasksSorted = false;
+                  tasksArrayToSort.push(item);
+            } else {
+                  tasksArrayWithPosition.push(item);
             }
       });
 
-      console.log(areTasksSorted);
+      if (tasksArrayToSort.length === 0) {
+            areTasksSorted = true;
+      }
 
-      //What if there is only -1 items and no other items
-
-      if (areTasksSorted === false) {
-            let tasksWithPosition = tasks.filter(item => {
-                  if (item.position !== -1) {
-                        return item;
-                  }
+      //SORTING the array with position if it's not empty
+      // Set the correct position because if we change the date of an item it inside the same day it will create a hole in the array
+      if (tasksArrayWithPosition.length > 0) {
+            tasksArrayWithPosition.sort(function(a, b) {
+                  return a.position - b.position;
             });
-
-            let tasksWithoutPosition = tasks.filter(item => {
-                  if (item.position === -1) {
-                        return item;
-                  }
-            });
-
-            let newArray = [...tasksWithPosition];
-
-            //What if the unpositioned object have no time
-
-            tasksWithoutPosition.map(item => {
-                  if (item.time !== '') {
-                        for (let i = 0; i < tasksWithPosition.length; i++) {
-                              if (tasksWithPosition[i].time !== '') {
-                                    let itemDate = moment(tasksWithPosition[i].time, 'h:mma');
-                                    let dateToCompare = moment(item.time, 'h:mma');
-                                    //If the new date is earlier we splice the tasksWithPosition
-                                    if (dateToCompare.isBefore(itemDate)) {
-                                          item.position = i;
-                                          newArray.splice(i, 0, item);
-                                          break;
-                                    }
-                                    //If the new date is equal we splice the array
-                                    if (dateToCompare === itemDate) {
-                                          item.position = i;
-                                          newArray.splice(i, 0, item);
-                                          break;
-                                    }
-                                    //If it's the last date it will be push at the end of the array
-                                    item.position = i;
-                                    newArray.push(item);
-                                    break;
-                              }
-                              // If i === array.length - 1, it means the array only contains items with no time
-                              // so we push the item with a date at the end
-                              if (tasksWithPosition[i].time === '' && i === tasksWithPosition.length - 1) {
-                                    console.log('there is no date');
-                                    item.position = i;
-                                    newArray.push(item);
-                              }
-                        }
-                  } else {
-                        //If the unpositioned item have no time we simply put it at the end
-                        item.position = tasksWithPosition.length - 1;
-                        newArray.push(item);
-                  }
+            tasksArrayWithPosition.map((item, index) => {
+                  item.position = index;
             });
       }
 
+      tasksArrayToSort.map((item, index) => {
+            let stopMapping = false;
+            if (item.time === '') {
+                  item.position = tasksArrayWithPosition.length;
+                  tasksArrayWithPosition.push(item);
+                  stopMapping = true;
+            }
+            if (item.time !== '' && stopMapping === false) {
+                  let stopMappingB = false;
+
+                  if (stopMappingB === false) {
+                        let stopMappingC = false;
+                        tasksArrayWithPosition.map((itemB, indexB) => {
+                              if (item.time === itemB.time && stopMappingC === false) {
+                                    item.position = indexB;
+                                    tasksArrayWithPosition.splice(indexB, 0, item);
+                                    tasksArrayWithPosition.map((itemC, indexC) => {
+                                          if (indexC > indexB) {
+                                                itemC.position++;
+                                          }
+                                    });
+
+                                    stopMappingC = true;
+                                    stopMappingB = true;
+                              }
+                        });
+                  }
+
+                  if (stopMappingB === false) {
+                        let stopMappingC = false;
+                        tasksArrayWithPosition.map((itemB, indexB) => {
+                              let timeToSort = moment(item.time, 'h:mma');
+                              let timeWithPosition = moment(itemB.time, 'h:mma');
+
+                              if (timeToSort.isBefore(timeWithPosition) && stopMappingC === false) {
+                                    item.position = indexB;
+                                    tasksArrayWithPosition.splice(indexB, 0, item);
+                                    tasksArrayWithPosition.map((itemC, indexC) => {
+                                          if (indexC > indexB) {
+                                                itemC.position++;
+                                          }
+                                    });
+
+                                    stopMappingC = true;
+                                    stopMappingB = true;
+                              }
+                        });
+                  }
+
+                  if (stopMappingB === false) {
+                        item.position = tasksArrayWithPosition.length;
+                        tasksArrayWithPosition.push(item);
+                  }
+
+                  //FIXME:
+                  //areTasksSorted = true;
+            }
+      });
+
       return {
             dateProps: ownProps.date,
-            tasks: tasks
+            tasks: tasksArrayWithPosition,
+            areTasksSorted: areTasksSorted
       };
 }
 
 function mapDispatchToProps(dispatch) {
       return {
             receiveTasksProp: date => dispatch(receiveTasksAction(date)),
-            addTaskProp: task => dispatch(addTaskAction(task))
+            addTaskProp: task => dispatch(addTaskAction(task)),
+            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks))
       };
 }
 

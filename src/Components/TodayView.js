@@ -145,9 +145,10 @@ function mapStateToProp(state) {
                         item.position = tasksArrayWithPosition.length;
                         tasksArrayWithPosition.push(item);
                   }
-            
-            //FIXME:
-            //areTasksSorted = true;
+
+                  //FIXME:
+                  //areTasksSorted = true;
+            }
       });
 
       return {

@@ -5,7 +5,7 @@
             "privacy": "public",
             "sdkVersion": "33.0.0",
             "platforms": ["ios", "android", "web"],
-            "version": "1.0.0",
+            "version": "2.0.0",
             "orientation": "portrait",
             "icon": "./assets/icon-app.png",
             "splash": {
@@ -22,7 +22,8 @@
                   "supportsTablet": true
             },
             "android": {
-                  "package": "com.alma.almana"
+                  "package": "com.alma.almana",
+                  "versionCode": 2
             }
       }
 }
