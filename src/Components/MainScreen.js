@@ -18,7 +18,7 @@ class MainScreen extends PureComponent {
             //Props from the DateMover
             //formattedDate is passed to the AgendaView in order to display the correct day
             visibleMonth: 0,
-            formattedDate: 0
+            formattedDate: getToday
       };
 
       componentDidMount() {
@@ -249,7 +249,7 @@ class MainScreen extends PureComponent {
             return (
                   <View style={styles.container}>
                         {/*---------------------------------------------------- Views ---------------------------------------------------- */}
-                        {this.state.isDateMoverOpen ? (
+                        {/* {this.state.isDateMoverOpen ? (
                               <AgendaView
                                     date={this.state.formattedDate}
                                     openItemMenu={this.openItemMenu}
@@ -257,7 +257,12 @@ class MainScreen extends PureComponent {
                               />
                         ) : (
                               <TodayView openItemMenu={this.openItemMenu} openItemAdder={() => this.openItemAdder()} />
-                        )}
+                        )} */}
+                        <AgendaView
+                              date={this.state.formattedDate}
+                              openItemMenu={this.openItemMenu}
+                              openItemAdder={() => this.openItemAdder()}
+                        />
 
                         {/*-------------------------------------------------- Item Menu -------------------------------------------------- */}
                         <Animated.View

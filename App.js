@@ -14,6 +14,8 @@ import SignUp from './src/Components/Login/SignUp';
 import LoadingScreen from './src/Components/Login/LoadingScreen';
 import TodayView from './src/Components/TodayView';
 import MainScreen from './src/Components/MainScreen';
+import reanimatedTestDragTask from './src/Components/reanimatedTestDragTask2';
+import rea from './src/Components/_reanimated-archive/reanimated-workforwardonly-oneitemselectableonly';
 
 import './src/Utils/fixtimerbug';
 
@@ -61,6 +63,8 @@ export default class App extends Component {
 
 const StackNav = createStackNavigator(
       {
+            // rea,
+            reanimatedTestDragTask,
             MainScreen,
             LoadingScreen,
             SignUp,

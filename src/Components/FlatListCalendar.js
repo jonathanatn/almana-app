@@ -56,11 +56,16 @@ export default class FlatListCalendar extends PureComponent {
       };
 
       onViewableItemsChanged = ({ viewableItems, changed }) => {
-            if (viewableItems[0].index) {
-                  let getMonth = moment()
+            if (viewableItems[0] && viewableItems[0].index === 0) {
+                  var getMonth = moment()
                         .add(viewableItems[0].index - 12, 'month')
                         .format('MMMM YYYY');
-
+                  this.props.getVisibleMonth(getMonth);
+            }
+            if (viewableItems[0] && viewableItems[0].index) {
+                  var getMonth = moment()
+                        .add(viewableItems[0].index - 12, 'month')
+                        .format('MMMM YYYY');
                   this.props.getVisibleMonth(getMonth);
             }
 
@@ -148,8 +153,10 @@ export default class FlatListCalendar extends PureComponent {
                                     index
                               })}
                               initialNumToRender={1}
-                              windowSize={5}
-                              maxToRenderPerBatch={1}
+                              windowSize={7}
+                              // maxToRenderPerBatch={1}
+                              removeClippedSubviews={true}
+                              onScrollToIndexFailed={12}
                         />
                   </View>
             );
