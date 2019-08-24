@@ -79,9 +79,11 @@ const styles = StyleSheet.create({
       componentContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginVertical: 5,
+            // marginVertical: 5,
             paddingHorizontal: 12,
-            height: 44
+            flex: 1
+            // backgroundColor: 'blue'
+            // height: 44
       }
 });
 

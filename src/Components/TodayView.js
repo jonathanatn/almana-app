@@ -42,7 +42,7 @@ class TodayView extends Component {
                                           <Task
                                                 key={index}
                                                 {...item}
-                                                style={{ zIndex: 0 }}
+                                                // style={{ zIndex: 0 }}
                                                 openItemMenu={() => this.props.openItemMenu(item)}
                                           />
                                     );
