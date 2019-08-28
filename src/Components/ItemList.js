@@ -1,5 +1,16 @@
 import React from 'react';
-import { StyleSheet, View, Dimensions, Text, TouchableOpacity, Alert, FlatList, Platform } from 'react-native';
+import {
+      StyleSheet,
+      View,
+      Dimensions,
+      Text,
+      TouchableOpacity,
+      Alert,
+      FlatList,
+      Platform,
+      TouchableHighlight,
+      TouchableNativeFeedback
+} from 'react-native';
 import Animated from 'react-native-reanimated';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 const { width, height } = Dimensions.get('window');
@@ -30,8 +41,6 @@ const {
       lessOrEq,
       greaterOrEq
 } = Animated;
-
-// FIXME: I a use a second finger I can make the drag and drop bug (maybe use a second variable for the gestureststate, if it's the first time variable isFirstTime = 1 after isFirstTime = 0 // isFirstTime 1 this.onGestureEvent)
 
 class ItemList extends React.Component {
       constructor(props) {
@@ -88,9 +97,9 @@ class ItemList extends React.Component {
             ]
       };
 
-      componentDidMount() {
-            console.log(this.props.tasks);
-      }
+      // componentDidMount() {
+      //       console.log(this.props.tasks);
+      // }
 
       componentDidUpdate(prevProps) {
             if (!this.props.areTasksSorted && this.props.tasks.length > 0) {
@@ -99,33 +108,38 @@ class ItemList extends React.Component {
       }
 
       handlerLongClick = index => {
+            console.log(index);
             this.setState({
                   dragging: true,
                   indexDragged: index
                   // displayDraggedItem: true
             });
+
+            // After a ling a press we give a feedback to the user so he knows that he is dragging
+            // But it would make but iOS to do it that way so instead we make a conditional style in the _renderITem function for iOS
+            Platform.OS === 'android' &&
+                  this.setState({
+                        displayDraggedItem: true
+                  });
       };
 
       reset = () => {
-            this.flatListRef.setNativeProps({
-                  opacity: 1
-            });
-            this.flatListRef2.setNativeProps({
-                  opacity: 0
-            });
             this.setState({
                   dragging: false,
                   indexDragged: '',
                   indexToSwap: '',
                   displayDraggedItem: false
             });
+            this.flatListRef2.setNativeProps({
+                  opacity: 0
+            });
+            this.flatListRef.setNativeProps({
+                  opacity: 1
+            });
       };
 
       displayDraggedItem = () => {
-            // console.log('dragging', );
-            // console.log('dragging', );
-            if (this.state.dragging === true && this.state.displayDraggedItem === false) {
-                  // console.log('display dragged item');
+            if (this.state.dragging === true && this.state.displayDraggedItem === false && Platform.OS === 'ios') {
                   this.setState({
                         displayDraggedItem: true
                   });
@@ -156,45 +170,39 @@ class ItemList extends React.Component {
             }
       };
 
-      // TODO: ONLY SORT WHEN
       sort = () => {
+            // Hide the dragged item just before the sort to avoid render bug
+            this.draggedItemRef.setNativeProps({
+                  opacity: 0
+            });
             if (this.state.dragging === true) {
-                  let tasksCopy = [...this.props.tasks];
-                  let tasksToEditPosition = [];
+                  if (this.props.tasks.length > 1) {
+                        let tasksCopy = [...this.props.tasks];
+                        let tasksToEditPosition = [];
 
-                  tasksToEditPosition.push(tasksCopy[this.state.indexDragged]);
-                  tasksToEditPosition[0].position = this.state.indexToSwap;
+                        tasksToEditPosition.push(tasksCopy[this.state.indexDragged]);
+                        tasksToEditPosition[0].position = this.state.indexToSwap;
 
-                  if (this.state.indexDragged < this.state.indexToSwap) {
-                        tasksCopy.map((item, index) => {
-                              if (index <= this.state.indexToSwap && index > this.state.indexDragged) {
-                                    item.position--;
-                                    tasksToEditPosition.push(item);
-                              }
-                        });
+                        if (this.state.indexDragged < this.state.indexToSwap) {
+                              tasksCopy.map((item, index) => {
+                                    if (index <= this.state.indexToSwap && index > this.state.indexDragged) {
+                                          item.position--;
+                                          tasksToEditPosition.push(item);
+                                    }
+                              });
+                        }
+
+                        if (this.state.indexDragged > this.state.indexToSwap) {
+                              tasksCopy.map((item, index) => {
+                                    if (index >= this.state.indexToSwap && index < this.state.indexDragged) {
+                                          item.position++;
+                                          tasksToEditPosition.push(item);
+                                    }
+                              });
+                        }
+
+                        this.props.editTasksPositionProp(tasksToEditPosition);
                   }
-
-                  if (this.state.indexDragged > this.state.indexToSwap) {
-                        tasksCopy.map((item, index) => {
-                              if (index >= this.state.indexToSwap && index < this.state.indexDragged) {
-                                    item.position++;
-                                    tasksToEditPosition.push(item);
-                              }
-                        });
-                  }
-
-                  this.props.editTasksPositionProp(tasksToEditPosition);
-
-                  // let sortedData = [...this.state.data];
-                  // let dataDragged = sortedData[this.state.indexDragged];
-
-                  // sortedData.splice(this.state.indexDragged, 1);
-                  // sortedData.splice(this.state.indexToSwap, 0, dataDragged);
-
-                  // this.setState({
-                  //       displayDraggedItem: false,
-                  //       data: sortedData
-                  // });
 
                   this.flatListRef.setNativeProps({
                         opacity: 0
@@ -206,10 +214,20 @@ class ItemList extends React.Component {
             }
       };
 
+      openItemMenu = item => {
+            // console.log(item);
+            return;
+      };
+
       renderItem2 = ({ item, index }) => {
             return (
                   <Animated.View style={[styles.box]} key={index}>
-                        <Text>{item.name}</Text>
+                        {/* <Text>{item.name}</Text> */}
+                        <Task
+                              {...item}
+                              // style={{ zIndex: 0 }}
+                              // openItemMenu={() => this.props.openItemMenu(item)}
+                        />
                   </Animated.View>
             );
       };
@@ -268,17 +286,31 @@ class ItemList extends React.Component {
                               ]}
                               key={index}
                         >
-                              {/* <Text>{item.name}</Text> */}
-
                               <TouchableOpacity
                                     onLongPress={() => this.handlerLongClick(index)}
-                                    // onPress={this.handlerClick}
-                                    style={{ flex: 1 }}
+                                    onPress={() => this.openItemMenu(item)}
+                                    activeOpacity={0.5}
+                                    // style={{ flex: 1 }}
+
+                                    // We give feedback to the user on iOS so he knows he is dragging
+                                    // Doesn't work on Android so instead we display the dragged item earlier in the handleLongPress function
+                                    style={
+                                          this.state.indexDragged === index && Platform.OS === 'ios'
+                                                ? {
+                                                        flex: 1,
+                                                        elevation: 5,
+                                                        shadowColor: 'black',
+                                                        shadowOffset: { width: 0, height: 0.5 * 5 },
+                                                        shadowOpacity: 0.3,
+                                                        shadowRadius: 0.8 * 5
+                                                  }
+                                                : { flex: 1 }
+                                    }
                               >
                                     <Task
                                           {...item}
                                           // style={{ zIndex: 0 }}
-                                          openItemMenu={() => this.props.openItemMenu(item)}
+                                          // openItemMenu={() => this.props.openItemMenu(item)}
                                     />
                               </TouchableOpacity>
                         </Animated.View>
@@ -321,6 +353,7 @@ class ItemList extends React.Component {
       };
 
       render() {
+            // console.log(this.props.tasks);
             return (
                   <View style={styles.container}>
                         {// https://github.com/kmagiera/react-native-gesture-handler/issues/732
@@ -329,9 +362,6 @@ class ItemList extends React.Component {
                         /////////////// but on iOS it's different State.BEGAN fire when we start to drag and State.ACTIVE follow.         ///////////////
                         /////////////// It become obvious when you use minDist with a big number on the PanGestureHandler.           ///////////////
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                        //TODO: Sort only when..
-                        //TODO: Check if reset reset correctly
-                        //TODO: Join END CANCELLED AND FAILED (only when over)
                         Platform.OS === 'android' ? (
                               <Animated.Code>
                                     {() =>
@@ -347,10 +377,15 @@ class ItemList extends React.Component {
                                                       call([], this.displayDraggedItem),
                                                       call([this.dragY], this.sortCalculation)
                                                 ]),
+                                                cond(
+                                                      and(
+                                                            eq(this.gestureState, State.END),
+                                                            or(greaterThan(this.dragY, 50), lessThan(this.dragY, -50))
+                                                      ),
+                                                      [call([], this.start3), call([], this.sort), call([], this.reset)]
+                                                ),
                                                 cond(eq(this.gestureState, State.END), [
                                                       call([], this.start3),
-                                                      //TODO: Sort only when..
-                                                      call([], this.sort),
                                                       call([], this.reset)
                                                 ]),
                                                 cond(eq(this.gestureState, State.FAILED), [
@@ -361,20 +396,20 @@ class ItemList extends React.Component {
                                                       call([], this.start5),
                                                       call([], this.reset)
                                                 ]),
-                                                // TODO: Change on iOS
+                                                // TODO: Make scroll when drag in the bottom or end
                                                 cond(
                                                       greaterThan(this.dragY, 50),
                                                       [
-                                                            set(this.transYB, -70),
-                                                            call([this.rootViewY], this.scrollOnDrag)
+                                                            set(this.transYB, -70)
+                                                            // call([this.rootViewY], this.scrollOnDrag)
                                                       ],
                                                       set(this.transYB, 0)
                                                 ),
                                                 cond(
                                                       lessThan(this.dragY, -50),
                                                       [
-                                                            set(this.transYC, 70),
-                                                            call([this.rootViewY], this.scrollOnDrag)
+                                                            set(this.transYC, 70)
+                                                            // call([this.rootViewY], this.scrollOnDrag)
                                                       ],
                                                       set(this.transYC, 0)
                                                 )
@@ -396,10 +431,15 @@ class ItemList extends React.Component {
                                                       call([this.dragY], this.sortCalculation),
                                                       set(this.transY, this.addY)
                                                 ]),
+                                                cond(
+                                                      and(
+                                                            eq(this.gestureState, State.END),
+                                                            or(greaterThan(this.dragY, 50), lessThan(this.dragY, -50))
+                                                      ),
+                                                      [call([], this.start3), call([], this.sort), call([], this.reset)]
+                                                ),
                                                 cond(eq(this.gestureState, State.END), [
                                                       call([], this.start3),
-                                                      //TODO: Sort only when..
-                                                      call([], this.sort),
                                                       call([], this.reset)
                                                 ]),
                                                 cond(eq(this.gestureState, State.FAILED), [
@@ -426,25 +466,29 @@ class ItemList extends React.Component {
                         )}
 
                         <Animated.View
-                              ref={ref => (this.myRef = ref)}
+                              ref={ref => (this.draggedItemRef = ref)}
                               style={[
                                     styles.box,
                                     {
-                                          // backgroundColor: 'blue',
                                           position: 'absolute',
+
                                           top: this.state.indexDragged * 70 + 0 - this.scrollOffset,
                                           // top: this.state.indexDragged * 70 + 100 - this.scrollOffset,
                                           transform: [{ translateY: this.transY }],
                                           zIndex: this.state.dragging ? 1 : -1,
                                           // Necessary hack for iOS
-                                          opacity: this.state.displayDraggedItem ? 1 : 0
+                                          opacity: this.state.displayDraggedItem ? 1 : 0,
+                                          elevation: 5,
+                                          shadowColor: 'black',
+                                          shadowOffset: { width: 0, height: 0.5 * 5 },
+                                          shadowOpacity: 0.3,
+                                          shadowRadius: 0.8 * 5
                                     }
                               ]}
                         >
-                              <Text>
-                                    {this.props.tasks[this.state.indexDragged] &&
-                                          this.props.tasks[this.state.indexDragged]['name']}
-                              </Text>
+                              {this.state.indexDragged !== '' && (
+                                    <Task {...this.props.tasks[this.state.indexDragged]} />
+                              )}
                         </Animated.View>
 
                         <View style={{ zIndex: 0, opacity: 1, height: height }}>
@@ -456,6 +500,7 @@ class ItemList extends React.Component {
                                     keyExtractor={(item, index) => index.toString()}
                                     renderItem={this.renderItem}
                                     scrollEnabled={this.state.dragging ? false : true}
+                                    showsVerticalScrollIndicator={false}
                                     onScroll={e => {
                                           if (this.scrollOffset !== Math.trunc(e.nativeEvent.contentOffset.y)) {
                                                 // contentOffset.y === distance in the list
@@ -492,6 +537,7 @@ class ItemList extends React.Component {
                                     keyExtractor={(item, index) => index.toString()}
                                     renderItem={this.renderItem2}
                                     scrollEnabled={false}
+                                    showsVerticalScrollIndicator={false}
                               />
                         </View>
                   </View>
@@ -500,7 +546,6 @@ class ItemList extends React.Component {
 }
 
 function mapStateToProp(state, ownProps) {
-      //TODO: Create a function to get the sort and put in helper function
       let tasks = state.tasks ? state.tasks : {};
 
       let areTasksSorted = false;

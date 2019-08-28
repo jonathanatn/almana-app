@@ -1,22 +1,56 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Keyboard, BackHandler } from 'react-native';
 
-import { connect } from 'react-redux';
-import { getToday } from '../Utils/helpers';
-import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+// STATIC UI
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Keyboard, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Task from './Elements/Task';
 import ItemMenu from './Elements/ItemMenu';
 import ItemList from './ItemList';
 import TaskAdder from './Elements/TaskAdder';
-import moment from 'moment';
+import NavigationView from './NavigationView';
+import MonthlyCalendar from './MonthlyCalendar';
 
-class AgendaView extends Component {
+// ANIMATED UI
+import Animated from 'react-native-reanimated';
+import { PanGestureHandler, State, TapGestureHandler } from 'react-native-gesture-handler';
+const { cond, eq, add, call, set, Value, event, block, and, Clock } = Animated;
+const { greaterThan, lessThan, diff, or, debug, startClock, lessOrEq, greaterOrEq } = Animated;
+
+// DATA
+import { connect } from 'react-redux';
+import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+
+// HELPERS
+import moment from 'moment';
+import { getToday } from '../Utils/helpers';
+
+class MainScreen extends Component {
+      constructor(props) {
+            super(props);
+
+            //DateMover
+            this.dateMoverButtonState = new Value(-1);
+            this.clock = new Clock();
+            this.onDateMoverButtonEvent = event([
+                  {
+                        nativeEvent: {
+                              state: this.dateMoverButtonState
+                        }
+                  }
+            ]);
+
+            this.transY = new Value(0);
+      }
+
       state = {
             title: '',
             isDateMoverOpen: false,
             isItemAdderOpen: false,
-            isItemMenuOpen: false
+            isItemMenuOpen: false,
+
+            // DateMover
+            visibleMonth: 0,
+            formattedDate: getToday
       };
 
       componentDidMount() {
@@ -39,6 +73,21 @@ class AgendaView extends Component {
       //             }
       //       }
 
+      handleBackPress = () => {
+            if (this.state.isItemMenuOpen === true) {
+                  //       this.closeItemMenu();
+                  this.setState({
+                        isItemMenuOpen: false
+                  });
+                  return true;
+            }
+
+            if (this.state.isDateMoverOpen === true) {
+                  //       this.closeDateMover();
+                  return true;
+            }
+      };
+
       _keyboardDidShow = () => {
             console.log('keyboard show');
       };
@@ -52,7 +101,7 @@ class AgendaView extends Component {
       };
 
       _keyboardWillHide = () => {
-            console.log('keyboard hide');
+            console.log('keyboard willhide');
             this.setState({
                   isItemAdderOpen: false
             });
@@ -100,6 +149,47 @@ class AgendaView extends Component {
             });
       };
 
+      // DateMover
+
+      scrollToIndex = () => {
+            this.child.scrollToIndex(); // do stuff
+      };
+
+      getSelectedDate = (day, month) => {
+            let selectedMonth = moment()
+                  .add(month - 12, 'month')
+                  .format('L');
+            let momentDate = moment().set({
+                  date: day,
+                  month: parseInt(selectedMonth.substring(0, 2)) - 1,
+                  year: selectedMonth.substring(6)
+            });
+
+            this.setState({
+                  formattedDate: momentDate.format('L')
+            });
+      };
+
+      getVisibleMonth = month => {
+            this.setState({
+                  visibleMonth: month
+            });
+      };
+
+      openDateMover = () => {
+            console.log('tapgesture open');
+            // this.setState({
+            //       isDateMoverOpen: true
+            // });
+      };
+
+      closeDateMover = () => {
+            console.log('tapgesture closed');
+            // this.setState({
+            //       isDateMoverOpen: false
+            // });
+      };
+
       render() {
             let day, month, year;
             //     day = this.props.date.substring(3, 5);
@@ -118,6 +208,15 @@ class AgendaView extends Component {
 
             return (
                   <View style={styles.container}>
+                        {/* TODO: Create a function to get the day title and put in helper */}
+                        <Text style={styles.mainTitle}>
+                              {this.props.dateProps === getToday
+                                    ? 'Today'
+                                    : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
+                        </Text>
+                        <ItemList style={{ zIndex: 10 }} date={getToday} />
+
+                        {/* TODO: Create a component */}
                         {/* ------------------------------------------ Add Task Button ------------------------------------------ */}
                         <TouchableOpacity style={styles.addButtonContainer} onPress={this.openItemAdder}>
                               <View style={styles.addButton}>
@@ -126,21 +225,91 @@ class AgendaView extends Component {
                         </TouchableOpacity>
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
-                        {/* TODO: Create a function to get the day title and put in helper */}
-                        <Text
-                              style={{
-                                    fontWeight: '900',
-                                    fontSize: 36,
-                                    marginBottom: 20,
-                                    marginLeft: 12,
-                                    marginTop: 70
-                              }}
+                        <NavigationView openDateMover={() => this.openDateMover()} />
+
+                        {/*---------------------------------------------------- DateMover ---------------------------------------------------- */}
+
+                        <Animated.Code>
+                              {() =>
+                                    block([
+                                          cond(and(eq(this.transY, 0), eq(this.dateMoverButtonState, State.BEGAN)), [
+                                                set(this.transY, -400)
+                                                // call([], this.openDateMover)
+                                          ])
+                                          // cond(and(eq(this.transY, -400), eq(this.dateMoverButtonState, State.BEGAN)), [
+                                          //       set(this.transY, 0)
+                                          //       // call([], this.openDateMover)
+                                          // ])
+                                    ])
+                              }
+                        </Animated.Code>
+
+                        <Animated.View
+                              style={[styles.dateMoverContainer, { transform: [{ translateY: this.transY }] }]}
                         >
-                              {this.props.dateProps === getToday
-                                    ? 'Today'
-                                    : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
-                        </Text>
-                        <ItemList date={getToday} />
+                              <View
+                                    style={{
+                                          flexDirection: 'row',
+                                          marginTop: 16,
+                                          marginHorizontal: 24,
+                                          marginBottom: 8
+                                    }}
+                              >
+                                    <Text style={{ fontSize: 18, fontWeight: '500', flex: 1 }}>
+                                          {this.state.visibleMonth}
+                                    </Text>
+                                    {/* TODO: Make the icon change color if we reach the visible month */}
+                                    <TouchableOpacity onPress={this.scrollToIndex} style={{ alignSelf: 'flex-end' }}>
+                                          <Ionicons name="ios-calendar" size={30} />
+                                          <View
+                                                style={{
+                                                      width: 6,
+                                                      height: 6,
+                                                      backgroundColor: '#FF2D55',
+                                                      position: 'relative',
+                                                      right: -15,
+                                                      bottom: 13,
+                                                      borderRadius: 50
+                                                }}
+                                          />
+                                    </TouchableOpacity>
+                              </View>
+                              <MonthlyCalendar
+                                    onRef={ref => (this.child = ref)}
+                                    //Get back the selected date to display the right agenda day
+                                    getSelectedDate={this.getSelectedDate}
+                                    //Get back the visible month to display the right name in the DateMover component
+                                    getVisibleMonth={this.getVisibleMonth}
+                              />
+                              <TouchableOpacity
+                                    style={{
+                                          width: 60,
+                                          height: 60,
+                                          marginBottom: 10,
+                                          alignSelf: 'center',
+                                          justifyContent: 'center',
+                                          alignItems: 'center'
+                                    }}
+                                    // onPress={() => this.props.closeDateMover()}
+                              >
+                                    <Ionicons name="ios-close" size={40} color={'#FF2D55'} />
+                              </TouchableOpacity>
+                        </Animated.View>
+
+                        <TapGestureHandler onHandlerStateChange={this.onDateMoverButtonEvent} minDist={0}>
+                              <Animated.View
+                                    style={{
+                                          backgroundColor: 'blue',
+                                          width: 60,
+                                          height: 60,
+                                          position: 'absolute',
+                                          bottom: 20,
+                                          alignSelf: 'center',
+                                          zIndex: 999,
+                                          elevation: 20
+                                    }}
+                              ></Animated.View>
+                        </TapGestureHandler>
 
                         {/*-------------------------------------------------- Task Adder -------------------------------------------------- */}
                         {/* The task adder depend of the key board, if the key board close it will be automatically closed */}
@@ -148,113 +317,6 @@ class AgendaView extends Component {
                   </View>
             );
       }
-}
-
-function mapStateToProp(state, ownProps) {
-      //       //TODO: Create a function to get the sort and put in helper function
-      //       let tasks = state.tasks ? state.tasks : {};
-
-      //       let areTasksSorted = false;
-
-      //       let tasksArray = Object.values(tasks);
-
-      //       // Get tasks of the day
-      //       tasksArray = tasksArray.filter(item => {
-      //             //     return item.date === ownProps.date;
-      //             return item.date === getToday;
-      //       });
-
-      //       let tasksArrayWithPosition = [];
-      //       let tasksArrayToSort = [];
-
-      //       //Make a distinction between tasks positioned and unpositioned
-      //       tasksArray.map(item => {
-      //             if (item.position === -1) {
-      //                   tasksArrayToSort.push(item);
-      //             } else {
-      //                   tasksArrayWithPosition.push(item);
-      //             }
-      //       });
-
-      //       if (tasksArrayToSort.length === 0) {
-      //             areTasksSorted = true;
-      //       }
-
-      //       //SORTING the array with position if it's not empty
-      //       // Set the correct position because if we change the date of an item it inside the same day it will create a hole in the array
-      //       if (tasksArrayWithPosition.length > 0) {
-      //             tasksArrayWithPosition.sort(function(a, b) {
-      //                   return a.position - b.position;
-      //             });
-      //             tasksArrayWithPosition.map((item, index) => {
-      //                   item.position = index;
-      //             });
-      //       }
-
-      //       tasksArrayToSort.map((item, index) => {
-      //             let stopMapping = false;
-      //             if (item.time === '') {
-      //                   item.position = tasksArrayWithPosition.length;
-      //                   tasksArrayWithPosition.push(item);
-      //                   stopMapping = true;
-      //             }
-      //             if (item.time !== '' && stopMapping === false) {
-      //                   let stopMappingB = false;
-
-      //                   if (stopMappingB === false) {
-      //                         let stopMappingC = false;
-      //                         tasksArrayWithPosition.map((itemB, indexB) => {
-      //                               if (item.time === itemB.time && stopMappingC === false) {
-      //                                     item.position = indexB;
-      //                                     tasksArrayWithPosition.splice(indexB, 0, item);
-      //                                     tasksArrayWithPosition.map((itemC, indexC) => {
-      //                                           if (indexC > indexB) {
-      //                                                 itemC.position++;
-      //                                           }
-      //                                     });
-
-      //                                     stopMappingC = true;
-      //                                     stopMappingB = true;
-      //                               }
-      //                         });
-      //                   }
-
-      //                   if (stopMappingB === false) {
-      //                         let stopMappingC = false;
-      //                         tasksArrayWithPosition.map((itemB, indexB) => {
-      //                               let timeToSort = moment(item.time, 'h:mma');
-      //                               let timeWithPosition = moment(itemB.time, 'h:mma');
-
-      //                               if (timeToSort.isBefore(timeWithPosition) && stopMappingC === false) {
-      //                                     item.position = indexB;
-      //                                     tasksArrayWithPosition.splice(indexB, 0, item);
-      //                                     tasksArrayWithPosition.map((itemC, indexC) => {
-      //                                           if (indexC > indexB) {
-      //                                                 itemC.position++;
-      //                                           }
-      //                                     });
-
-      //                                     stopMappingC = true;
-      //                                     stopMappingB = true;
-      //                               }
-      //                         });
-      //                   }
-
-      //                   if (stopMappingB === false) {
-      //                         item.position = tasksArrayWithPosition.length;
-      //                         tasksArrayWithPosition.push(item);
-      //                   }
-
-      //                   //FIXME:
-      //                   //areTasksSorted = true;
-      //             }
-      //       });
-
-      return {
-            dateProps: getToday
-            //     tasks: tasksArrayWithPosition,
-            //     areTasksSorted: areTasksSorted
-      };
 }
 
 function mapDispatchToProps(dispatch) {
@@ -266,9 +328,9 @@ function mapDispatchToProps(dispatch) {
 }
 
 export default connect(
-      mapStateToProp,
+      null,
       mapDispatchToProps
-)(AgendaView);
+)(MainScreen);
 
 const { width, height } = Dimensions.get('window');
 
@@ -276,6 +338,13 @@ const styles = StyleSheet.create({
       container: {
             flex: 1,
             backgroundColor: 'white'
+      },
+      mainTitle: {
+            fontWeight: '900',
+            fontSize: 36,
+            marginBottom: 20,
+            marginLeft: 12,
+            marginTop: 70
       },
       addButtonContainer: {
             width: 80,
@@ -285,7 +354,8 @@ const styles = StyleSheet.create({
             position: 'absolute',
             top: height / 2 - 60,
             right: -30,
-            zIndex: 10
+            zIndex: 9,
+            elevation: 6
       },
       addButton: {
             width: 60,
@@ -293,6 +363,25 @@ const styles = StyleSheet.create({
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: '#FF2D55',
-            borderRadius: 30
+            borderRadius: 30,
+            elevation: 5,
+            shadowColor: 'black',
+            shadowOffset: { width: 0, height: 0.5 * 5 },
+            shadowOpacity: 0.3,
+            shadowRadius: 0.8 * 5
+      },
+      dateMoverContainer: {
+            flex: 1,
+            backgroundColor: 'white',
+            position: 'absolute',
+            bottom: 0,
+            borderTopLeftRadius: 30,
+            borderTopRightRadius: 30,
+            elevation: 15,
+            zIndex: 99,
+            shadowColor: 'black',
+            shadowOffset: { width: 0, height: 0.5 * 5 },
+            shadowOpacity: 0.3,
+            shadowRadius: 0.8 * 8
       }
 });

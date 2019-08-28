@@ -441,7 +441,7 @@ import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../S
 import moment from 'moment';
 
 import TodayView from './TodayView';
-import FlatListCalendar from './FlatListCalendar';
+import FlatListCalendar from './MonthlyCalendar';
 import AgendaView from './AgendaView';
 import ItemMenu from './Elements/ItemMenu';
 import TaskAdder from './Elements/TaskAdder';

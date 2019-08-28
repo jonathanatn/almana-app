@@ -25,7 +25,9 @@ const styles = StyleSheet.create({
             height: 100,
             backgroundColor: 'white',
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
+            // elevation: 15,
+            zIndex: 2
       },
       dateMoverButton: {
             width: 60,
@@ -34,16 +36,12 @@ const styles = StyleSheet.create({
             justifyContent: 'center',
             backgroundColor: 'white',
             borderRadius: 30,
-            borderColor: '#ededed',
-            borderWidth: 0.5,
-            shadowColor: '#000',
-            shadowOffset: {
-                  width: 0,
-                  height: -4
-            },
-            shadowOpacity: 0.23,
-            shadowRadius: 2.62,
-
-            elevation: 1
+            // borderColor: '#ededed',
+            // borderWidth: 0.5,
+            elevation: 2,
+            shadowColor: 'black',
+            shadowOffset: { width: 0, height: 0.5 * 5 },
+            shadowOpacity: 0.3,
+            shadowRadius: 0.8 * 5
       }
 });

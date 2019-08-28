@@ -47,14 +47,16 @@ class Task extends Component {
                                           size={30}
                                           color={this.props.completed ? 'red' : 'grey'}
                                     />
-                                    {this.props.time !== '' && (
+                                    {this.props.time !== '' ? (
                                           <Text style={{ fontSize: 11, color: 'grey', marginTop: -3 }}>
                                                 {this.props.time.substring(0, 5)}
                                           </Text>
-                                    )}
+                                    ) : null}
                               </TouchableOpacity>
                         </View>
-                        <TouchableOpacity onPress={() => this.props.openItemMenu()}>
+                        <View
+                        // onPress={() => this.props.openItemMenu()}
+                        >
                               <Text
                                     style={{
                                           fontSize: 19,
@@ -67,7 +69,7 @@ class Task extends Component {
                               >
                                     {this.props.name}
                               </Text>
-                        </TouchableOpacity>
+                        </View>
                   </View>
             );
       }
@@ -81,8 +83,8 @@ const styles = StyleSheet.create({
             alignItems: 'center',
             // marginVertical: 5,
             paddingHorizontal: 12,
-            flex: 1
-            // backgroundColor: 'blue'
+            flex: 1,
+            backgroundColor: 'white'
             // height: 44
       }
 });
