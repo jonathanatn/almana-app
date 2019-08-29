@@ -27,7 +27,9 @@ const styles = StyleSheet.create({
             justifyContent: 'center',
             alignItems: 'center',
             // elevation: 15,
-            zIndex: 2
+            zIndex: 2,
+            position: 'absolute',
+            bottom: 0
       },
       dateMoverButton: {
             width: 60,

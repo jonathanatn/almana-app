@@ -28,18 +28,26 @@ class MainScreen extends Component {
       constructor(props) {
             super(props);
 
-            //DateMover
-            this.dateMoverButtonState = new Value(-1);
-            this.clock = new Clock();
-            this.onDateMoverButtonEvent = event([
+            // DateMover
+            this.onGestureState = new Value(-1);
+            this.onGestureState2 = new Value(-1);
+            this.onGestureEvent = event([
                   {
                         nativeEvent: {
-                              state: this.dateMoverButtonState
+                              state: this.onGestureState
                         }
                   }
             ]);
 
-            this.transY = new Value(0);
+            this.onGestureEvent2 = event([
+                  {
+                        nativeEvent: {
+                              state: this.onGestureState2
+                        }
+                  }
+            ]);
+
+            this.transY = new Value(400);
       }
 
       state = {
@@ -47,6 +55,8 @@ class MainScreen extends Component {
             isDateMoverOpen: false,
             isItemAdderOpen: false,
             isItemMenuOpen: false,
+
+            itemMenuProps: '',
 
             // DateMover
             visibleMonth: 0,
@@ -105,6 +115,20 @@ class MainScreen extends Component {
             this.setState({
                   isItemAdderOpen: false
             });
+      };
+
+      openItemMenu = item => {
+            console.log(item);
+            if (this.state.isItemMenuOpen === false) {
+                  this.setState({
+                        itemMenuProps: item,
+                        isItemMenuOpen: true
+                  });
+            } else {
+                  this.setState({
+                        isItemMenuOpen: false
+                  });
+            }
       };
 
       // componentDidUpdate(prevProps) {
@@ -177,17 +201,17 @@ class MainScreen extends Component {
       };
 
       openDateMover = () => {
-            console.log('tapgesture open');
-            // this.setState({
-            //       isDateMoverOpen: true
-            // });
+            console.log('open date mover');
+            this.setState({
+                  isDateMoverOpen: true
+            });
       };
 
       closeDateMover = () => {
-            console.log('tapgesture closed');
-            // this.setState({
-            //       isDateMoverOpen: false
-            // });
+            console.log('close date mover');
+            this.setState({
+                  isDateMoverOpen: false
+            });
       };
 
       render() {
@@ -214,7 +238,7 @@ class MainScreen extends Component {
                                     ? 'Today'
                                     : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
                         </Text>
-                        <ItemList style={{ zIndex: 10 }} date={getToday} />
+                        <ItemList style={{ zIndex: 10 }} date={getToday} openItemMenu={this.openItemMenu} />
 
                         {/* TODO: Create a component */}
                         {/* ------------------------------------------ Add Task Button ------------------------------------------ */}
@@ -223,23 +247,33 @@ class MainScreen extends Component {
                                     <Ionicons name="ios-add" size={50} color={'white'} />
                               </View>
                         </TouchableOpacity>
+
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
+                        {this.state.isItemMenuOpen === true && (
+                              <ItemMenu
+                                    {...this.state.itemMenuProps}
+                                    // closeItemMenu={() => this.closeItemMenu()}
+                              />
+                        )}
+
+                        {/* TODO: If possible do a this.transY.setValue to open the menu (possible with spring animation) */}
                         <NavigationView openDateMover={() => this.openDateMover()} />
 
                         {/*---------------------------------------------------- DateMover ---------------------------------------------------- */}
 
+                        {/* TODO: Change name of event, gesture, transY */}
                         <Animated.Code>
                               {() =>
                                     block([
-                                          cond(and(eq(this.transY, 0), eq(this.dateMoverButtonState, State.BEGAN)), [
-                                                set(this.transY, -400)
-                                                // call([], this.openDateMover)
+                                          cond(eq(this.onGestureState, State.BEGAN), [
+                                                set(this.transY, 400),
+                                                call([], this.closeDateMover)
+                                          ]),
+                                          cond(eq(this.onGestureState2, State.BEGAN), [
+                                                set(this.transY, 0),
+                                                call([], this.openDateMover)
                                           ])
-                                          // cond(and(eq(this.transY, -400), eq(this.dateMoverButtonState, State.BEGAN)), [
-                                          //       set(this.transY, 0)
-                                          //       // call([], this.openDateMover)
-                                          // ])
                                     ])
                               }
                         </Animated.Code>
@@ -258,7 +292,7 @@ class MainScreen extends Component {
                                     <Text style={{ fontSize: 18, fontWeight: '500', flex: 1 }}>
                                           {this.state.visibleMonth}
                                     </Text>
-                                    {/* TODO: Make the icon change color if we reach the visible month */}
+
                                     <TouchableOpacity onPress={this.scrollToIndex} style={{ alignSelf: 'flex-end' }}>
                                           <Ionicons name="ios-calendar" size={30} />
                                           <View
@@ -274,6 +308,7 @@ class MainScreen extends Component {
                                           />
                                     </TouchableOpacity>
                               </View>
+
                               <MonthlyCalendar
                                     onRef={ref => (this.child = ref)}
                                     //Get back the selected date to display the right agenda day
@@ -281,32 +316,36 @@ class MainScreen extends Component {
                                     //Get back the visible month to display the right name in the DateMover component
                                     getVisibleMonth={this.getVisibleMonth}
                               />
-                              <TouchableOpacity
-                                    style={{
-                                          width: 60,
-                                          height: 60,
-                                          marginBottom: 10,
-                                          alignSelf: 'center',
-                                          justifyContent: 'center',
-                                          alignItems: 'center'
-                                    }}
-                                    // onPress={() => this.props.closeDateMover()}
-                              >
-                                    <Ionicons name="ios-close" size={40} color={'#FF2D55'} />
-                              </TouchableOpacity>
+
+                              <TapGestureHandler onHandlerStateChange={this.onGestureEvent}>
+                                    <Animated.View
+                                          style={{
+                                                width: 60,
+                                                height: 60,
+                                                marginBottom: 10,
+                                                alignSelf: 'center',
+                                                justifyContent: 'center',
+                                                alignItems: 'center'
+                                          }}
+                                    >
+                                          <Ionicons name="ios-close" size={40} color={'#FF2D55'} />
+                                    </Animated.View>
+                              </TapGestureHandler>
                         </Animated.View>
 
-                        <TapGestureHandler onHandlerStateChange={this.onDateMoverButtonEvent} minDist={0}>
+                        <TapGestureHandler onHandlerStateChange={this.onGestureEvent2}>
                               <Animated.View
                                     style={{
-                                          backgroundColor: 'blue',
                                           width: 60,
                                           height: 60,
                                           position: 'absolute',
                                           bottom: 20,
                                           alignSelf: 'center',
-                                          zIndex: 999,
-                                          elevation: 20
+                                          justifyContent: 'center',
+                                          alignItems: 'center',
+                                          backgroundColor: 'blue',
+                                          zIndex: 3,
+                                          elevation: 3
                                     }}
                               ></Animated.View>
                         </TapGestureHandler>

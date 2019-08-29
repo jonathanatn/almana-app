@@ -14,7 +14,7 @@ import SignUp from './src/Components/Login/SignUp';
 import LoadingScreen from './src/Components/Login/LoadingScreen';
 import TodayView from './src/Components/TodayView';
 import MainScreen from './src/Components/MainScreen';
-import MainScreen_Newer from './src/Components/MainScreen_Newer_DateMoverTest';
+import MainScreen_Newer from './src/Components/MainScreen_Newer';
 import reanimatedTestButton from './src/Components/reanimated-testbutton';
 
 import './src/Utils/fixtimerbug';

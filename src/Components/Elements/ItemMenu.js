@@ -58,6 +58,10 @@ class ItemMenu extends Component {
             });
       }
 
+      closeItemMenu = () => {
+            console.log('close item menu');
+      };
+
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////      Date/Time Picker Func      //////////////////////////////////////
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,7 +83,7 @@ class ItemMenu extends Component {
 
             // We need to close the item menu after changing the date of the task for another day
             if (date !== previousDate) {
-                  this.props.closeItemMenu();
+                  this.closeItemMenu();
             }
       };
 
@@ -141,13 +145,13 @@ class ItemMenu extends Component {
 
       deleteTask = () => {
             this.props.deleteTaskProp(this.props.task.id);
-            this.props.closeItemMenu();
+            this.closeItemMenu();
       };
 
       render() {
             let subtask = [0, 1, 2];
             return (
-                  <View style={[styles.container, { bottom: 0 }]}>
+                  <View style={[styles.container]}>
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Header          ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
@@ -273,27 +277,25 @@ class ItemMenu extends Component {
       }
 }
 
-const { WIDTH, HEIGHT } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const menuheight = 340;
 
 const styles = StyleSheet.create({
       container: {
             padding: 16,
             backgroundColor: 'white',
-            // height: menuheight,
-            // position: 'absolute',
-            // left: 0,
-            // right: 0,
-            // shadowRadius: 2,
-            // shadowOffset: {
-            //       width: 0,
-            //       height: -3
-            // },
-            // shadowColor: '#000000',
-            // elevation: 24,
-            // shadowOpacity: 1,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20
+            width: width,
+            height: 400,
+            position: 'absolute',
+            bottom: 0,
+            borderTopLeftRadius: 30,
+            borderTopRightRadius: 30,
+            elevation: 15,
+            zIndex: 99,
+            shadowColor: 'black',
+            shadowOffset: { width: 0, height: 0.5 * 5 },
+            shadowOpacity: 0.3,
+            shadowRadius: 0.8 * 8
       },
       bottomBarMenu: {
             flexDirection: 'row',

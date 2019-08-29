@@ -288,7 +288,7 @@ class ItemList extends React.Component {
                         >
                               <TouchableOpacity
                                     onLongPress={() => this.handlerLongClick(index)}
-                                    onPress={() => this.openItemMenu(item)}
+                                    onPress={() => this.props.openItemMenu(item)}
                                     activeOpacity={0.5}
                                     // style={{ flex: 1 }}
 
