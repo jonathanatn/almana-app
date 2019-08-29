@@ -80,7 +80,7 @@ class TaskAdder extends Component {
       render() {
             return (
                   <KeyboardAvoidingView
-                        style={{ backgroundColor: 'white' }}
+                        style={{ backgroundColor: 'white', elevation: 7, zIndex: 999 }}
                         //FIXME: Weird effect, the component come faster than the keyboard, try with padding
                         behavior="padding"
                   >
@@ -140,14 +140,11 @@ const styles = StyleSheet.create({
             width: width,
             bottom: 0,
             padding: 16,
-            shadowRadius: 2,
-            shadowOffset: {
-                  width: 0,
-                  height: -3
-            },
-            shadowColor: '#000000',
-            elevation: 24,
-            shadowOpacity: 1,
+            elevation: 15,
+            shadowColor: 'black',
+            shadowOffset: { width: 0, height: 0.5 * 5 },
+            shadowOpacity: 0.3,
+            shadowRadius: 0.8 * 8,
             borderTopLeftRadius: 15,
             borderTopRightRadius: 15
       },

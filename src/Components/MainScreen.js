@@ -18,7 +18,7 @@ class MainScreen extends PureComponent {
             //Props from the DateMover
             //formattedDate is passed to the AgendaView in order to display the correct day
             visibleMonth: 0,
-            formattedDate: 0
+            formattedDate: getToday
       };
 
       componentDidMount() {
@@ -249,7 +249,7 @@ class MainScreen extends PureComponent {
             return (
                   <View style={styles.container}>
                         {/*---------------------------------------------------- Views ---------------------------------------------------- */}
-                        {this.state.isDateMoverOpen ? (
+                        {/* {this.state.isDateMoverOpen ? (
                               <AgendaView
                                     date={this.state.formattedDate}
                                     openItemMenu={this.openItemMenu}
@@ -257,7 +257,12 @@ class MainScreen extends PureComponent {
                               />
                         ) : (
                               <TodayView openItemMenu={this.openItemMenu} openItemAdder={() => this.openItemAdder()} />
-                        )}
+                        )} */}
+                        <AgendaView
+                              date={this.state.formattedDate}
+                              openItemMenu={this.openItemMenu}
+                              openItemAdder={() => this.openItemAdder()}
+                        />
 
                         {/*-------------------------------------------------- Item Menu -------------------------------------------------- */}
                         <Animated.View
@@ -436,7 +441,7 @@ import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../S
 import moment from 'moment';
 
 import TodayView from './TodayView';
-import FlatListCalendar from './FlatListCalendar';
+import FlatListCalendar from './MonthlyCalendar';
 import AgendaView from './AgendaView';
 import ItemMenu from './Elements/ItemMenu';
 import TaskAdder from './Elements/TaskAdder';
@@ -447,160 +452,3 @@ import { TextInput } from 'react-native-gesture-handler';
 const { width, height } = Dimensions.get('window');
 
 import { getToday } from '../Utils/helpers';
-
-// toggleDateMover = () => {
-//       if (this.state.isDateMoverOpen === false) {
-//             if (this.state.isItemAdderOpen === false && this.state.isItemMenuOpen === false) {
-//                   Animated.timing(this.state.yValueDateMover, {
-//                         toValue: 0,
-//                         duration: 100
-//                   }).start();
-//                   this.setState({
-//                         isDateMoverOpen: true
-//                   });
-//             } else {
-//                   Animated.sequence([
-//                         Animated.timing(this.state.yValueItemAdder, {
-//                               toValue: -calendarMenuHeight,
-//                               duration: 100
-//                         }),
-//                         Animated.timing(this.state.yValueItemMenu, {
-//                               toValue: -calendarMenuHeight,
-//                               duration: 100
-//                         }),
-//                         Animated.timing(this.state.yValueDateMover, {
-//                               toValue: 0,
-//                               duration: 100
-//                         })
-//                   ]).start();
-
-//                   this.setState({
-//                         isItemAdderOpen: false,
-//                         isItemMenuOpen: false,
-//                         isDateMoverOpen: true
-//                   });
-//             }
-//       } else {
-//             Animated.timing(this.state.yValueDateMover, {
-//                   toValue: -calendarMenuHeight,
-//                   duration: 100
-//             }).start();
-//             this.setState({
-//                   isDateMoverOpen: false
-//             });
-//       }
-// };
-
-// toggleItemAdder = () => {
-//       if (this.state.isItemAdderOpen === false) {
-//             if (this.state.isDateMoverOpen === false && this.state.isItemMenuOpen === false) {
-//                   Animated.timing(this.state.yValueItemAdder, {
-//                         toValue: 0,
-//                         duration: 100
-//                   }).start();
-//                   this.setState({
-//                         isItemAdderOpen: true
-//                   });
-//             } else {
-//                   Animated.sequence([
-//                         Animated.timing(this.state.yValueDateMover, {
-//                               toValue: -calendarMenuHeight,
-//                               duration: 100
-//                         }),
-//                         Animated.timing(this.state.yValueItemMenu, {
-//                               toValue: -calendarMenuHeight,
-//                               duration: 100
-//                         }),
-//                         Animated.timing(this.state.yValueItemAdder, {
-//                               toValue: 0,
-//                               duration: 100
-//                         })
-//                   ]).start();
-
-//                   this.setState({
-//                         isDateMoverOpen: false,
-//                         isItemMenuOpen: false,
-//                         isItemAdderOpen: true
-//                   });
-//             }
-//       } else {
-//             Animated.timing(this.state.yValueItemAdder, {
-//                   toValue: -calendarMenuHeight,
-//                   duration: 100
-//             }).start();
-//             this.setState({
-//                   isItemAdderOpen: false
-//             });
-//       }
-// };
-
-// toggleItemMenu = async props => {
-//       if (this.state.isItemMenuOpen === false) {
-//             await this.setState({
-//                   itemMenuProps: props
-//             });
-//             if (this.state.isDateMoverOpen === false && this.state.isItemAdderOpen === false) {
-//                   Animated.timing(this.state.yValueItemMenu, {
-//                         toValue: 0,
-//                         duration: 100
-//                   }).start();
-//                   this.setState({
-//                         isItemMenuOpen: true
-//                   });
-//             } else {
-//                   Animated.sequence([
-//                         Animated.timing(this.state.yValueDateMover, {
-//                               toValue: -calendarMenuHeight,
-//                               duration: 100
-//                         }),
-//                         Animated.timing(this.state.yValueItemAdder, {
-//                               toValue: -calendarMenuHeight,
-//                               duration: 100
-//                         }),
-//                         Animated.timing(this.state.yValueItemMenu, {
-//                               toValue: 0,
-//                               duration: 100
-//                         })
-//                   ]).start();
-
-//                   this.setState({
-//                         isDateMoverOpen: false,
-//                         isItemAdderOpen: false,
-//                         isItemMenuOpen: true
-//                   });
-//             }
-//       } else {
-//             // If the ItemMenu was already open
-//             // and if we reclick on that open item => close menu
-//             // FIXME: If we simply change a prop of the the same item, the app think it's an other item
-//             // So or you make the ItemMenu full screen or the only way to close it is to drag it down
-//             if (props === this.state.itemMenuProps) {
-//                   Animated.timing(this.state.yValueItemMenu, {
-//                         toValue: -calendarMenuHeight,
-//                         duration: 100
-//                   }).start();
-//                   this.setState({
-//                         isItemMenuOpen: false
-//                   });
-//                   //If we click on an other item => close that one, reopen the other
-//             } else {
-//                   await this.setState({
-//                         isItemMenuOpen: false,
-//                         itemMenuProps: props
-//                   });
-//                   Animated.sequence([
-//                         Animated.timing(this.state.yValueItemMenu, {
-//                               toValue: -calendarMenuHeight,
-//                               duration: 100
-//                         }),
-//                         Animated.timing(this.state.yValueItemMenu, {
-//                               toValue: 0,
-//                               duration: 100
-//                         })
-//                   ]).start();
-//                   this.setState({
-//                         isItemMenuOpen: true
-//                   });
-//             }
-//       }
-// };

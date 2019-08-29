@@ -35,7 +35,9 @@ export default class FlatListCalendar extends PureComponent {
 
       onDayPress = (day, dayNumber, monthNumber) => {
             // FIXME: Use the parent to recover the date make the component really slow, maybe use the store
-            this.props.getSelectedDate(dayNumber, monthNumber);
+
+            // TODO: Send an action
+            // this.props.getSelectedDate(dayNumber, monthNumber);
 
             //Keeping track on last date selected because on the re-render of the child component (because of too much swiper on the FlatList)
             // We will loose the selected day so we save it in the parent component
@@ -56,12 +58,19 @@ export default class FlatListCalendar extends PureComponent {
       };
 
       onViewableItemsChanged = ({ viewableItems, changed }) => {
-            if (viewableItems[0].index) {
-                  let getMonth = moment()
+            if (viewableItems[0] && viewableItems[0].index === 0) {
+                  var getMonth = moment()
                         .add(viewableItems[0].index - 12, 'month')
                         .format('MMMM YYYY');
-
-                  this.props.getVisibleMonth(getMonth);
+                  //TODO: Send an action
+                  // this.props.getVisibleMonth(getMonth);
+            }
+            if (viewableItems[0] && viewableItems[0].index) {
+                  var getMonth = moment()
+                        .add(viewableItems[0].index - 12, 'month')
+                        .format('MMMM YYYY');
+                  //TODO: Send an action
+                  // this.props.getVisibleMonth(getMonth);
             }
 
             // (viewableItems[0].index) && this.props.getVisibleMonth(viewableItems[0].index);
@@ -149,7 +158,9 @@ export default class FlatListCalendar extends PureComponent {
                               })}
                               initialNumToRender={1}
                               windowSize={5}
-                              maxToRenderPerBatch={1}
+                              // maxToRenderPerBatch={1}
+                              removeClippedSubviews={true}
+                              onScrollToIndexFailed={12}
                         />
                   </View>
             );

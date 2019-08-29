@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView } from
 
 import { connect } from 'react-redux';
 import { getToday } from '../Utils/helpers';
-import { addTaskAction, receiveTasksAction, editTasksPositionProp } from '../Store/actions/taskAction';
+import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
 import { Ionicons } from '@expo/vector-icons';
 import Task from './Elements/Task';
 import ItemMenu from './Elements/ItemMenu';
@@ -78,7 +78,9 @@ class AgendaView extends Component {
                         </TouchableOpacity>
                         {/* ------------------------------------------------------------------------------------------------------------- */}
                         <Text style={{ fontWeight: '900', fontSize: 36, marginBottom: 20, marginLeft: 12 }}>
-                              {title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
+                              {this.props.date === getToday
+                                    ? 'Today'
+                                    : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
                         </Text>
                         <ScrollView>
                               {this.props.tasks.map((item, index) => {

@@ -4,6 +4,9 @@
             "slug": "almana-calendar",
             "privacy": "public",
             "sdkVersion": "33.0.0",
+            "packagerOpts": {
+                  "port": 21000
+            },
             "platforms": ["ios", "android", "web"],
             "version": "2.0.0",
             "orientation": "portrait",
