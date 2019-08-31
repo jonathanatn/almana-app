@@ -1,13 +1,20 @@
 // TODO: On back to today, update the calendar day selected
 // FIXME: The calendar height change alone, because it upload 3 month in advance so if there is 6 weeks in one of them the height will higher
+
+// STATIC UI
 import React, { Component, PureComponent } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, FlatList, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import moment from 'moment';
 
+// DATA
+import { connect } from 'react-redux';
+import { setDateSelectedDateMoverAction, setVisibleMonthDateMoverAction } from '../Store/actions/generalAction';
+
+//HELPERS
+import moment from 'moment';
 const { width } = Dimensions.get('window');
 
-export default class FlatListCalendar extends PureComponent {
+class FlatListCalendar extends PureComponent {
       constructor(props) {
             super(props);
             this.state = {
@@ -34,10 +41,8 @@ export default class FlatListCalendar extends PureComponent {
       }
 
       onDayPress = (day, dayNumber, monthNumber) => {
-            // FIXME: Use the parent to recover the date make the component really slow, maybe use the store
-
-            // TODO: Send an action
             // this.props.getSelectedDate(dayNumber, monthNumber);
+            this.props.setDateSelectedDateMoverProp(dayNumber, monthNumber);
 
             //Keeping track on last date selected because on the re-render of the child component (because of too much swiper on the FlatList)
             // We will loose the selected day so we save it in the parent component
@@ -59,18 +64,18 @@ export default class FlatListCalendar extends PureComponent {
 
       onViewableItemsChanged = ({ viewableItems, changed }) => {
             if (viewableItems[0] && viewableItems[0].index === 0) {
-                  var getMonth = moment()
+                  var visibleMonth = moment()
                         .add(viewableItems[0].index - 12, 'month')
                         .format('MMMM YYYY');
-                  //TODO: Send an action
-                  // this.props.getVisibleMonth(getMonth);
+                  // this.props.getVisibleMonth(visibleMonth);
+                  this.props.setVisibleMonthDateMoverProp(visibleMonth);
             }
             if (viewableItems[0] && viewableItems[0].index) {
-                  var getMonth = moment()
+                  var visibleMonth = moment()
                         .add(viewableItems[0].index - 12, 'month')
                         .format('MMMM YYYY');
-                  //TODO: Send an action
-                  // this.props.getVisibleMonth(getMonth);
+                  // this.props.getVisibleMonth(visibleMonth);
+                  this.props.setVisibleMonthDateMoverProp(visibleMonth);
             }
 
             // (viewableItems[0].index) && this.props.getVisibleMonth(viewableItems[0].index);
@@ -231,6 +236,8 @@ class Calendar extends PureComponent {
                   }
             }
 
+            //FIXME: Give a date to every items and after set the state when onPress and if state = date, change style
+
             return (
                   <View style={styles.container}>
                         {daysPreviousMonth.map(i => {
@@ -300,6 +307,18 @@ class Calendar extends PureComponent {
             );
       }
 }
+
+function mapDispatchToProps(dispatch) {
+      return {
+            setDateSelectedDateMoverProp: (day, month) => dispatch(setDateSelectedDateMoverAction(day, month)),
+            setVisibleMonthDateMoverProp: visibleMonth => dispatch(setVisibleMonthDateMoverAction(visibleMonth))
+      };
+}
+
+export default connect(
+      null,
+      mapDispatchToProps
+)(FlatListCalendar);
 
 const styles = StyleSheet.create({
       container: {
