@@ -1,46 +1,39 @@
+// STATIC UI
 import React from 'react';
-import {
-      StyleSheet,
-      View,
-      Dimensions,
-      Text,
-      TouchableOpacity,
-      Alert,
-      FlatList,
-      Platform,
-      TouchableHighlight,
-      TouchableNativeFeedback
-} from 'react-native';
-import Animated from 'react-native-reanimated';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
-const { width, height } = Dimensions.get('window');
-
-import { getToday } from '../Utils/helpers';
-
-import { connect } from 'react-redux';
-import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
-
+import { StyleSheet, View, Dimensions, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
+import { Platform, TouchableHighlight, TouchableNativeFeedback } from 'react-native';
 import Task from './Elements/Task';
 
-const {
-      cond,
-      eq,
-      add,
-      call,
-      set,
-      Value,
-      event,
-      block,
-      and,
-      greaterThan,
-      lessThan,
-      diff,
-      or,
-      debug,
-      startClock,
-      lessOrEq,
-      greaterOrEq
-} = Animated;
+// ANIMATED UI
+import Animated from 'react-native-reanimated';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
+const { cond, eq, add, call, set, Value, event, block, and, greaterThan, lessThan } = Animated;
+const { diff, or, debug, startClock, lessOrEq, greaterOrEq } = Animated;
+
+// DATA
+import { connect } from 'react-redux';
+import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+import {
+      setSelectedItemAction,
+      openItemMenuAction,
+      closeItemMenuAction,
+      closeDateMoverAction
+} from '../Store/actions/generalAction';
+function mapDispatchToProps(dispatch) {
+      return {
+            receiveTasksProp: date => dispatch(receiveTasksAction(date)),
+            addTaskProp: task => dispatch(addTaskAction(task)),
+            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks)),
+            setSelectedItemProp: item => dispatch(setSelectedItemAction(item)),
+            openItemMenuProp: () => dispatch(openItemMenuAction()),
+            closeItemMenuProp: () => dispatch(closeItemMenuAction())
+      };
+}
+
+// HELPERS
+import { getToday } from '../Utils/helpers';
+import moment from 'moment';
+const { width, height } = Dimensions.get('window');
 
 class ItemList extends React.Component {
       constructor(props) {
@@ -77,29 +70,8 @@ class ItemList extends React.Component {
             dragging: false,
             indexDragged: '',
             indexToSwap: '',
-            displayDraggedItem: false,
-            data: [
-                  'keep an eye',
-                  'buy bread',
-                  'meeting with partner',
-                  'birthday',
-                  'clean room',
-                  'keep an eye',
-                  'buy bread',
-                  'meeting with partner',
-                  'birthday',
-                  'clean room',
-                  'keep an eye',
-                  'buy bread',
-                  'meeting with partner',
-                  'birthday',
-                  'clean room'
-            ]
+            displayDraggedItem: false
       };
-
-      // componentDidMount() {
-      //       console.log(this.props.tasks);
-      // }
 
       componentDidUpdate(prevProps) {
             if (!this.props.areTasksSorted && this.props.tasks.length > 0) {
@@ -107,8 +79,24 @@ class ItemList extends React.Component {
             }
       }
 
+      handleItemClick = async item => {
+            this.props.setSelectedItemProp(item);
+
+            if (this.props.general.isDateMoverOpen === true) {
+                  this.props.closeDateMoverParentProp();
+            }
+
+            // ItemMenu is rendered in MainScreen.js
+            if (this.props.general.isItemMenuOpen === true) {
+                  await this.props.closeItemMenuProp();
+                  this.props.openItemMenuProp();
+            } else {
+                  this.props.openItemMenuProp();
+            }
+      };
+
       handlerLongClick = index => {
-            console.log(index);
+            // console.log(index);
             this.setState({
                   dragging: true,
                   indexDragged: index
@@ -214,20 +202,10 @@ class ItemList extends React.Component {
             }
       };
 
-      openItemMenu = item => {
-            // console.log(item);
-            return;
-      };
-
       renderItem2 = ({ item, index }) => {
             return (
                   <Animated.View style={[styles.box]} key={index}>
-                        {/* <Text>{item.name}</Text> */}
-                        <Task
-                              {...item}
-                              // style={{ zIndex: 0 }}
-                              // openItemMenu={() => this.props.openItemMenu(item)}
-                        />
+                        <Task {...item} />
                   </Animated.View>
             );
       };
@@ -240,7 +218,7 @@ class ItemList extends React.Component {
                         onHandlerStateChange={this.onGestureEvent}
                         //FIXME: With a smaller minDist, FlatList scroll doesn't work
                         minDist={20}
-                        // enabled={this.state.dragging ? false : true}
+                        // enabled={this.state.dragging ? true : false}
                         // style={{ opacity: 0 }}
                   >
                         <Animated.View
@@ -288,7 +266,7 @@ class ItemList extends React.Component {
                         >
                               <TouchableOpacity
                                     onLongPress={() => this.handlerLongClick(index)}
-                                    onPress={() => this.props.openItemMenu(item)}
+                                    onPress={() => this.handleItemClick(item)}
                                     activeOpacity={0.5}
                                     // style={{ flex: 1 }}
 
@@ -307,31 +285,11 @@ class ItemList extends React.Component {
                                                 : { flex: 1 }
                                     }
                               >
-                                    <Task
-                                          {...item}
-                                          // style={{ zIndex: 0 }}
-                                          // openItemMenu={() => this.props.openItemMenu(item)}
-                                    />
+                                    <Task {...item} />
                               </TouchableOpacity>
                         </Animated.View>
                   </PanGestureHandler>
             );
-      };
-
-      start1 = () => {
-            console.log('BEGAN');
-      };
-      start2 = () => {
-            console.log('ACTIVE');
-      };
-      start3 = () => {
-            console.log('END');
-      };
-      start4 = () => {
-            console.log('FAILED');
-      };
-      start5 = () => {
-            console.log('CANCELLED');
       };
 
       scrollOnDrag = ([absoluteY]) => {
@@ -367,12 +325,10 @@ class ItemList extends React.Component {
                                     {() =>
                                           block([
                                                 cond(eq(this.gestureState, State.BEGAN), [
-                                                      call([], this.start1),
                                                       set(this.transY, 0),
                                                       set(this.dragY, 0)
                                                 ]),
                                                 cond(eq(this.gestureState, State.ACTIVE), [
-                                                      // call([], this.start2),
                                                       set(this.transY, this.addY),
                                                       call([], this.displayDraggedItem),
                                                       call([this.dragY], this.sortCalculation)
@@ -382,20 +338,11 @@ class ItemList extends React.Component {
                                                             eq(this.gestureState, State.END),
                                                             or(greaterThan(this.dragY, 50), lessThan(this.dragY, -50))
                                                       ),
-                                                      [call([], this.start3), call([], this.sort), call([], this.reset)]
+                                                      [call([], this.sort), call([], this.reset)]
                                                 ),
-                                                cond(eq(this.gestureState, State.END), [
-                                                      call([], this.start3),
-                                                      call([], this.reset)
-                                                ]),
-                                                cond(eq(this.gestureState, State.FAILED), [
-                                                      call([], this.start4),
-                                                      call([], this.reset)
-                                                ]),
-                                                cond(eq(this.gestureState, State.CANCELLED), [
-                                                      call([], this.start5),
-                                                      call([], this.reset)
-                                                ]),
+                                                cond(eq(this.gestureState, State.END), [call([], this.reset)]),
+                                                cond(eq(this.gestureState, State.FAILED), [call([], this.reset)]),
+                                                cond(eq(this.gestureState, State.CANCELLED), [call([], this.reset)]),
                                                 // TODO: Make scroll when drag in the bottom or end
                                                 cond(
                                                       greaterThan(this.dragY, 50),
@@ -421,13 +368,11 @@ class ItemList extends React.Component {
                                     {() =>
                                           block([
                                                 cond(eq(this.gestureState, State.BEGAN), [
-                                                      call([], this.start1),
                                                       call([], this.displayDraggedItem),
                                                       set(this.transY, 0),
                                                       set(this.dragY, 0)
                                                 ]),
                                                 cond(eq(this.gestureState, State.ACTIVE), [
-                                                      // call([], this.start2),
                                                       call([this.dragY], this.sortCalculation),
                                                       set(this.transY, this.addY)
                                                 ]),
@@ -436,20 +381,11 @@ class ItemList extends React.Component {
                                                             eq(this.gestureState, State.END),
                                                             or(greaterThan(this.dragY, 50), lessThan(this.dragY, -50))
                                                       ),
-                                                      [call([], this.start3), call([], this.sort), call([], this.reset)]
+                                                      [call([], this.sort), call([], this.reset)]
                                                 ),
-                                                cond(eq(this.gestureState, State.END), [
-                                                      call([], this.start3),
-                                                      call([], this.reset)
-                                                ]),
-                                                cond(eq(this.gestureState, State.FAILED), [
-                                                      call([], this.start4),
-                                                      call([], this.reset)
-                                                ]),
-                                                cond(eq(this.gestureState, State.CANCELLED), [
-                                                      call([], this.start5),
-                                                      call([], this.reset)
-                                                ]),
+                                                cond(eq(this.gestureState, State.END), [call([], this.reset)]),
+                                                cond(eq(this.gestureState, State.FAILED), [call([], this.reset)]),
+                                                cond(eq(this.gestureState, State.CANCELLED), [call([], this.reset)]),
                                                 cond(
                                                       greaterThan(this.dragY, 50),
                                                       set(this.transYB, -70),
@@ -499,6 +435,7 @@ class ItemList extends React.Component {
                                     extraData={this.props}
                                     keyExtractor={(item, index) => index.toString()}
                                     renderItem={this.renderItem}
+                                    // scrollEnabled={this.state.dragging ? false : true}
                                     scrollEnabled={this.state.dragging ? false : true}
                                     showsVerticalScrollIndicator={false}
                                     onScroll={e => {
@@ -555,7 +492,7 @@ function mapStateToProp(state, ownProps) {
       // Get tasks of the day
       tasksArray = tasksArray.filter(item => {
             //     return item.date === ownProps.date;
-            return item.date === getToday;
+            return item.date === state.general.dateSelectedDateMover;
       });
 
       let tasksArrayWithPosition = [];
@@ -647,15 +584,9 @@ function mapStateToProp(state, ownProps) {
       return {
             date: getToday,
             tasks: tasksArrayWithPosition,
-            areTasksSorted: areTasksSorted
-      };
-}
-
-function mapDispatchToProps(dispatch) {
-      return {
-            receiveTasksProp: date => dispatch(receiveTasksAction(date)),
-            addTaskProp: task => dispatch(addTaskAction(task)),
-            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks))
+            areTasksSorted: areTasksSorted,
+            general: state.general,
+            closeDateMoverParentProp: ownProps.closeDateMover
       };
 }
 
@@ -667,15 +598,10 @@ export default connect(
 const styles = StyleSheet.create({
       container: {
             flex: 1
-            // paddingTop: 100
       },
       box: {
-            // backgroundColor: 'tomato',
-            // marginLeft: -(CIRCLE_SIZE / 2),
-            // marginTop: -(CIRCLE_SIZE / 2),
             width: width,
             height: 70,
-            // borderRadius: CIRCLE_SIZE / 2,
             borderColor: '#000'
       }
 });

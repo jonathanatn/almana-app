@@ -1,13 +1,31 @@
-// TODO: Add a Time Picker (Datetime picker mode close the keyboard)
-import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, TextInput, KeyboardAvoidingView } from 'react-native';
+// TODO:
+// - Add a Time Picker (Datetime picker mode close the keyboard)
+// - Optimise code for iOS and android platform (keyboard listener)
+// - Maybe implement official react native picker to give up the dependency
 
+// STATIC UI
+import React, { Component } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import { TextInput, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from 'react-native-modal-datetime-picker';
-import moment from 'moment';
+
+// ANIMATED UI
+
+// DATA
 import { connect } from 'react-redux';
-import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../../Store/actions/taskAction';
+import { addTaskAction } from '../../Store/actions/taskAction';
+import { closeTaskAdderAction } from '../../Store/actions/generalAction';
+function mapDispatchToProps(dispatch) {
+      return {
+            addTaskProp: task => dispatch(addTaskAction(task)),
+            closeTaskAdderProp: () => dispatch(closeTaskAdderAction())
+      };
+}
+
+// HELPERS
 import { getToday } from '../../Utils/helpers';
+import moment from 'moment';
 
 class TaskAdder extends Component {
       state = {
@@ -18,12 +36,32 @@ class TaskAdder extends Component {
       };
 
       componentDidMount() {
+            this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
+            this.keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', this._keyboardWillHide);
+
             this.inputRef.focus();
 
             this.setState({
                   date: getToday
             });
       }
+
+      componentWillUnmount() {
+            this.keyboardDidHideListener.remove();
+            this.keyboardWillHideListener.remove();
+      }
+
+      // keyboardWillHide does'nt work on Android
+      _keyboardDidHide = () => {
+            this.props.closeTaskAdderProp();
+      };
+
+      _keyboardWillHide = () => {
+            // On iOS the date picker close the keyboard which cause to unmount the component and make the date picker unavailable
+            if (this.state.isDateTimePickerVisible === false && Platform.OS === 'ios') {
+                  this.props.closeTaskAdderProp();
+            }
+      };
 
       showDateTimePicker = () => {
             this.setState({ isDateTimePickerVisible: true });
@@ -84,7 +122,15 @@ class TaskAdder extends Component {
                         //FIXME: Weird effect, the component come faster than the keyboard, try with padding
                         behavior="padding"
                   >
-                        <View style={[styles.container, { flexDirection: 'row' }]}>
+                        <View
+                              style={[
+                                    styles.container,
+                                    {
+                                          flexDirection: 'row',
+                                          opacity: this.state.isDateTimePickerVisible && Platform.OS === 'ios' ? 0 : 1
+                                    }
+                              ]}
+                        >
                               <TouchableOpacity onPress={() => this.showDateTimePicker()}>
                                     <Ionicons name="ios-calendar" size={30} color={'grey'} />
                               </TouchableOpacity>
@@ -109,21 +155,17 @@ class TaskAdder extends Component {
                               </TouchableOpacity>
                         </View>
 
-                        <DateTimePicker
-                              mode={'date'}
-                              isVisible={this.state.isDateTimePickerVisible}
-                              onConfirm={this.handleDateTimePicked}
-                              onCancel={this.hideDateTimePicker}
-                        />
+                        {this.state.isDateTimePickerVisible ? (
+                              <DateTimePicker
+                                    mode={'date'}
+                                    isVisible={true}
+                                    onConfirm={this.handleDateTimePicked}
+                                    onCancel={this.hideDateTimePicker}
+                              />
+                        ) : null}
                   </KeyboardAvoidingView>
             );
       }
-}
-
-function mapDispatchToProps(dispatch) {
-      return {
-            addTaskProp: task => dispatch(addTaskAction(task))
-      };
 }
 
 export default connect(

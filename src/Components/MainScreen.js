@@ -1,291 +1,141 @@
-// TODO:
-// - Create a special function for the back button, don't use a toggle animation because it involve more than just animated the calendar menu (like going back to home)
-// - If the month contains 6weeks make the calendar height bigger
-// - When I go to another month and after I go back to my day on scrolling on it, my calendar come back to that date
+// STATIC UI
+import React, { Component } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Keyboard, BackHandler } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Task from './Elements/Task';
+import ItemMenu from './Elements/ItemMenu';
+import ItemList from './ItemList';
+import TaskAdder from './Elements/TaskAdder';
+import NavigationView from './NavigationView';
+import MonthlyCalendar from './MonthlyCalendar';
 
-class MainScreen extends PureComponent {
-      state = {
-            isDateMoverOpen: false,
-            isItemAdderOpen: false,
-            isItemMenuOpen: false,
-            yValueDateMover: new Animated.Value(-400),
-            // yValueItemAdder: new Animated.Value(-calendarMenuHeight -10),
-            yValueItemMenu: new Animated.Value(-calendarMenuHeight - 10),
+// ANIMATED UI
+import Animated, { Easing } from 'react-native-reanimated';
+import { PanGestureHandler, State, TapGestureHandler } from 'react-native-gesture-handler';
+const { cond, eq, add, call, set, Value, event, block, and, Clock, neq, timing, stopClock, interpolate } = Animated;
+const { greaterThan, lessThan, diff, or, debug, startClock, lessOrEq, greaterOrEq, Extrapolate } = Animated;
 
-            //Props that will be passed to the task we click on (TodayView/Task) to BottomMenu
-            itemMenuProps: {},
-
-            //Props from the DateMover
-            //formattedDate is passed to the AgendaView in order to display the correct day
-            visibleMonth: 0,
-            formattedDate: getToday
+// DATA
+import { connect } from 'react-redux';
+import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+import {
+      openItemMenuAction,
+      closeItemMenuAction,
+      openTaskAdderAction,
+      openDateMoverAction,
+      closeDateMoverAction
+} from '../Store/actions/generalAction';
+function mapDispatchToProps(dispatch) {
+      return {
+            receiveTasksProp: date => dispatch(receiveTasksAction(date)),
+            addTaskProp: task => dispatch(addTaskAction(task)),
+            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks)),
+            openDateMoverProp: () => dispatch(openDateMoverAction()),
+            closeDateMoverProp: () => dispatch(closeDateMoverAction()),
+            closeItemMenuProp: () => dispatch(closeItemMenuAction()),
+            openTaskAdderProp: () => dispatch(openTaskAdderAction())
       };
+}
+
+// HELPERS
+import moment from 'moment';
+import { getToday } from '../Utils/helpers';
+
+class MainScreen extends Component {
+      constructor(props) {
+            super(props);
+            // DateMover
+            this.clock = new Clock();
+            this.transY = new Value(400);
+      }
 
       componentDidMount() {
-            this.keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', this._keyboardDidShow);
-            this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
-
             this.backHandler = BackHandler.addEventListener('hardwareBackPress', this.handleBackPress);
       }
 
       componentWillUnmount() {
-            // this.keyboardDidShowListener.remove();
-            this.keyboardDidHideListener.remove();
-
             this.backHandler.remove();
       }
 
       handleBackPress = () => {
-            if (this.state.isItemMenuOpen === true) {
-                  this.closeItemMenu();
+            if (this.props.general.isItemMenuOpen === true) {
+                  this.props.closeItemMenuProp();
                   return true;
             }
 
             if (this.state.isDateMoverOpen === true) {
+                  this.transY.setValue(400);
+            }
+      };
+
+      openTaskAdder = () => {
+            if (this.props.general.isDateMoverOpen === true) {
                   this.closeDateMover();
-                  return true;
             }
+            if (this.props.general.isItemMenuOpen === true) {
+                  this.props.closeItemMenuProp();
+            }
+            this.props.openTaskAdderProp();
       };
 
-      _keyboardDidShow = () => {
-            // If the taskadder is not open we can put higher the itemmenu position so the keyboard doesn't overlap
-            if (this.state.isItemAdderOpen === false) {
-                  Animated.timing(this.state.yValueItemMenu, {
-                        toValue: 140,
-                        duration: 100
-                  }).start();
-            }
+      // DateMover
+
+      scrollToIndex = () => {
+            this.child.scrollToIndex();
       };
-
-      _keyboardDidHide = () => {
-            //If the item adder is open, closing the keyboard will close it as well
-            this.closeItemAdder();
-            // If isItemAdderOpen === true, means that we click on the itemAdder
-            // If the key board close by clicking send
-
-            if (this.state.isItemMenuOpen === true) {
-                  Animated.timing(this.state.yValueItemMenu, {
-                        toValue: 0,
-                        duration: 100
-                  }).start();
-            }
-      };
-
-      // {/*------------------------------------------------------------------------------------------------------------------------
-      // ------------------------------------------------------ ItemAdder ------------------------------------------------------
-      // ---------------------------------------------------------------------------------------------------------------------------*/}
-
-      //Closing is managed by _keyboardDidHide()
-      openItemAdder = () => {
-            if (this.state.isItemMenuOpen === true) {
-                  this.closeItemMenu();
-            }
-
-            this.setState(
-                  {
-                        isItemAdderOpen: true
-                  },
-                  () => {
-                        //On the agenda view I don't want to superpose my datemover and itemadder
-                        if (this.state.isDateMoverOpen === true) {
-                              Animated.timing(this.state.yValueDateMover, {
-                                    toValue: -400,
-                                    duration: 100
-                              }).start();
-                        }
-                  }
-            );
-      };
-
-      closeItemAdder = () => {
-            if (this.state.isItemAdderOpen === true) {
-                  if (this.state.isDateMoverOpen === true) {
-                        Animated.timing(this.state.yValueDateMover, {
-                              toValue: 0,
-                              duration: 100
-                        }).start();
-                  }
-                  this.setState({
-                        isItemAdderOpen: false
-                  });
-            }
-      };
-
-      // {/*------------------------------------------------------------------------------------------------------------------------
-      // ------------------------------------------------------ DateMover ------------------------------------------------------
-      // ---------------------------------------------------------------------------------------------------------------------------*/}
 
       openDateMover = () => {
-            this.setState(
-                  {
-                        isDateMoverOpen: true
-                  },
-                  () => {
-                        Animated.timing(this.state.yValueDateMover, {
-                              toValue: 0,
-                              duration: 100
-                        }).start();
-                  }
-            );
+            this.transY.setValue(0);
+            this.props.openDateMoverProp();
       };
 
       closeDateMover = () => {
-            Animated.timing(this.state.yValueDateMover, {
-                  toValue: -400,
-                  duration: 100
-            }).start(() => {
-                  this.setState({
-                        isDateMoverOpen: false
-                  });
-            });
-      };
-
-      getSelectedDate = (day, month) => {
-            let selectedMonth = moment()
-                  .add(month - 12, 'month')
-                  .format('L');
-            let momentDate = moment().set({
-                  date: day,
-                  month: parseInt(selectedMonth.substring(0, 2)) - 1,
-                  year: selectedMonth.substring(6)
-            });
-
-            this.setState({
-                  formattedDate: momentDate.format('L')
-            });
-      };
-
-      getVisibleMonth = month => {
-            this.setState({
-                  visibleMonth: month
-            });
-      };
-
-      scrollToIndex = () => {
-            this.child.scrollToIndex(); // do stuff
-      };
-
-      // {/*------------------------------------------------------------------------------------------------------------------------
-      // ------------------------------------------------------ ItemMenu ------------------------------------------------------
-      // ---------------------------------------------------------------------------------------------------------------------------*/}
-
-      openItemMenu = async itemProps => {
-            if (this.state.isItemMenuOpen === false) {
-                  this.setState(
-                        {
-                              itemMenuProps: itemProps,
-                              isItemMenuOpen: true
-                        },
-                        () => {
-                              //Dismiss the keyboard if never the TaskAdder is open, so the TaskAdder close as well
-                              // FIXME: Maybe it's not the best idea to dismiss the keyboard, maybe if the TaskAdder is open the agenda/today view should not be clickable
-                              Keyboard.dismiss();
-                              Animated.timing(this.state.yValueItemMenu, {
-                                    toValue: 0,
-                                    duration: 100
-                              }).start();
-
-                              //On the agenda view I don't want to superpose my datemover and itemmenu
-                              if (this.state.isDateMoverOpen === true) {
-                                    Animated.timing(this.state.yValueDateMover, {
-                                          toValue: -400,
-                                          duration: 100
-                                    }).start();
-                              }
-                        }
-                  );
-                  //Check if we are not clicking one the same task to avoid useless animation
-            } else if (this.state.itemMenuProps !== itemProps) {
-                  this.setState(
-                        {
-                              itemMenuProps: {},
-                              isItemMenuOpen: false
-                        },
-                        () => {
-                              this.setState({
-                                    itemMenuProps: itemProps,
-                                    isItemMenuOpen: true
-                              });
-
-                              Animated.sequence([
-                                    Animated.timing(this.state.yValueItemMenu, {
-                                          toValue: -calendarMenuHeight - 10,
-                                          duration: 100
-                                    }),
-                                    Animated.timing(this.state.yValueItemMenu, {
-                                          toValue: 0,
-                                          duration: 100
-                                    })
-                              ]).start();
-                        }
-                  );
-            }
-      };
-
-      closeItemMenu = () => {
-            this.setState(
-                  {
-                        itemMenuProps: {},
-                        isItemMenuOpen: false
-                  },
-                  () => {
-                        Animated.timing(this.state.yValueItemMenu, {
-                              toValue: -calendarMenuHeight - 10,
-                              duration: 100
-                        }).start();
-
-                        // If I'm in the agenda, I need to show my datemover when I close itemmenu
-                        if (this.state.isDateMoverOpen === true) {
-                              Animated.timing(this.state.yValueDateMover, {
-                                    toValue: 0,
-                                    duration: 100
-                              }).start();
-                        }
-                  }
-            );
+            this.transY.setValue(400);
+            this.props.closeDateMoverProp();
       };
 
       render() {
+            let day, month, year;
+            day = this.props.general.dateSelectedDateMover.substring(3, 5);
+            month = this.props.general.dateSelectedDateMover.substring(0, 2);
+            year = this.props.general.dateSelectedDateMover.substring(6);
+
+            let title = moment().set({
+                  date: day,
+                  month: month - 1,
+                  year: year
+            });
+
+            let formattedMonth = this.props.general.visibleMonth && this.props.general.visibleMonth;
+
             return (
                   <View style={styles.container}>
-                        {/*---------------------------------------------------- Views ---------------------------------------------------- */}
-                        {/* {this.state.isDateMoverOpen ? (
-                              <AgendaView
-                                    date={this.state.formattedDate}
-                                    openItemMenu={this.openItemMenu}
-                                    openItemAdder={() => this.openItemAdder()}
-                              />
-                        ) : (
-                              <TodayView openItemMenu={this.openItemMenu} openItemAdder={() => this.openItemAdder()} />
-                        )} */}
-                        <AgendaView
-                              date={this.state.formattedDate}
-                              openItemMenu={this.openItemMenu}
-                              openItemAdder={() => this.openItemAdder()}
-                        />
+                        {/* TODO: Create a function to get the day title and put in helper */}
+                        <Text style={styles.mainTitle}>
+                              {this.props.general.dateSelectedDateMover === getToday
+                                    ? 'Today'
+                                    : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
+                        </Text>
+                        <ItemList style={{ zIndex: 10 }} closeDateMover={this.closeDateMover} />
 
-                        {/*-------------------------------------------------- Item Menu -------------------------------------------------- */}
-                        <Animated.View
-                              style={[
-                                    styles.calendarMenu,
-                                    { bottom: this.state.yValueItemMenu, width: width, zIndex: 15 }
-                              ]}
-                        >
-                              {this.state.isItemMenuOpen ? (
-                                    <ItemMenu
-                                          {...this.state.itemMenuProps}
-                                          closeItemMenu={() => this.closeItemMenu()}
-                                    />
-                              ) : null}
-                        </Animated.View>
+                        {/* TODO: Create a component */}
+                        {/* ------------------------------------------ Add Task Button ------------------------------------------ */}
+                        <TouchableOpacity style={styles.addButtonContainer} onPress={this.openTaskAdder}>
+                              <View style={styles.addButton}>
+                                    <Ionicons name="ios-add" size={50} color={'white'} />
+                              </View>
+                        </TouchableOpacity>
 
-                        {/*-------------------------------------------------- Task Adder -------------------------------------------------- */}
-                        {/* The task adder depend of the key board, if the key board close it will be automatically closed */}
-                        {this.state.isItemAdderOpen ? <TaskAdder /> : null}
+                        {/* ------------------------------------------------------------------------------------------------------------- */}
+
+                        {this.props.general.isItemMenuOpen === true && <ItemMenu />}
+
+                        <NavigationView openDateMover={() => this.openDateMover()} />
 
                         {/*---------------------------------------------------- DateMover ---------------------------------------------------- */}
-                        {/* Keep the date mover like that for the moment are we will have to pass getSelectedDate and getVisibleMonth through 2 parents */}
-                        <Animated.View style={[styles.dateMover, { bottom: this.state.yValueDateMover }]}>
+                        <Animated.View
+                              style={[styles.dateMoverContainer, { transform: [{ translateY: this.transY }] }]}
+                        >
                               <View
                                     style={{
                                           flexDirection: 'row',
@@ -294,10 +144,8 @@ class MainScreen extends PureComponent {
                                           marginBottom: 8
                                     }}
                               >
-                                    <Text style={{ fontSize: 18, fontWeight: '500', flex: 1 }}>
-                                          {this.state.visibleMonth}
-                                    </Text>
-                                    {/* TODO: Make the icon change color if we reach the visible month */}
+                                    <Text style={{ fontSize: 18, fontWeight: '500', flex: 1 }}>{formattedMonth}</Text>
+
                                     <TouchableOpacity onPress={this.scrollToIndex} style={{ alignSelf: 'flex-end' }}>
                                           <Ionicons name="ios-calendar" size={30} />
                                           <View
@@ -313,57 +161,42 @@ class MainScreen extends PureComponent {
                                           />
                                     </TouchableOpacity>
                               </View>
-                              {/* //FIXME: To increase performance we could load the component at the launch, but first we
-                              should try with Reanimated library */}
-                              <FlatListCalendar
+
+                              <MonthlyCalendar
                                     onRef={ref => (this.child = ref)}
                                     //Get back the selected date to display the right agenda day
                                     getSelectedDate={this.getSelectedDate}
                                     //Get back the visible month to display the right name in the DateMover component
                                     getVisibleMonth={this.getVisibleMonth}
                               />
-                              {/* <FlatListCalendar
-                                    onRef={ref => (this.child = ref)}
-                                    //Get back the selected date to display the right agenda day
-                                    getSelectedDate={this.getSelectedDate}
-                                    //Get back the visible month to display the right name in the DateMover component
-                                    getVisibleMonth={this.getVisibleMonth}
-                              /> */}
 
-                              <TouchableOpacity
-                                    style={{
-                                          width: 60,
-                                          height: 60,
-                                          marginBottom: 10,
-                                          alignSelf: 'center',
-                                          justifyContent: 'center',
-                                          alignItems: 'center'
-                                    }}
-                                    onPress={() => this.closeDateMover()}
-                              >
-                                    <Ionicons name="ios-close" size={40} color={'#FF2D55'} />
+                              <TouchableOpacity onPress={() => this.closeDateMover()}>
+                                    <Animated.View
+                                          style={{
+                                                width: 60,
+                                                height: 60,
+                                                marginBottom: 10,
+                                                alignSelf: 'center',
+                                                justifyContent: 'center',
+                                                alignItems: 'center'
+                                          }}
+                                    >
+                                          <Ionicons name="ios-close" size={40} color={'#FF2D55'} />
+                                    </Animated.View>
                               </TouchableOpacity>
                         </Animated.View>
 
-                        {/*----------------------------------------------- Main Navigation ----------------------------------------------- */}
-                        {/* The navigation close if the date mover is open to avoid tap bug */}
-                        {!this.state.isDateMoverOpen ? (
-                              <NavigationView openDateMover={() => this.openDateMover()} />
-                        ) : null}
+                        {/*-------------------------------------------------- Task Adder -------------------------------------------------- */}
+                        {/* The task adder depend of the key board, if the key board close it will be automatically closed */}
+                        {this.props.general.isTaskAdderOpen ? <TaskAdder /> : null}
                   </View>
             );
       }
 }
 
 function mapStateToProp(state, ownProps) {
-      return {};
-}
-
-function mapDispatchToProps(dispatch) {
       return {
-            receiveTasksProp: date => dispatch(receiveTasksAction(date)),
-            addTaskProp: task => dispatch(addTaskAction(task)),
-            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks))
+            general: state.general
       };
 }
 
@@ -372,83 +205,56 @@ export default connect(
       mapDispatchToProps
 )(MainScreen);
 
-const calendarMenuHeight = 340;
+const { width, height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
       container: {
             flex: 1,
-            backgroundColor: 'white',
-            paddingTop: 50
+            backgroundColor: 'white'
       },
-      calendarMenu: {
-            width: width,
-            height: calendarMenuHeight,
+      mainTitle: {
+            fontWeight: '900',
+            fontSize: 36,
+            marginBottom: 20,
+            marginLeft: 12,
+            marginTop: 70
+      },
+      addButtonContainer: {
+            width: 80,
+            height: 80,
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+            top: height / 2 - 60,
+            right: -30,
+            zIndex: 9,
+            elevation: 6
+      },
+      addButton: {
+            width: 60,
+            height: 60,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#FF2D55',
+            borderRadius: 30,
+            elevation: 5,
+            shadowColor: 'black',
+            shadowOffset: { width: 0, height: 0.5 * 5 },
+            shadowOpacity: 0.3,
+            shadowRadius: 0.8 * 5
+      },
+      dateMoverContainer: {
+            flex: 1,
             backgroundColor: 'white',
             position: 'absolute',
-            shadowRadius: 2,
-            shadowOffset: {
-                  width: 0,
-                  height: -3
-            },
-            shadowColor: '#000000',
-            elevation: 24,
-            shadowOpacity: 1,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20
-      },
-      dateMover: {
-            width: width,
-            // height: calendarMenuHeight,
-            backgroundColor: 'white',
-            position: 'absolute',
-            shadowRadius: 2,
-            shadowOffset: {
-                  width: 0,
-                  height: -3
-            },
-            shadowColor: '#000000',
-            elevation: 24,
-            shadowOpacity: 1,
+            bottom: 0,
             borderTopLeftRadius: 30,
-            borderTopRightRadius: 30
-      },
-      button: {
-            backgroundColor: 'steelblue',
-            height: 25,
-            alignSelf: 'center',
-            marginTop: 30
+            borderTopRightRadius: 30,
+            elevation: 15,
+            zIndex: 99,
+            shadowColor: 'black',
+            shadowOffset: { width: 0, height: 0.5 * 5 },
+            shadowOpacity: 0.3,
+            shadowRadius: 0.8 * 8
       }
 });
-
-// Sort by ui, component, element, helpers; etc..
-
-import React, { Component, PureComponent } from 'react';
-import {
-      View,
-      Text,
-      StyleSheet,
-      Dimensions,
-      TouchableOpacity,
-      Animated,
-      Easing,
-      KeyboardAvoidingView,
-      Keyboard,
-      BackHandler
-} from 'react-native';
-import { connect } from 'react-redux';
-import { Ionicons } from '@expo/vector-icons';
-import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
-import moment from 'moment';
-
-import TodayView from './TodayView';
-import FlatListCalendar from './MonthlyCalendar';
-import AgendaView from './AgendaView';
-import ItemMenu from './Elements/ItemMenu';
-import TaskAdder from './Elements/TaskAdder';
-import NavigationView from './NavigationView';
-
-import { TextInput } from 'react-native-gesture-handler';
-
-const { width, height } = Dimensions.get('window');
-
-import { getToday } from '../Utils/helpers';

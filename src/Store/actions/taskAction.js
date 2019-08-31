@@ -1,4 +1,3 @@
-// TODO: Redux implementation is a mess
 // TODO: Manage success and failure in reducer
 
 export const RECEIVE_TASKS = 'RECEIVE_TASKS';

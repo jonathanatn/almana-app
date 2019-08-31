@@ -32,7 +32,7 @@ import { getToday } from '../../Utils/helpers';
 
 class ItemMenu extends Component {
       state = {
-            // yValue: new Animated.Value(-menuheight),
+            yValue: new Animated.Value(-400),
             subtaskPlaceholder: 'Add a subtask..',
             id: '',
             name: '',
@@ -49,18 +49,31 @@ class ItemMenu extends Component {
       };
 
       async componentDidMount() {
+            if (this.props.general.isItemMenuOpen === true) {
+                  Animated.timing(this.state.yValue, {
+                        toValue: 0,
+                        duration: 100
+                  }).start();
+            } else {
+                  Animated.timing(this.state.yValue, {
+                        toValue: 0,
+                        duration: 100
+                  }).start();
+            }
+
             await this.setState({
-                  name: this.props.name,
-                  completed: this.props.completed,
-                  date: this.props.date != '' ? this.props.date : 'No date',
-                  time: this.props.time != '' ? this.props.time : 'No time'
+                  name: this.props.general.selectedItem.name,
+                  completed: this.props.general.selectedItem.completed,
+                  date: this.props.general.selectedItem.date != '' ? this.props.general.selectedItem.date : 'No date',
+                  time: this.props.general.selectedItem.time != '' ? this.props.general.selectedItem.time : 'No time'
                   // id: this.props.id != '' ? this.props.id : ''
             });
       }
 
-      closeItemMenu = () => {
-            console.log('close item menu');
-      };
+      // closeItemMenu = () => {
+      //       console.log('close item menu')
+      //       return
+      // };
 
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////      Date/Time Picker Func      //////////////////////////////////////
@@ -82,9 +95,10 @@ class ItemMenu extends Component {
             this.hideDatePicker();
 
             // We need to close the item menu after changing the date of the task for another day
-            if (date !== previousDate) {
-                  this.closeItemMenu();
-            }
+            // FIXME:
+            // if (date !== previousDate) {
+            //       this.closeItemMenu();
+            // }
       };
 
       showTimePicker = () => {
@@ -102,11 +116,7 @@ class ItemMenu extends Component {
                   time = '0' + time;
             }
 
-            //TODO: Erase that line
-            this.setState({
-                  time: time
-            });
-            this.editTaskTime(this.state.time, this.props.id);
+            this.editTaskTime(time, this.props.general.selectedItem.id);
 
             this.hideTimePicker();
       };
@@ -120,11 +130,19 @@ class ItemMenu extends Component {
                   name: name
             });
 
-            this.props.editTaskNameProp(name, this.props.id);
+            this.props.editTaskNameProp(name, this.props.general.selectedItem.id);
       };
 
       toggleCompletion = () => {
-            this.props.editTaskCompletionActionProp(!this.props.task.completed, this.props.task.id);
+            this.setState(
+                  {
+                        completed: !this.state.completed
+                  },
+                  () => {
+                        this.props.editTaskCompletionProp(this.state.completed, this.props.general.selectedItem.id);
+                  }
+            );
+            // this.props.editTaskCompletionActionProp(!this.state.completed, this.props.general.selectedItem.id);
       };
 
       editTaskTime = time => {
@@ -132,7 +150,7 @@ class ItemMenu extends Component {
                   time: time
             });
 
-            this.props.editTaskTimeProp(time, this.props.id);
+            this.props.editTaskTimeProp(time, this.props.general.selectedItem.id);
       };
 
       editTaskDate = date => {
@@ -140,18 +158,19 @@ class ItemMenu extends Component {
                   date: date
             });
 
-            this.props.editTaskDateProp(date, this.props.id);
+            this.props.editTaskDateProp(date, this.props.general.selectedItem.id);
       };
 
       deleteTask = () => {
-            this.props.deleteTaskProp(this.props.task.id);
-            this.closeItemMenu();
+            this.props.deleteTaskProp(this.props.general.selectedItem.id);
+            // FIXME:
+            // this.closeItemMenu();
       };
 
       render() {
             let subtask = [0, 1, 2];
             return (
-                  <View style={[styles.container]}>
+                  <Animated.View style={[styles.container, { bottom: this.state.yValue }]}>
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Header          ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
@@ -272,7 +291,7 @@ class ItemMenu extends Component {
                                     />
                               </TouchableOpacity>
                         </View> */}
-                  </View>
+                  </Animated.View>
             );
       }
 }
@@ -308,9 +327,11 @@ const styles = StyleSheet.create({
 });
 
 function mapStateToProp(state, ownProps) {
+      // console.log(state.general);
       let task = state.tasks[ownProps.id];
 
       return {
+            general: state.general,
             task: task
       };
 }
@@ -318,7 +339,7 @@ function mapStateToProp(state, ownProps) {
 function mapDispatchToProps(dispatch) {
       return {
             editTaskNameProp: (name, id) => dispatch(editTaskNameAction(name, id)),
-            editTaskCompletionActionProp: (state, id) => dispatch(editTaskCompletionAction(state, id)),
+            editTaskCompletionProp: (state, id) => dispatch(editTaskCompletionAction(state, id)),
             editTaskTimeProp: (hour, id) => dispatch(editTaskTimeAction(hour, id)),
             editTaskDateProp: (date, id) => dispatch(editTaskDateAction(date, id)),
             deleteTaskProp: id => dispatch(deleteTaskAction(id))

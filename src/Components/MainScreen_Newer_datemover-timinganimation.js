@@ -11,56 +11,127 @@ import NavigationView from './NavigationView';
 import MonthlyCalendar from './MonthlyCalendar';
 
 // ANIMATED UI
-import Animated from 'react-native-reanimated';
+import Animated, { Easing } from 'react-native-reanimated';
 import { PanGestureHandler, State, TapGestureHandler } from 'react-native-gesture-handler';
-const { cond, eq, add, call, set, Value, event, block, and, Clock } = Animated;
-const { greaterThan, lessThan, diff, or, debug, startClock, lessOrEq, greaterOrEq } = Animated;
+const { cond, eq, add, call, set, Value, event, block, and, Clock, neq, timing, stopClock, interpolate } = Animated;
+const { greaterThan, lessThan, diff, or, debug, startClock, lessOrEq, greaterOrEq, Extrapolate } = Animated;
 
 // DATA
 import { connect } from 'react-redux';
 import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+import { openItemMenuAction, closeItemMenuAction } from '../Store/actions/generalAction';
 
 // HELPERS
 import moment from 'moment';
 import { getToday } from '../Utils/helpers';
+
+let position = 400;
+
+const runOpacityTimer2 = (clock, gestureState) => {
+      const state = {
+            finished: new Value(0),
+            position: new Value(0),
+            time: new Value(0),
+            frameTime: new Value(0)
+      };
+
+      const config = {
+            duration: 1000,
+            toValue: new Value(-1),
+            easing: Easing.inOut(Easing.ease)
+      };
+
+      return block([
+            cond(and(eq(gestureState, State.BEGAN), neq(config.toValue, 1)), [
+                  set(state.finished, 0),
+                  set(state.time, 0),
+                  set(state.frameTime, 0),
+                  set(config.toValue, 1),
+                  startClock(clock)
+            ]),
+            timing(clock, state, config),
+            cond(state.finished, stopClock(clock)),
+            interpolate(state.position, {
+                  inputRange: [0, 1],
+                  outputRange: [400, 0],
+                  extrapolate: Extrapolate.CLAMP
+            })
+      ]);
+};
 
 class MainScreen extends Component {
       constructor(props) {
             super(props);
 
             // DateMover
-            this.onGestureState = new Value(-1);
-            this.onGestureState2 = new Value(-1);
-            this.onGestureEvent = event([
+            this.clock = new Clock();
+            this.onDateMoverOpenButtonState = new Value(-1);
+            this.onDateMoverOpenButtonEvent = event([
                   {
                         nativeEvent: {
-                              state: this.onGestureState
+                              state: this.onDateMoverOpenButtonState
                         }
                   }
             ]);
 
-            this.onGestureEvent2 = event([
-                  {
-                        nativeEvent: {
-                              state: this.onGestureState2
-                        }
-                  }
-            ]);
+            this.transY = this.runOpacityTimer2(
+                  this.clock,
+                  this.onDateMoverOpenButtonState,
+                  this.state.startValue,
+                  this.state.endValue
+            );
 
-            this.transY = new Value(400);
+            // transY.setValue(!close ? runTiming(clock) : 0);
       }
+
+      runOpacityTimer2 = (clock, gestureState, startValue, endValue) => {
+            const state = {
+                  finished: new Value(0),
+                  position: new Value(0),
+                  time: new Value(0),
+                  frameTime: new Value(0)
+            };
+
+            const config = {
+                  duration: 1000,
+                  toValue: new Value(0),
+                  easing: Easing.inOut(Easing.ease)
+            };
+
+            return block([
+                  cond(and(eq(gestureState, State.BEGAN), neq(config.toValue, 1)), [
+                        set(state.finished, 0),
+                        set(state.time, 0),
+                        set(state.frameTime, 0),
+                        set(config.toValue, 1),
+                        startClock(clock)
+                  ]),
+                  timing(clock, state, config),
+                  cond(state.finished, [stopClock(clock), call([], this.testFunc)]),
+                  interpolate(state.position, {
+                        inputRange: [0, 1],
+                        outputRange: [startValue, endValue],
+                        extrapolate: Extrapolate.CLAMP
+                  })
+            ]);
+      };
+
+      testFunc = () => {
+            console.log('finished');
+            this.setState({
+                  isDateMoverOpen: !this.state.isDateMoverOpen,
+                  startValue: 400,
+                  endValue: 0
+            });
+      };
 
       state = {
             title: '',
             isDateMoverOpen: false,
             isItemAdderOpen: false,
             isItemMenuOpen: false,
-
-            itemMenuProps: '',
-
-            // DateMover
-            visibleMonth: 0,
-            formattedDate: getToday
+            startValue: 0,
+            endValue: 400
       };
 
       componentDidMount() {
@@ -77,18 +148,9 @@ class MainScreen extends Component {
             this.backHandler.remove();
       }
 
-      //       componentDidUpdate(prevProps) {
-      //             if (!this.props.areTasksSorted && this.props.tasks.length > 0) {
-      //                   this.props.editTasksPositionProp(this.props.tasks);
-      //             }
-      //       }
-
       handleBackPress = () => {
-            if (this.state.isItemMenuOpen === true) {
-                  //       this.closeItemMenu();
-                  this.setState({
-                        isItemMenuOpen: false
-                  });
+            if (this.props.general.isItemMenuOpen === true) {
+                  this.props.closeItemMenuProp();
                   return true;
             }
 
@@ -115,20 +177,6 @@ class MainScreen extends Component {
             this.setState({
                   isItemAdderOpen: false
             });
-      };
-
-      openItemMenu = item => {
-            console.log(item);
-            if (this.state.isItemMenuOpen === false) {
-                  this.setState({
-                        itemMenuProps: item,
-                        isItemMenuOpen: true
-                  });
-            } else {
-                  this.setState({
-                        isItemMenuOpen: false
-                  });
-            }
       };
 
       // componentDidUpdate(prevProps) {
@@ -179,27 +227,6 @@ class MainScreen extends Component {
             this.child.scrollToIndex(); // do stuff
       };
 
-      getSelectedDate = (day, month) => {
-            let selectedMonth = moment()
-                  .add(month - 12, 'month')
-                  .format('L');
-            let momentDate = moment().set({
-                  date: day,
-                  month: parseInt(selectedMonth.substring(0, 2)) - 1,
-                  year: selectedMonth.substring(6)
-            });
-
-            this.setState({
-                  formattedDate: momentDate.format('L')
-            });
-      };
-
-      getVisibleMonth = month => {
-            this.setState({
-                  visibleMonth: month
-            });
-      };
-
       openDateMover = () => {
             console.log('open date mover');
             this.setState({
@@ -216,13 +243,9 @@ class MainScreen extends Component {
 
       render() {
             let day, month, year;
-            //     day = this.props.date.substring(3, 5);
-            //     month = this.props.date.substring(0, 2);
-            //     year = this.props.date.substring(6);
-
-            day = getToday.substring(3, 5);
-            month = getToday.substring(0, 2);
-            year = getToday.substring(6);
+            day = this.props.general.dateSelectedDateMover.substring(3, 5);
+            month = this.props.general.dateSelectedDateMover.substring(0, 2);
+            year = this.props.general.dateSelectedDateMover.substring(6);
 
             let title = moment().set({
                   date: day,
@@ -234,7 +257,7 @@ class MainScreen extends Component {
                   <View style={styles.container}>
                         {/* TODO: Create a function to get the day title and put in helper */}
                         <Text style={styles.mainTitle}>
-                              {this.props.dateProps === getToday
+                              {this.props.general.dateSelectedDateMover === getToday
                                     ? 'Today'
                                     : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
                         </Text>
@@ -250,10 +273,10 @@ class MainScreen extends Component {
 
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
-                        {this.state.isItemMenuOpen === true && (
+                        {this.props.general.isItemMenuOpen === true && (
                               <ItemMenu
-                                    {...this.state.itemMenuProps}
-                                    // closeItemMenu={() => this.closeItemMenu()}
+                              // {...this.state.itemMenuProps}
+                              // closeItemMenu={() => this.closeItemMenu()}
                               />
                         )}
 
@@ -263,20 +286,39 @@ class MainScreen extends Component {
                         {/*---------------------------------------------------- DateMover ---------------------------------------------------- */}
 
                         {/* TODO: Change name of event, gesture, transY */}
-                        <Animated.Code>
+                        {/* <Animated.Code>
                               {() =>
                                     block([
-                                          cond(eq(this.onGestureState, State.BEGAN), [
-                                                set(this.transY, 400),
-                                                call([], this.closeDateMover)
-                                          ]),
+                                          set(
+                                                this.transY,
+                                                runOpacityTimer2(
+                                                      this.clock,
+                                                      this.onDateMoverCloseButtonState,
+                                                      this.onDateMoverOpenButtonState,
+                                                      true
+                                                )
+                                          )
+                                          // set(
+                                          //       this.transY,
+                                          //       runOpacityTimer2(this.clock2, this.onGestureState2, this.transY)
+                                          // )
+                                    ])
+                              }
+                        </Animated.Code> */}
+                        {/* <Animated.Code>
+                              {() =>
+                                    block([
+                                          // cond(eq(this.onGestureState, State.BEGAN), [
+                                          //       // set(this.transY, 400),
+                                          //       call([], this.closeDateMover)
+                                          // ]),
                                           cond(eq(this.onGestureState2, State.BEGAN), [
                                                 set(this.transY, 0),
                                                 call([], this.openDateMover)
                                           ])
                                     ])
                               }
-                        </Animated.Code>
+                        </Animated.Code> */}
 
                         <Animated.View
                               style={[styles.dateMoverContainer, { transform: [{ translateY: this.transY }] }]}
@@ -317,29 +359,27 @@ class MainScreen extends Component {
                                     getVisibleMonth={this.getVisibleMonth}
                               />
 
-                              <TapGestureHandler onHandlerStateChange={this.onGestureEvent}>
-                                    <Animated.View
-                                          style={{
-                                                width: 60,
-                                                height: 60,
-                                                marginBottom: 10,
-                                                alignSelf: 'center',
-                                                justifyContent: 'center',
-                                                alignItems: 'center'
-                                          }}
-                                    >
-                                          <Ionicons name="ios-close" size={40} color={'#FF2D55'} />
-                                    </Animated.View>
-                              </TapGestureHandler>
+                              <Animated.View
+                                    style={{
+                                          width: 60,
+                                          height: 60,
+                                          marginBottom: 10,
+                                          alignSelf: 'center',
+                                          justifyContent: 'center',
+                                          alignItems: 'center'
+                                    }}
+                              >
+                                    <Ionicons name="ios-close" size={40} color={'#FF2D55'} />
+                              </Animated.View>
                         </Animated.View>
 
-                        <TapGestureHandler onHandlerStateChange={this.onGestureEvent2}>
+                        <TapGestureHandler onHandlerStateChange={this.onDateMoverOpenButtonEvent}>
                               <Animated.View
                                     style={{
                                           width: 60,
                                           height: 60,
                                           position: 'absolute',
-                                          bottom: 20,
+                                          bottom: 500,
                                           alignSelf: 'center',
                                           justifyContent: 'center',
                                           alignItems: 'center',
@@ -358,16 +398,27 @@ class MainScreen extends Component {
       }
 }
 
+function mapStateToProp(state, ownProps) {
+      // console.log(state.general);
+      // let task = state.tasks[ownProps.id];
+
+      return {
+            general: state.general
+      };
+}
+
 function mapDispatchToProps(dispatch) {
       return {
             receiveTasksProp: date => dispatch(receiveTasksAction(date)),
             addTaskProp: task => dispatch(addTaskAction(task)),
-            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks))
+            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks)),
+            openItemMenuProp: () => dispatch(openItemMenuAction()),
+            closeItemMenuProp: () => dispatch(closeItemMenuAction())
       };
 }
 
 export default connect(
-      null,
+      mapStateToProp,
       mapDispatchToProps
 )(MainScreen);
 
