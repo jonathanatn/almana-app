@@ -30,11 +30,12 @@ function tasks(state = {}, action) {
                         }
                   };
             case EDIT_TASK_COMPLETION:
+                  console.log('reducer fired: ', action);
                   return {
                         ...state,
-                        [action.id]: {
-                              ...state[action.id],
-                              completed: action.completion
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              completed: !action.payload.completion
                         }
                   };
             case DELETE_TASK:

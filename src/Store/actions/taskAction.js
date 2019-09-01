@@ -9,6 +9,7 @@ export const EDIT_TASK_TIME = 'EDIT_TASK_TIME';
 export const EDIT_TASKS_POSITION = 'EDIT_TASKS_POSITION';
 export const DELETE_TASK = 'DELETE_TASK';
 
+// TODO: Edit the whole system between id field
 export function addTaskAction(task) {
       let idGenerator = function() {
             return (
@@ -30,7 +31,6 @@ export function addTaskAction(task) {
       };
 }
 
-// TODO: Make the dispatch
 export function editTaskNameAction(name, id) {
       return dispatch => {
             dispatch({
@@ -41,13 +41,33 @@ export function editTaskNameAction(name, id) {
       };
 }
 
-// TODO: Make the dispatch
+// export function editTaskCompletionAction(completion, id) {
+//       return dispatch => {
+//             dispatch({
+//                   type: EDIT_TASK_COMPLETION,
+//                   completion: completion,
+//                   id: id
+//             });
+//       };
+// }
+
 export function editTaskCompletionAction(completion, id) {
-      return dispatch => {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
             dispatch({
                   type: EDIT_TASK_COMPLETION,
-                  completion: completion,
-                  id: id
+                  payload: { completion, id },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('tasks')
+                                    .doc(id)
+                                    .set({ completed: !completion }, { merge: true }),
+                              commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                              // rollback: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                        }
+                  }
             });
       };
 }
@@ -83,7 +103,7 @@ export function editTaskDateAction(date, id) {
 
 // Receive an object who is the date and replace it in the store
 // Send something different on firestore
-
+// TODO: Explain the whole system behind position editing
 export function editTasksPositionAction(tasks) {
       return dispatch => {
             tasks.map(item => {

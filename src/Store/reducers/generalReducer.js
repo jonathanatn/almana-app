@@ -10,6 +10,8 @@ import {
       VISIBLE_MONTH_DATE_MOVER
 } from '../actions/generalAction';
 
+// import { getToday } from '../../Utils/helpers';
+
 const generalState = {
       isItemMenuOpen: false,
       selectedItem: {},
