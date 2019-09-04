@@ -1,7 +1,7 @@
 // UI
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, AsyncStorage } from 'react-native';
-import { createAppContainer, createStackNavigator } from 'react-navigation';
+import { createAppContainer, createStackNavigator, createSwitchNavigator } from 'react-navigation';
 import Login from './src/Components/Login/Login';
 import SignUp from './src/Components/Login/SignUp';
 import LoadingScreen from './src/Components/Login/LoadingScreen';
@@ -27,21 +27,6 @@ import './src/Utils/fixtimerbug';
 import { offline } from '@redux-offline/redux-offline';
 import offlineConfig from '@redux-offline/redux-offline/lib/defaults';
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////  Redux Store & Redux Persist  ////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//https://www.youtube.com/watch?v=gKC4Hfp0zzU
-// import { persistStore, persistReducer } from 'redux-persist';
-// import { PersistGate } from 'redux-persist/integration/react';
-
-// const persistConfig = {
-//       key: 'root',
-//       storage: AsyncStorage,
-//       blacklist: ['general']
-// };
-
-// const persistedReducer = persistReducer(persistConfig, rootReducer);
-
 // https://github.com/redux-offline/redux-offline/issues/182
 const reduxOfflineConfig = {
       ...offlineConfig,
@@ -52,8 +37,6 @@ const reduxOfflineConfig = {
 };
 
 const store = createStore(
-      // persistedReducer,
-      //Replaced by
       rootReducer,
       compose(
             applyMiddleware(
@@ -63,40 +46,44 @@ const store = createStore(
                   })
             ),
             reduxFirestore(firebaseConfig),
-            reactReduxFirebase(firebaseConfig, { useFirestoreForProfile: true, userProfile: 'users' }),
+            // reactReduxFirebase(firebaseConfig, { useFirestoreForProfile: true, userProfile: 'users' }),
+            reactReduxFirebase(firebaseConfig),
             offline(reduxOfflineConfig)
       )
 );
-
-// const persistor = persistStore(store);
 
 export default class App extends Component {
       render() {
             return (
                   <Provider store={store}>
-                        {/* <PersistGate loading={null} persistor={persistor}> */}
                         <AppContainer />
-                        {/* </PersistGate> */}
                   </Provider>
             );
       }
 }
 
-const StackNav = createStackNavigator(
+const SignUpStackNav = createStackNavigator(
       {
-            // reanimatedTestButton,
-            MainScreen,
-            // reanimatedTestDragTask,
-            LoadingScreen,
             SignUp,
             Login
+      },
+      {
+            // headerMode: 'none'
+      }
+);
+
+const SwitchNav = createSwitchNavigator(
+      {
+            LoadingScreen,
+            SignUpStackNav,
+            MainScreen
       },
       {
             headerMode: 'none'
       }
 );
 
-const AppContainer = createAppContainer(StackNav);
+const AppContainer = createAppContainer(SwitchNav);
 
 const styles = StyleSheet.create({
       container: {

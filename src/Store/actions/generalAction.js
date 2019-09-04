@@ -1,4 +1,5 @@
 import moment from 'moment';
+import { receiveTasksAction } from './taskAction';
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// ITEMMENU ACTION  ////////////////////////////////////////
@@ -93,6 +94,8 @@ export function setDateSelectedDateMoverAction(day, month) {
       dateSelectedDateMover = momentDate.format('L');
 
       return dispatch => {
+            // FIXME: get firestore as a source of truth
+            // dispatch(receiveTasksAction(dateSelectedDateMover));
             dispatch({
                   type: DATE_SELECTED_DATE_MOVER,
                   dateSelectedDateMover: dateSelectedDateMover

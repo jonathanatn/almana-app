@@ -1,52 +1,94 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ToastAndroid } from 'react-native';
 import { connect } from 'react-redux';
-import { signUp } from '../../Store/actions/authAction';
+import { signUp, resetAuthErrorAction } from '../../Store/actions/authAction';
+function mapDispatchToProps(dispatch) {
+      return {
+            signUp: newUser => dispatch(signUp(newUser)),
+            resetAuthErrorProp: () => dispatch(resetAuthErrorAction())
+      };
+}
 
 class Login extends Component {
+      static navigationOptions = {
+            title: 'Welcome'
+      };
+
       state = {
             email: '',
             password: ''
       };
 
+      componentDidMount() {
+            this.props.resetAuthErrorProp();
+      }
+
+      componentDidUpdate() {
+            this.props.resetAuthErrorProp();
+            if (this.props.uid) {
+                  this.props.navigation.navigate('MainScreen');
+            }
+      }
+
       handleSubmit = () => {
+            this.props.resetAuthErrorProp();
             this.props.signUp(this.state);
       };
 
+      goToLogin = () => {
+            this.props.resetAuthErrorProp();
+            this.props.navigation.navigate('Login');
+      };
+
       render() {
-            console.log(this.props.signOut);
-            // if (auth.uid) navigate to ..
             return (
                   <View style={styles.container}>
-                        <Text>Sign Up</Text>
+                        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 30 }}>
+                              Create an account (it's free!)
+                        </Text>
                         <Text>Email</Text>
-                        <TextInput onChangeText={text => this.setState({ email: text })} value={this.state.text} />
-                        <Text>Password</Text>
                         <TextInput
-                              style={{ height: 40, borderColor: 'gray' }}
+                              autoCapitalize="none"
+                              keyboardType="email-address"
+                              style={styles.input}
+                              onChangeText={text => this.setState({ email: text })}
+                              value={this.state.text}
+                        />
+                        <Text style={{ marginTop: 16 }}>Password</Text>
+                        <TextInput
+                              autoCapitalize="none"
+                              style={styles.input}
+                              placeholder="6 characters minimum"
+                              secureTextEntry={true}
                               onChangeText={text => this.setState({ password: text })}
                               value={this.state.text}
                         />
-                        <TouchableOpacity onPress={this.handleSubmit} style={styles.button}>
+                        <TouchableOpacity onPress={this.handleSubmit} style={[styles.button, { marginTop: 24 }]}>
                               <Text>Sign Up</Text>
                         </TouchableOpacity>
-                        <Text>{this.props.authError && this.props.authError}</Text>
+
+                        {this.props.authError &&
+                              ToastAndroid.show(this.props.authError, ToastAndroid.SHORT, ToastAndroid.BOTTOM)}
+
+                        <Text style={{ alignSelf: 'center', marginTop: 40, marginBottom: 10 }}>
+                              Already have an account?
+                        </Text>
+                        <TouchableOpacity
+                              onPress={this.goToLogin}
+                              style={[styles.button, { backgroundColor: 'white' }]}
+                        >
+                              <Text>Log in</Text>
+                        </TouchableOpacity>
                   </View>
             );
       }
 }
 
 function mapStateToProp(state) {
-      console.log(state.firebase);
       return {
             auth: state.firebase.auth,
-            authError: state.auth.authError
-      };
-}
-
-function mapDispatchToProps(dispatch) {
-      return {
-            signUp: newUser => dispatch(signUp(newUser))
+            authError: state.auth.authError,
+            uid: state.auth.uid
       };
 }
 
@@ -59,11 +101,25 @@ const styles = StyleSheet.create({
       container: {
             flex: 1,
             backgroundColor: 'white',
-            marginTop: 50
+            marginTop: 50,
+            paddingHorizontal: 16
       },
       button: {
             height: 40,
             width: 150,
-            backgroundColor: 'blue'
+            backgroundColor: 'tomato',
+            borderRadius: 7,
+            justifyContent: 'center',
+            alignItems: 'center',
+            alignSelf: 'center',
+            borderColor: 'tomato',
+            borderWidth: 2,
+            marginTop: 8
+      },
+      input: {
+            height: 40,
+            borderWidth: 0.5,
+            borderColor: 'grey',
+            borderRadius: 3
       }
 });

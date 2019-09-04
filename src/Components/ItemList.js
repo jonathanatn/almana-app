@@ -11,6 +11,8 @@ const { cond, eq, add, call, set, Value, event, block, and, greaterThan, lessTha
 const { diff, or, debug, startClock, lessOrEq, greaterOrEq } = Animated;
 
 // DATA
+import { firestoreConnect } from 'react-redux-firebase';
+import { compose } from 'redux';
 import { connect } from 'react-redux';
 import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
 import {
@@ -483,6 +485,7 @@ class ItemList extends React.Component {
 }
 
 function mapStateToProp(state, ownProps) {
+      // console.log(state.tasks);
       let tasks = state.tasks ? state.tasks : {};
 
       let areTasksSorted = false;
@@ -492,7 +495,7 @@ function mapStateToProp(state, ownProps) {
       // Get tasks of the day
       tasksArray = tasksArray.filter(item => {
             //     return item.date === ownProps.date;
-            return item.date === state.general.dateSelectedDateMover;
+            return item.date === state.general.dateSelectedDateMover && item.uid === state.auth.uid;
       });
 
       let tasksArrayWithPosition = [];
@@ -590,9 +593,12 @@ function mapStateToProp(state, ownProps) {
       };
 }
 
-export default connect(
-      mapStateToProp,
-      mapDispatchToProps
+export default compose(
+      connect(
+            mapStateToProp,
+            mapDispatchToProps
+      )
+      // firestoreConnect([{ collection: 'tasks' }])
 )(ItemList);
 
 const styles = StyleSheet.create({
