@@ -1,6 +1,15 @@
+// UI
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, AsyncStorage } from 'react-native';
-import { createAppContainer, createStackNavigator } from 'react-navigation';
+import { createAppContainer, createStackNavigator, createSwitchNavigator } from 'react-navigation';
+import Login from './src/Components/Login/Login';
+import SignUp from './src/Components/Login/SignUp';
+import LoadingScreen from './src/Components/Login/LoadingScreen';
+import TodayView from './src/Components/TodayView';
+import MainScreen from './src/Components/MainScreen';
+import reanimatedTestButton from './src/Components/reanimated-testbutton';
+
+// STATE MANAGEMENT
 import { createStore, applyMiddleware, compose } from 'redux';
 import { Provider } from 'react-redux';
 import rootReducer from './src/Store/reducers/rootReducer';
@@ -9,32 +18,26 @@ import { reduxFirestore, getFirestore } from 'redux-firestore';
 import { reactReduxFirebase, getFirebase } from 'react-redux-firebase';
 import firebaseConfig from './src/Utils/firebaseConfig';
 
-import Login from './src/Components/Login/Login';
-import SignUp from './src/Components/Login/SignUp';
-import LoadingScreen from './src/Components/Login/LoadingScreen';
-import TodayView from './src/Components/TodayView';
-import MainScreen from './src/Components/MainScreen';
-import reanimatedTestButton from './src/Components/reanimated-testbutton';
-
+// HELPERS
 import './src/Utils/fixtimerbug';
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////  Redux Store & Redux Persist  ////////////////////////////////
+///////////////////////////////////////////  Redux Offline /////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//https://www.youtube.com/watch?v=gKC4Hfp0zzU
-import { persistStore, persistReducer } from 'redux-persist';
-import { PersistGate } from 'redux-persist/integration/react';
+import { offline } from '@redux-offline/redux-offline';
+import offlineConfig from '@redux-offline/redux-offline/lib/defaults';
 
-const persistConfig = {
-      key: 'root',
-      storage: AsyncStorage,
-      blacklist: ['general']
+// https://github.com/redux-offline/redux-offline/issues/182
+const reduxOfflineConfig = {
+      ...offlineConfig,
+      persistOptions: {
+            ...offlineConfig['persistOptions'],
+            blacklist: ['general']
+      }
 };
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
-
 const store = createStore(
-      persistedReducer,
+      rootReducer,
       compose(
             applyMiddleware(
                   thunk.withExtraArgument({
@@ -43,39 +46,44 @@ const store = createStore(
                   })
             ),
             reduxFirestore(firebaseConfig),
-            reactReduxFirebase(firebaseConfig, { useFirestoreForProfile: true, userProfile: 'users' })
+            // reactReduxFirebase(firebaseConfig, { useFirestoreForProfile: true, userProfile: 'users' }),
+            reactReduxFirebase(firebaseConfig),
+            offline(reduxOfflineConfig)
       )
 );
-
-const persistor = persistStore(store);
 
 export default class App extends Component {
       render() {
             return (
                   <Provider store={store}>
-                        <PersistGate loading={null} persistor={persistor}>
-                              <AppContainer />
-                        </PersistGate>
+                        <AppContainer />
                   </Provider>
             );
       }
 }
 
-const StackNav = createStackNavigator(
+const SignUpStackNav = createStackNavigator(
       {
-            // reanimatedTestButton,
-            MainScreen,
-            // reanimatedTestDragTask,
-            LoadingScreen,
             SignUp,
             Login
+      },
+      {
+            // headerMode: 'none'
+      }
+);
+
+const SwitchNav = createSwitchNavigator(
+      {
+            LoadingScreen,
+            SignUpStackNav,
+            MainScreen
       },
       {
             headerMode: 'none'
       }
 );
 
-const AppContainer = createAppContainer(StackNav);
+const AppContainer = createAppContainer(SwitchNav);
 
 const styles = StyleSheet.create({
       container: {

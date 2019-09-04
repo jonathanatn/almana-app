@@ -2,33 +2,35 @@
 
 // TODO: Only show date and time if they are set
 
+// STATIC UI
 import React, { Component } from 'react';
-import {
-      StyleSheet,
-      Text,
-      View,
-      TouchableOpacity,
-      Animated,
-      Dimensions,
-      TextInput,
-      KeyboardAvoidingView
-} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Animated, Dimensions, TextInput } from 'react-native';
+import { KeyboardAvoidingView, Keyboard } from 'react-native';
 import DateTimePicker from 'react-native-modal-datetime-picker';
-import moment from 'moment';
 import { Ionicons } from '@expo/vector-icons';
+
+// ANIMATED UI
+
+// DATA
 import { firestoreConnect } from 'react-redux-firebase';
 import { connect } from 'react-redux';
 import { compose } from 'redux';
+import { editTaskNameAction, syncTaskNameAction, editTaskCompletionAction } from '../../Store/actions/taskAction';
+import { editTaskTimeAction, editTaskDateAction, deleteTaskAction } from '../../Store/actions/taskAction';
+function mapDispatchToProps(dispatch) {
+      return {
+            editTaskNameProp: (name, id, previousName) => dispatch(editTaskNameAction(name, id, previousName)),
+            syncTaskNameProp: (name, id) => dispatch(syncTaskNameAction(name, id)),
+            editTaskCompletionProp: (state, id) => dispatch(editTaskCompletionAction(state, id)),
+            editTaskTimeProp: (hour, id) => dispatch(editTaskTimeAction(hour, id)),
+            editTaskDateProp: (date, id) => dispatch(editTaskDateAction(date, id)),
+            deleteTaskProp: id => dispatch(deleteTaskAction(id))
+      };
+}
 
-import {
-      editTaskNameAction,
-      editTaskCompletionAction,
-      editTaskTimeAction,
-      editTaskDateAction,
-      deleteTaskAction
-} from '../../Store/actions/taskAction';
-
+// HELPERS
 import { getToday } from '../../Utils/helpers';
+import moment from 'moment';
 
 class ItemMenu extends Component {
       state = {
@@ -49,6 +51,8 @@ class ItemMenu extends Component {
       };
 
       async componentDidMount() {
+            this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
+            this.keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', this._keyboardWillHide);
             if (this.props.general.isItemMenuOpen === true) {
                   Animated.timing(this.state.yValue, {
                         toValue: 0,
@@ -70,10 +74,22 @@ class ItemMenu extends Component {
             });
       }
 
-      // closeItemMenu = () => {
-      //       console.log('close item menu')
-      //       return
-      // };
+      componentWillUnmount() {
+            this.keyboardDidHideListener.remove();
+            this.keyboardWillHideListener.remove();
+      }
+
+      // keyboardWillHide does'nt work on Android
+      _keyboardDidHide = () => {
+            this.confirmChangeTaskName();
+      };
+
+      _keyboardWillHide = () => {
+            // On iOS the date picker close the keyboard which cause to unmount the component and make the date picker unavailable
+            if (Platform.OS === 'ios') {
+                  this.confirmChangeTaskName();
+            }
+      };
 
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////      Date/Time Picker Func      //////////////////////////////////////
@@ -129,8 +145,16 @@ class ItemMenu extends Component {
             this.setState({
                   name: name
             });
+            this.props.syncTaskNameProp(name, this.props.general.selectedItem.id);
+      };
 
-            this.props.editTaskNameProp(name, this.props.general.selectedItem.id);
+      confirmChangeTaskName = () => {
+            // TODO:
+            // If keyboard open and input item name focus => register the previous name
+            let previousName = '';
+
+            // if keyboard close and previousname and name to send are different
+            this.props.editTaskNameProp(this.state.name, this.props.general.selectedItem.id, previousName);
       };
 
       toggleCompletion = () => {
@@ -162,7 +186,7 @@ class ItemMenu extends Component {
       };
 
       deleteTask = () => {
-            this.props.deleteTaskProp(this.props.general.selectedItem.id);
+            this.props.deleteTaskProp(this.props.general.selectedItem);
             // FIXME:
             // this.closeItemMenu();
       };
@@ -336,20 +360,7 @@ function mapStateToProp(state, ownProps) {
       };
 }
 
-function mapDispatchToProps(dispatch) {
-      return {
-            editTaskNameProp: (name, id) => dispatch(editTaskNameAction(name, id)),
-            editTaskCompletionProp: (state, id) => dispatch(editTaskCompletionAction(state, id)),
-            editTaskTimeProp: (hour, id) => dispatch(editTaskTimeAction(hour, id)),
-            editTaskDateProp: (date, id) => dispatch(editTaskDateAction(date, id)),
-            deleteTaskProp: id => dispatch(deleteTaskAction(id))
-      };
-}
-
-export default compose(
-      connect(
-            mapStateToProp,
-            mapDispatchToProps
-      ),
-      firestoreConnect([{ collection: 'tasks' }])
+export default connect(
+      mapStateToProp,
+      mapDispatchToProps
 )(ItemMenu);

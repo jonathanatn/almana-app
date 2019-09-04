@@ -1,6 +1,6 @@
 // STATIC UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Keyboard, BackHandler } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Task from './Elements/Task';
 import ItemMenu from './Elements/ItemMenu';
@@ -18,6 +18,7 @@ const { greaterThan, lessThan, diff, or, debug, startClock, lessOrEq, greaterOrE
 // DATA
 import { connect } from 'react-redux';
 import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+import { signOut } from '../Store/actions/authAction';
 import {
       openItemMenuAction,
       closeItemMenuAction,
@@ -27,19 +28,24 @@ import {
 } from '../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
+            // TASK
             receiveTasksProp: date => dispatch(receiveTasksAction(date)),
             addTaskProp: task => dispatch(addTaskAction(task)),
             editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks)),
+            // GENERAL
             openDateMoverProp: () => dispatch(openDateMoverAction()),
             closeDateMoverProp: () => dispatch(closeDateMoverAction()),
             closeItemMenuProp: () => dispatch(closeItemMenuAction()),
-            openTaskAdderProp: () => dispatch(openTaskAdderAction())
+            openTaskAdderProp: () => dispatch(openTaskAdderAction()),
+            // OTHERS
+            signOutProp: () => dispatch(signOut())
       };
 }
 
 // HELPERS
 import moment from 'moment';
 import { getToday } from '../Utils/helpers';
+const { width, height } = Dimensions.get('window');
 
 class MainScreen extends Component {
       constructor(props) {
@@ -57,14 +63,37 @@ class MainScreen extends Component {
             this.backHandler.remove();
       }
 
+      signOut = () => {
+            Alert.alert(
+                  'Log out',
+                  'Are you sure you want to log out?',
+                  [
+                        {
+                              text: 'Cancel',
+                              // onPress: () => console.log('Cancel Pressed'),
+                              style: 'cancel'
+                        },
+                        {
+                              text: 'Yes, log out',
+                              onPress: () => {
+                                    this.props.signOutProp();
+                                    this.props.navigation.navigate('SignUpStackNav');
+                              }
+                        }
+                  ],
+                  { cancelable: false }
+            );
+      };
+
       handleBackPress = () => {
             if (this.props.general.isItemMenuOpen === true) {
                   this.props.closeItemMenuProp();
                   return true;
             }
 
-            if (this.state.isDateMoverOpen === true) {
+            if (this.props.general.isDateMoverOpen === true) {
                   this.transY.setValue(400);
+                  return true;
             }
       };
 
@@ -110,12 +139,17 @@ class MainScreen extends Component {
 
             return (
                   <View style={styles.container}>
-                        {/* TODO: Create a function to get the day title and put in helper */}
-                        <Text style={styles.mainTitle}>
-                              {this.props.general.dateSelectedDateMover === getToday
-                                    ? 'Today'
-                                    : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
-                        </Text>
+                        <View style={styles.header}>
+                              {/* TODO: Create a function to get the day title and put in helper */}
+                              <Text style={{ fontWeight: '900', fontSize: 36 }}>
+                                    {this.props.general.dateSelectedDateMover === getToday
+                                          ? 'Today'
+                                          : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
+                              </Text>
+                              <TouchableOpacity onPress={() => this.signOut()}>
+                                    <Ionicons name="ios-log-out" size={24} color={'black'} />
+                              </TouchableOpacity>
+                        </View>
                         <ItemList style={{ zIndex: 10 }} closeDateMover={this.closeDateMover} />
 
                         {/* TODO: Create a component */}
@@ -205,18 +239,17 @@ export default connect(
       mapDispatchToProps
 )(MainScreen);
 
-const { width, height } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
       container: {
             flex: 1,
             backgroundColor: 'white'
       },
-      mainTitle: {
-            fontWeight: '900',
-            fontSize: 36,
+      header: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: 20,
-            marginLeft: 12,
+            paddingHorizontal: 12,
             marginTop: 70
       },
       addButtonContainer: {
@@ -257,4 +290,18 @@ const styles = StyleSheet.create({
             shadowOpacity: 0.3,
             shadowRadius: 0.8 * 8
       }
+      // signOutModal: {
+      //       position: 'absolute',
+      //       width,
+      //       height,
+      //       backgroundColor: 'grey',
+      //       justifyContent: 'center',
+      //       alignItems: 'center',
+      //       elevation: 20,
+      //       zIndex: 999
+      // },
+      // modalBox: {
+      //       width: 200,
+      //       height: 150
+      // }
 });

@@ -1,53 +1,79 @@
+// STATIC UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ToastAndroid } from 'react-native';
+
+// DATA
 import { connect } from 'react-redux';
-import { signIn, signOut } from '../../Store/actions/authAction';
+import { loginWithEmailAndPasswordAction, signOut, resetAuthErrorAction } from '../../Store/actions/authAction';
+function mapDispatchToProps(dispatch) {
+      return {
+            loginWithEmailAndPasswordProp: credentials => dispatch(loginWithEmailAndPasswordAction(credentials)),
+            signOut: () => dispatch(signOut()),
+            resetAuthErrorProp: () => dispatch(resetAuthErrorAction())
+      };
+}
 
 class Login extends Component {
+      static navigationOptions = {
+            title: 'Log in'
+      };
+
       state = {
             email: '',
             password: ''
       };
 
-      handleSubmit = () => {
-            this.props.signIn(this.state);
+      componentDidMount() {
+            this.props.resetAuthErrorProp();
+      }
+
+      componentDidUpdate() {
+            this.props.resetAuthErrorProp();
+            if (this.props.uid) {
+                  this.props.navigation.navigate('MainScreen');
+            }
+      }
+
+      handleSubmit = async () => {
+            this.props.resetAuthErrorProp();
+            this.props.loginWithEmailAndPasswordProp(this.state);
       };
 
       render() {
-            console.log(this.props.signOut);
             return (
                   <View style={styles.container}>
                         <Text>Email</Text>
-                        <TextInput onChangeText={text => this.setState({ email: text })} value={this.state.text} />
-                        <Text>Password</Text>
                         <TextInput
-                              style={{ height: 40, borderColor: 'gray' }}
+                              autoCapitalize="none"
+                              keyboardType="email-address"
+                              style={styles.input}
+                              onChangeText={text => this.setState({ email: text })}
+                              value={this.state.text}
+                        />
+                        <Text style={{ marginTop: 16 }}>Password</Text>
+                        <TextInput
+                              autoCapitalize="none"
+                              secureTextEntry={true}
+                              style={styles.input}
                               onChangeText={text => this.setState({ password: text })}
                               value={this.state.text}
                         />
+
                         <TouchableOpacity onPress={this.handleSubmit} style={styles.button}>
-                              <Text>Sign In</Text>
+                              <Text>Log in</Text>
                         </TouchableOpacity>
-                        <Text>{this.props.authError && this.props.authError}</Text>
-                        <TouchableOpacity onPress={this.props.signOut} style={[styles.button, { marginTop: 20 }]}>
-                              <Text>Sign Out</Text>
-                        </TouchableOpacity>
+
+                        {this.props.authError &&
+                              ToastAndroid.show(this.props.authError, ToastAndroid.SHORT, ToastAndroid.BOTTOM)}
                   </View>
             );
       }
 }
 
 function mapStateToProp(state) {
-      console.log(state.firebase);
       return {
-            authError: state.auth.authError
-      };
-}
-
-function mapDispatchToProps(dispatch) {
-      return {
-            signIn: credentials => dispatch(signIn(credentials)),
-            signOut: () => dispatch(signOut())
+            authError: state.auth.authError,
+            uid: state.auth.uid
       };
 }
 
@@ -60,11 +86,23 @@ const styles = StyleSheet.create({
       container: {
             flex: 1,
             backgroundColor: 'white',
-            marginTop: 50
+            marginTop: 50,
+            paddingHorizontal: 16
       },
       button: {
             height: 40,
             width: 150,
-            backgroundColor: 'blue'
+            backgroundColor: 'tomato',
+            borderRadius: 7,
+            justifyContent: 'center',
+            alignItems: 'center',
+            alignSelf: 'center',
+            marginTop: 8
+      },
+      input: {
+            height: 40,
+            borderWidth: 0.5,
+            borderColor: 'grey',
+            borderRadius: 3
       }
 });
