@@ -1,7 +1,6 @@
 // TODO:
-// - Add a Time Picker (Datetime picker mode close the keyboard)
 // - Optimise code for iOS and android platform (keyboard listener)
-// - Maybe implement official react native picker to give up the dependency
+// - Maybe implement official react native picker to give up the dependency (Didn't work last time I tried)
 
 // STATIC UI
 import React, { Component } from 'react';
@@ -32,7 +31,10 @@ class TaskAdder extends Component {
             isDateTimePickerVisible: false,
             textInput: '',
             date: '',
-            time: ''
+            time: '',
+            dateSelected: '',
+            timeSelected: '',
+            dateFormattedForDatePicker: ''
       };
 
       componentDidMount() {
@@ -41,8 +43,17 @@ class TaskAdder extends Component {
 
             this.inputRef.focus();
 
+            let dateSelected = this.props.general.dateSelectedDateMover;
+
+            let day = dateSelected.substring(3, 5);
+            let month = dateSelected.substring(0, 2);
+            let year = dateSelected.substring(6);
+
+            let date = new Date(year, month, day, 0, 0, 0, 0);
+
             this.setState({
-                  date: getToday
+                  date: this.props.general.dateSelectedDateMover,
+                  dateFormattedForDatePicker: date
             });
       }
 
@@ -158,6 +169,7 @@ class TaskAdder extends Component {
                         {this.state.isDateTimePickerVisible ? (
                               <DateTimePicker
                                     mode={'date'}
+                                    date={this.state.dateFormattedForDatePicker}
                                     isVisible={true}
                                     onConfirm={this.handleDateTimePicked}
                                     onCancel={this.hideDateTimePicker}
@@ -168,8 +180,14 @@ class TaskAdder extends Component {
       }
 }
 
+function mapStateToProp(state, ownProps) {
+      return {
+            general: state.general
+      };
+}
+
 export default connect(
-      null,
+      mapStateToProp,
       mapDispatchToProps
 )(TaskAdder);
 

@@ -27,7 +27,7 @@ class LoadingScreen extends Component {
             // });
             setTimeout(() => {
                   if (this.props.uid) {
-                        this.props.navigation.navigate('MainScreen');
+                        this.props.navigation.navigate('MainStackNav');
                   } else {
                         this.props.navigation.navigate('SignUpStackNav');
                   }

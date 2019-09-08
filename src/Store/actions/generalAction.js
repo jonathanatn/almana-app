@@ -6,6 +6,8 @@ import { receiveTasksAction } from './taskAction';
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 export const OPEN_ITEM_MENU = 'OPEN_ITEM_MENU';
 export const CLOSE_ITEM_MENU = 'CLOSE_ITEM_MENU';
+export const OPEN_EVENT_MENU = 'OPEN_EVENT_MENU';
+export const CLOSE_EVENT_MENU = 'CLOSE_EVENT_MENU';
 export const SET_SELECTED_ITEM = 'SET_SELECTED_ITEM';
 
 export function openItemMenuAction() {
@@ -24,6 +26,22 @@ export function closeItemMenuAction() {
       };
 }
 
+export function openEventMenuAction() {
+      return dispatch => {
+            dispatch({
+                  type: OPEN_EVENT_MENU
+            });
+      };
+}
+
+export function closeEventMenuAction() {
+      return dispatch => {
+            dispatch({
+                  type: CLOSE_EVENT_MENU
+            });
+      };
+}
+
 export function setSelectedItemAction(item) {
       return dispatch => {
             dispatch({
@@ -34,10 +52,13 @@ export function setSelectedItemAction(item) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////// TASKADDER ACTION  ////////////////////////////////////////
+///////////////////////////////////// ITEMS ADDER ACTION  //////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 export const OPEN_TASK_ADDER = 'OPEN_TASK_ADDER';
 export const CLOSE_TASK_ADDER = 'CLOSE_TASK_ADDER';
+
+export const OPEN_EVENT_ADDER = 'OPEN_EVENT_ADDER';
+export const CLOSE_EVENT_ADDER = 'CLOSE_EVENT_ADDER';
 
 export function openTaskAdderAction() {
       return dispatch => {
@@ -51,6 +72,22 @@ export function closeTaskAdderAction() {
       return dispatch => {
             dispatch({
                   type: CLOSE_TASK_ADDER
+            });
+      };
+}
+
+export function openEventAdderAction() {
+      return dispatch => {
+            dispatch({
+                  type: OPEN_EVENT_ADDER
+            });
+      };
+}
+
+export function closeEventAdderAction() {
+      return dispatch => {
+            dispatch({
+                  type: CLOSE_EVENT_ADDER
             });
       };
 }

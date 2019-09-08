@@ -107,12 +107,12 @@ const styles = StyleSheet.create({
       button: {
             height: 40,
             width: 150,
-            backgroundColor: 'tomato',
+            backgroundColor: '#FF2D55',
             borderRadius: 7,
             justifyContent: 'center',
             alignItems: 'center',
             alignSelf: 'center',
-            borderColor: 'tomato',
+            borderColor: '#FF2D55',
             borderWidth: 2,
             marginTop: 8
       },

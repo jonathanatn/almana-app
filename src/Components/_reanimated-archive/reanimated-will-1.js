@@ -3,12 +3,12 @@ import React, { Component, useRef, useState, useEffect } from 'react';
 // STATIC UI
 import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Keyboard, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Task from './Elements/Task';
-import ItemMenu from './Elements/ItemMenu';
-import ItemList from './ItemList';
-import TaskAdder from './Elements/TaskAdder';
-import NavigationView from './NavigationView';
-import MonthlyCalendar from './MonthlyCalendar';
+import Task from '../Elements/Task';
+import ItemMenu from '../Elements/ItemMenu';
+import ItemList from '../ItemList';
+import TaskAdder from '../Elements/TaskAdder';
+import NavigationView from '../NavigationView';
+import MonthlyCalendar from '../MonthlyCalendar';
 
 // ANIMATED UI
 import Animated, { Easing, Transitioning, Transition } from 'react-native-reanimated';
@@ -18,11 +18,11 @@ const { greaterThan, lessThan, diff, or, debug, startClock, lessOrEq, greaterOrE
 
 // DATA
 import { connect } from 'react-redux';
-import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../../Store/actions/taskAction';
 
 // HELPERS
 import moment from 'moment';
-import { getToday } from '../Utils/helpers';
+import { getToday } from '../../Utils/helpers';
 
 const withOffset = (value, state, offset) => {
       // const offset = new Value(0);

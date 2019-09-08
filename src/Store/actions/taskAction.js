@@ -19,11 +19,14 @@ export const EDIT_TASK_TIME_ROLLBACK = 'EDIT_TASK_TIME_ROLLBACK';
 export const EDIT_TASKS_POSITION = 'EDIT_TASKS_POSITION';
 export const EDIT_TASKS_POSITION_ROLLBACK = 'EDIT_TASKS_POSITION_ROLLBACK';
 
+export const EDIT_TASK_PERIOD = 'EDIT_TASK_PERIOD';
+
 export const DELETE_TASK = 'DELETE_TASK';
 export const DELETE_TASK_ROLLBACK = 'DELETE_TASK_ROLLBACK';
 
-// TODO: Rollback not working
-// https://github.com/redux-offline/redux-offline/issues/352
+export const DELETE_TASK_TIME = 'DELETE_TASK_TIME';
+
+import { getPeriod } from '../../Utils/helpers';
 
 // FIXME:
 // For the moment I get my items with mapState in ItemList
@@ -85,7 +88,7 @@ export function addTaskAction(task) {
 
             dispatch({
                   type: ADD_TASK,
-                  payload: { id: autoId, uid: userId, task },
+                  payload: { id: autoId, uid: userId, task, type: 'task', period: 'Evening' },
                   meta: {
                         offline: {
                               effect: firestore
@@ -94,6 +97,8 @@ export function addTaskAction(task) {
                                     .set({
                                           id: autoId,
                                           uid: userId,
+                                          type: 'task',
+                                          period: 'Evening',
                                           name: task.name,
                                           completed: task.completed, //boolean
                                           subtask: { ...task.subtask },
@@ -133,6 +138,7 @@ export function editTaskNameAction(name, id, previousName) {
       };
 }
 
+// Serve to sync the name of a task in a FlatList, when we change it's name, so we avoid sending firestore request at every letter change
 export function syncTaskNameAction(name, id) {
       return dispatch => {
             dispatch({
@@ -191,18 +197,46 @@ export function editTaskTimeAction(time, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
+            const period = getPeriod(time);
+
             dispatch({
                   type: EDIT_TASK_TIME,
-                  payload: { time, id },
+                  payload: { time, id, period },
                   meta: {
                         offline: {
                               effect: firestore
                                     .collection('tasks')
                                     .doc(id)
-                                    .set({ time: time }, { merge: true })
-                              // .catch(err => {
-                              //       console.log(err);
-                              // });
+                                    .set({ time: time, position: -1, period: period }, { merge: true })
+                                    .catch(err => {
+                                          console.log(err);
+                                    })
+                              // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                              // rollback: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                        }
+                  }
+            });
+      };
+}
+
+export function deleteTaskTimeAction(id) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
+            // const time = '';
+
+            dispatch({
+                  type: DELETE_TASK_TIME,
+                  payload: { id },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('tasks')
+                                    .doc(id)
+                                    .set({ time: '' }, { merge: true })
+                                    .catch(err => {
+                                          console.log(err);
+                                    })
                               // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
                               // rollback: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
                         }
@@ -223,7 +257,33 @@ export function editTaskDateAction(date, id) {
                               effect: firestore
                                     .collection('tasks')
                                     .doc(id)
-                                    .set({ date: date }, { merge: true })
+                                    // Position is put to -1 so when our component re-build, he knows that he have to re-sort that task
+                                    .set({ date: date, position: -1 }, { merge: true })
+                              // .catch(err => {
+                              //       console.log(err);
+                              // });
+                              // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                              // rollback: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                        }
+                  }
+            });
+      };
+}
+
+export function editTaskPeriodAction(period, id) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
+            dispatch({
+                  type: EDIT_TASK_PERIOD,
+                  payload: { period, id },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('tasks')
+                                    .doc(id)
+                                    // Position is put to -1 so when our component re-build, he knows that he have to re-sort that task
+                                    .set({ period: period }, { merge: true })
                               // .catch(err => {
                               //       console.log(err);
                               // });
@@ -255,15 +315,16 @@ export function editTasksPositionAction(tasks) {
             const firestore = getFirestore();
 
             tasks.map(item => {
+                  // console.log(item.period);
                   dispatch({
                         type: EDIT_TASKS_POSITION,
-                        payload: { id: item.id, position: item.position },
+                        payload: { id: item.id, position: item.position, period: item.period },
                         meta: {
                               offline: {
                                     effect: firestore
                                           .collection('tasks')
                                           .doc(item.id)
-                                          .set({ position: item.position }, { merge: true })
+                                          .set({ position: item.position, period: item.period }, { merge: true })
                                     // .catch(err => {
                                     //       console.log(err);
                                     // })
