@@ -5,9 +5,8 @@ import { createAppContainer, createStackNavigator, createSwitchNavigator } from 
 import Login from './src/Components/Login/Login';
 import SignUp from './src/Components/Login/SignUp';
 import LoadingScreen from './src/Components/Login/LoadingScreen';
-import TodayView from './src/Components/TodayView';
 import MainScreen from './src/Components/MainScreen';
-import reanimatedTestButton from './src/Components/reanimated-testbutton';
+import Playground from './src/Components/Playground';
 
 // STATE MANAGEMENT
 import { createStore, applyMiddleware, compose } from 'redux';
@@ -72,11 +71,21 @@ const SignUpStackNav = createStackNavigator(
       }
 );
 
+const MainStackNav = createStackNavigator(
+      {
+            // Playground,
+            MainScreen
+      },
+      {
+            headerMode: 'none'
+      }
+);
+
 const SwitchNav = createSwitchNavigator(
       {
             LoadingScreen,
             SignUpStackNav,
-            MainScreen
+            MainStackNav
       },
       {
             headerMode: 'none'

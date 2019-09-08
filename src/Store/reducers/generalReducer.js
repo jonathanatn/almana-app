@@ -1,9 +1,13 @@
 import {
       OPEN_ITEM_MENU,
       CLOSE_ITEM_MENU,
+      OPEN_EVENT_MENU,
+      CLOSE_EVENT_MENU,
       SET_SELECTED_ITEM,
       OPEN_TASK_ADDER,
       CLOSE_TASK_ADDER,
+      OPEN_EVENT_ADDER,
+      CLOSE_EVENT_ADDER,
       OPEN_DATE_MOVER,
       CLOSE_DATE_MOVER,
       DATE_SELECTED_DATE_MOVER,
@@ -14,8 +18,10 @@ import {
 
 const generalState = {
       isItemMenuOpen: false,
+      isEventMenuOpen: false,
       selectedItem: {},
       isTaskAdderOpen: false,
+      isEventAdderOpen: false,
       isDateMoverOpen: false,
       dateSelectedDateMover: ''
 };
@@ -35,13 +41,23 @@ function generalReducer(state = generalState, action) {
                         ...state,
                         isItemMenuOpen: false
                   };
+            case OPEN_EVENT_MENU:
+                  return {
+                        ...state,
+                        isEventMenuOpen: true
+                  };
+            case CLOSE_EVENT_MENU:
+                  return {
+                        ...state,
+                        isEventMenuOpen: false
+                  };
             case SET_SELECTED_ITEM:
                   return {
                         ...state,
                         selectedItem: action.item
                   };
             //////////////////////////////////////////////////////////////////////////////////////////////////////
-            ////////////////////////////////////// TASKADDER  ///////////////////////////////////////
+            ////////////////////////////////////// ITEMS ADDER  ///////////////////////////////////////
             /////////////////////////////////////////////////////////////////////////////////////////////////////
             case OPEN_TASK_ADDER:
                   return {
@@ -52,6 +68,17 @@ function generalReducer(state = generalState, action) {
                   return {
                         ...state,
                         isTaskAdderOpen: false
+                  };
+
+            case OPEN_EVENT_ADDER:
+                  return {
+                        ...state,
+                        isEventAdderOpen: true
+                  };
+            case CLOSE_EVENT_ADDER:
+                  return {
+                        ...state,
+                        isEventAdderOpen: false
                   };
             //////////////////////////////////////////////////////////////////////////////////////////////////////
             ////////////////////////////////////// DATEMOVER  //////////////////////////////////////

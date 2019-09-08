@@ -6,25 +6,8 @@ import { connect } from 'react-redux';
 import { editTaskCompletionAction } from '../../Store/actions/taskAction';
 
 class Task extends Component {
-      state = {
-            completed: ''
-      };
-
-      componentDidMount() {
-            this.setState({
-                  completed: this.props.completed
-            });
-      }
-
       toggleCompletion = () => {
-            this.setState(
-                  {
-                        completed: !this.state.completed
-                  },
-                  () => {
-                        this.props.editTaskCompletionProp(this.state.completed, this.props.id);
-                  }
-            );
+            this.props.editTaskCompletionProp(this.props.completed, this.props.id);
       };
 
       render() {
@@ -47,27 +30,27 @@ class Task extends Component {
                                           size={30}
                                           color={this.props.completed ? 'red' : 'grey'}
                                     />
-                                    {this.props.time !== '' ? (
+                                    {this.props.time && this.props.time !== '' ? (
                                           <Text style={{ fontSize: 11, color: 'grey', marginTop: -3 }}>
                                                 {this.props.time.substring(0, 5)}
                                           </Text>
                                     ) : null}
                               </TouchableOpacity>
                         </View>
-                        <View
-                        // onPress={() => this.props.openItemMenu()}
-                        >
+                        <View>
                               <Text
                                     style={{
                                           fontSize: 19,
-                                          lineHeight: 34,
                                           marginLeft: 8,
-                                          color: this.props.completed ? 'grey' : 'black',
-                                          height: 40,
-                                          flex: 1
+                                          opacity: this.props.completed ? 0.2 : 1,
+                                          textDecorationLine: this.props.completed ? 'line-through' : 'none',
+                                          flex: 1,
+                                          paddingTop: 18
                                     }}
                               >
-                                    {this.props.name}
+                                    {this.props.name.length > 30
+                                          ? this.props.name.substring(0, 30) + '..'
+                                          : this.props.name}
                               </Text>
                         </View>
                   </View>
@@ -81,11 +64,9 @@ const styles = StyleSheet.create({
       componentContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-            // marginVertical: 5,
             paddingHorizontal: 12,
             flex: 1,
             backgroundColor: 'white'
-            // height: 44
       }
 });
 
@@ -95,7 +76,16 @@ function mapDispatchToProps(dispatch) {
       };
 }
 
+function mapStateToProp(state, ownProps) {
+      // console.log(state.general);
+      let task = state.tasks[state.general.selectedItem.id];
+
+      return {
+            task: task
+      };
+}
+
 export default connect(
-      null,
+      mapStateToProp,
       mapDispatchToProps
 )(Task);

@@ -3,7 +3,6 @@ import React from 'react';
 import { StyleSheet, View, Dimensions, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
 import { Platform, TouchableHighlight, TouchableNativeFeedback } from 'react-native';
 import Task from './Elements/Task';
-import Event from './Elements/Event';
 
 // ANIMATED UI
 import Animated from 'react-native-reanimated';
@@ -15,7 +14,7 @@ const { diff, or, debug, startClock, lessOrEq, greaterOrEq } = Animated;
 import { firestoreConnect } from 'react-redux-firebase';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { receiveTasksAction, editTasksPositionAction, editTaskPeriodAction } from '../Store/actions/taskAction';
+import { receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
 import { editEventsPositionAction } from '../Store/actions/eventAction';
 import { setSelectedItemAction, openItemMenuAction, openEventMenuAction } from '../Store/actions/generalAction';
 import { closeItemMenuAction, closeDateMoverAction, closeEventMenuAction } from '../Store/actions/generalAction';
@@ -24,7 +23,6 @@ function mapDispatchToProps(dispatch) {
             // TASKS
             // receiveTasksProp: date => dispatch(receiveTasksAction(date)),
             editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks)),
-            editTaskPeriodProp: (period, id) => dispatch(editTaskPeriodAction(period, id)),
 
             // EVENTS
             editEventsPositionProp: events => dispatch(editEventsPositionAction(events)),
@@ -82,31 +80,30 @@ class ItemList extends React.Component {
       };
 
       componentDidUpdate(prevProps) {
-            if (!this.props.areTasksSorted && this.props.tasks.length > 3) {
+            if (!this.props.areTasksSorted && this.props.tasks.length > 0) {
                   let tasksArray = [];
                   let eventsArray = [];
 
                   this.props.tasks.map(item => {
-                        if (item.type === 'event') {
+                        if (item.event) {
                               eventsArray.push(item);
-                        } else if (item.type === 'task') {
+                        } else {
                               tasksArray.push(item);
                         }
                   });
 
                   if (tasksArray.length > 0) {
-                        this.props.editTasksPositionProp(tasksArray);
+                        console.log('TASKS ARRAY', tasksArray);
+                        // this.props.editTasksPositionProp(tasksArray);
                   }
                   if (eventsArray.length > 0) {
-                        this.props.editEventsPositionProp(eventsArray);
+                        console.log('EVENTS ARRAY', eventsArray);
+                        // this.props.editEventsPositionProp(eventsArray);
                   }
             }
       }
 
       handleItemClick = async item => {
-            if (item.type === 'periodCategory') {
-                  return;
-            }
             this.props.setSelectedItemProp(item);
 
             if (this.props.general.isDateMoverOpen === true) {
@@ -135,10 +132,10 @@ class ItemList extends React.Component {
       };
 
       handlerLongClick = (index, item) => {
-            if (item.time !== '' && (item.type === 'event' || item.type === 'task')) {
+            if (item.event || item.time !== '') {
                   Alert.alert(
                         '',
-                        'Sorry, only tasks without scheduled hours can be moved.',
+                        "Sorry, you can't move items that have a scheduled start time. Only simple task can be reorganised",
                         [
                               {
                                     text: 'OK'
@@ -146,9 +143,6 @@ class ItemList extends React.Component {
                         ],
                         { cancelable: false }
                   );
-                  return;
-            }
-            if (item.type === 'periodCategory') {
                   return;
             }
 
@@ -224,45 +218,31 @@ class ItemList extends React.Component {
                         let tasksToEditPosition = [];
                         let eventsToEditPosition = [];
 
-                        // Means it's forward dragging
+                        tasksToEditPosition.push(tasksCopy[this.state.indexDragged]);
+                        tasksToEditPosition[0].position = this.state.indexToSwap;
+
                         if (this.state.indexDragged < this.state.indexToSwap) {
-                              // Push the dragged item
-                              tasksToEditPosition.push(tasksCopy[this.state.indexDragged]);
-
-                              // If we drag more than we have item, we give the item the last position
-                              if (this.state.indexToSwap >= tasksCopy.length) {
-                                    tasksToEditPosition[0].position = tasksCopy[tasksCopy.length - 1].position;
-                                    tasksToEditPosition[0].period = tasksCopy[tasksCopy.length - 1].period;
-                              } else {
-                                    tasksToEditPosition[0].position = this.state.indexToSwap;
-                                    tasksToEditPosition[0].period = tasksCopy[this.state.indexToSwap].period;
-                              }
-
                               tasksCopy.map((item, index) => {
                                     if (index <= this.state.indexToSwap && index > this.state.indexDragged) {
-                                          if (item.type === 'event') {
-                                                item.position--;
+                                          item.position--;
+
+                                          if (item.event) {
                                                 eventsToEditPosition.push(item);
-                                          } else if (item.type === 'task') {
-                                                item.position--;
+                                          } else {
                                                 tasksToEditPosition.push(item);
                                           }
                                     }
                               });
                         }
 
-                        if (this.state.indexDragged > this.state.indexToSwap && this.state.indexToSwap > 0) {
-                              tasksToEditPosition.push(tasksCopy[this.state.indexDragged]);
-                              tasksToEditPosition[0].position = this.state.indexToSwap;
-                              tasksToEditPosition[0].period = tasksCopy[this.state.indexToSwap - 1].period;
-
+                        if (this.state.indexDragged > this.state.indexToSwap) {
                               tasksCopy.map((item, index) => {
                                     if (index >= this.state.indexToSwap && index < this.state.indexDragged) {
-                                          if (item.type === 'event') {
-                                                item.position++;
+                                          item.position++;
+
+                                          if (item.event) {
                                                 eventsToEditPosition.push(item);
-                                          } else if (item.type === 'task') {
-                                                item.position++;
+                                          } else {
                                                 tasksToEditPosition.push(item);
                                           }
                                     }
@@ -286,20 +266,8 @@ class ItemList extends React.Component {
       renderItem2 = ({ item, index }) => {
             return (
                   <Animated.View style={[styles.box]} key={index}>
-                        {item.type === 'event' && <Event {...item} />}
-                        {item.type === 'periodCategory' && (
-                              <Text
-                                    style={{
-                                          fontWeight: 'bold',
-                                          color: '#FF2D55',
-                                          paddingTop: 40,
-                                          marginLeft: 16
-                                    }}
-                              >
-                                    {item.name}
-                              </Text>
-                        )}
-                        {item.type === 'task' && <Task {...item} />}
+                        {/* <Task {...item} /> */}
+                        {item.event ? <Text>{item.name}</Text> : <Task {...item} />}
                   </Animated.View>
             );
       };
@@ -379,20 +347,8 @@ class ItemList extends React.Component {
                                                 : { flex: 1 }
                                     }
                               >
-                                    {item.type === 'event' && <Event {...item} />}
-                                    {item.type === 'periodCategory' && (
-                                          <Text
-                                                style={{
-                                                      fontWeight: 'bold',
-                                                      color: '#FF2D55',
-                                                      paddingTop: 40,
-                                                      marginLeft: 16
-                                                }}
-                                          >
-                                                {item.name}
-                                          </Text>
-                                    )}
-                                    {item.type === 'task' && <Task {...item} />}
+                                    {/* <Task {...item} /> */}
+                                    {item.event ? <Text>{item.name}</Text> : <Task {...item} />}
                               </TouchableOpacity>
                         </Animated.View>
                   </PanGestureHandler>
@@ -514,8 +470,8 @@ class ItemList extends React.Component {
                                     styles.box,
                                     {
                                           position: 'absolute',
-                                          // -30 are for the negative marginTop on the FlatList
-                                          top: this.state.indexDragged * 70 + 0 - this.scrollOffset - 30,
+
+                                          top: this.state.indexDragged * 70 + 0 - this.scrollOffset,
                                           // top: this.state.indexDragged * 70 + 100 - this.scrollOffset,
                                           transform: [{ translateY: this.transY }],
                                           zIndex: this.state.dragging ? 1 : -1,
@@ -538,7 +494,7 @@ class ItemList extends React.Component {
                               <FlatList
                                     keyboardShouldPersistTaps="always"
                                     ref={ref => (this.flatListRef = ref)}
-                                    contentContainerStyle={{ paddingBottom: 300, marginTop: -30 }}
+                                    contentContainerStyle={{ paddingBottom: 200 }}
                                     data={this.props.tasks}
                                     extraData={this.props}
                                     keyExtractor={(item, index) => index.toString()}
@@ -577,7 +533,7 @@ class ItemList extends React.Component {
                               <FlatList
                                     keyboardShouldPersistTaps="always"
                                     ref={ref => (this.flatListRef3 = ref)}
-                                    contentContainerStyle={{ paddingBottom: 300, marginTop: -30 }}
+                                    contentContainerStyle={{ paddingBottom: 200 }}
                                     data={this.props.tasks}
                                     extraData={this.props}
                                     keyExtractor={(item, index) => index.toString()}
@@ -592,145 +548,131 @@ class ItemList extends React.Component {
 }
 
 function mapStateToProp(state, ownProps) {
-      // 1 - Receive today tasks and events
+      // console.log(state.tasks);
       let tasks = state.tasks ? state.tasks : {};
+
       let events = state.events ? state.events : {};
 
-      let allItems = [...Object.values(tasks), ...Object.values(events)];
-      let itemsArray = [];
+      let areTasksSorted = false;
 
-      for (let i = 0, len = allItems.length; i < len; i++) {
-            if (allItems[i].date === state.general.dateSelectedDateMover && allItems[i].uid === state.auth.uid) {
-                  itemsArray.push(allItems[i]);
-            }
-      }
+      let tasksArray = Object.values(tasks);
 
-      let morningCategory = [{ type: 'periodCategory', name: 'Morning', position: 0, period: 'Morning' }];
-      let afternoonCategory = [{ type: 'periodCategory', name: 'Afternoon', position: 0, period: 'Afternoon' }];
-      let eveningCategory = [{ type: 'periodCategory', name: 'Evening', position: 0, period: 'Evening' }];
-      let itemsToSort = [];
+      let eventsArray = Object.values(events);
 
-      itemsArray.map((item, index) => {
+      // Get tasks of the day
+      tasksArray = tasksArray.filter(item => {
+            //     return item.date === ownProps.date;
+            return item.date === state.general.dateSelectedDateMover && item.uid === state.auth.uid;
+      });
+
+      eventsArray = eventsArray.filter(item => {
+            //     return item.date === ownProps.date;
+            return item.date === state.general.dateSelectedDateMover && item.uid === state.auth.uid;
+      });
+
+      let tasksArrayWithPosition = [];
+      let tasksArrayToSort = [];
+
+      //Make a distinction between tasks positioned and unpositioned
+      tasksArray.map(item => {
             if (item.position === -1) {
-                  itemsToSort.push(item);
+                  tasksArrayToSort.push(item);
             } else {
-                  if (item.period === 'Morning') {
-                        morningCategory.push(item);
-                  } else if (item.period === 'Afternoon') {
-                        afternoonCategory.push(item);
-                  } else {
-                        eveningCategory.push(item);
-                  }
+                  tasksArrayWithPosition.push(item);
             }
       });
 
-      // 3 - If my local arrays are not empty, sort them by position to be sure there is no hole cause by a date moved item
-      // Make sure we will do the rest of operation on an healthy base
-      if (morningCategory.length > 1) {
-            morningCategory.sort(function(a, b) {
-                  return a.position - b.position;
-            });
-      }
-      if (afternoonCategory.length > 1) {
-            afternoonCategory.sort(function(a, b) {
-                  return a.position - b.position;
-            });
-      }
-      if (eveningCategory.length > 1) {
-            eveningCategory.sort(function(a, b) {
-                  return a.position - b.position;
-            });
-      }
+      // We add all events to the tasksArray
+      eventsArray.map(item => {
+            if (item.position === -1) {
+                  tasksArrayToSort.push(item);
+            } else {
+                  tasksArrayWithPosition.push(item);
+            }
+      });
 
-      // Check if there is no items to sort, to avoid component update
-      let areTasksSorted = false;
-      if (itemsToSort.length === 0) {
+      if (tasksArrayToSort.length === 0) {
             areTasksSorted = true;
       }
 
-      itemsToSort.map(item => {
-            // First check task with no time property
-            // We simply push it at the end of the period he is in
+      //SORTING the array with position if it's not empty
+      // Set the correct position because if we change the date of an item it inside the same day it will create a hole in the array
+      if (tasksArrayWithPosition.length > 0) {
+            tasksArrayWithPosition.sort(function(a, b) {
+                  return a.position - b.position;
+            });
+            tasksArrayWithPosition.map((item, index) => {
+                  item.position = index;
+            });
+      }
+
+      tasksArrayToSort.map((item, index) => {
+            let stopMapping = false;
+
+            // If the task doesn't have time we just push it at the end
             if (item.time === '') {
-                  if (item.period === 'Morning') {
-                        morningCategory.push(item);
-                  } else if (item.period === 'Afternoon') {
-                        afternoonCategory.push(item);
-                  } else {
-                        eveningCategory.push(item);
-                  }
-                  // Else the item have a time property
-            } else {
-                  if (item.period === 'Morning') {
-                        let isItemSorted = false;
-                        let time = moment(item.time, 'h:mma');
-
-                        // Check if there is an item with a time prop superior, so we splice it before
-                        morningCategory.map((itemToCompare, index) => {
-                              // That condition is to stop mapping once we have found the first item with a superior time prop
-                              if (isItemSorted === false) {
-                                    let time2 = moment(itemToCompare.time, 'h:mma');
-                                    if (time.isBefore(time2)) {
-                                          morningCategory.splice(index, 0, item);
-                                          isItemSorted = true;
-                                    }
-                              }
-                        });
-                        // If we didn't find an item with a time prop superior, we simply push the item at the end
-                        if (isItemSorted === false) {
-                              morningCategory.push(item);
-                        }
-                  } else if (item.period === 'Afternoon') {
-                        let isItemSorted = false;
-                        let time = moment(item.time, 'h:mma');
-
-                        // Check if there is an item with a time prop superior, so we splice it before
-                        afternoonCategory.map((itemToCompare, index) => {
-                              // That condition is to stop mapping once we have found the first item with a superior time prop
-                              if (isItemSorted === false) {
-                                    let time2 = moment(itemToCompare.time, 'h:mma');
-                                    if (time.isBefore(time2)) {
-                                          afternoonCategory.splice(index, 0, item);
-                                          isItemSorted = true;
-                                    }
-                              }
-                        });
-                        // If we didn't find an item with a time prop superior, we simply push the item at the end
-                        if (isItemSorted === false) {
-                              afternoonCategory.push(item);
-                        }
-                  } else {
-                        let isItemSorted = false;
-                        let time = moment(item.time, 'h:mma');
-
-                        // Check if there is an item with a time prop superior, so we splice it before
-                        eveningCategory.map((itemToCompare, index) => {
-                              // That condition is to stop mapping once we have found the first item with a superior time prop
-                              if (isItemSorted === false) {
-                                    let time2 = moment(itemToCompare.time, 'h:mma');
-                                    if (time.isBefore(time2)) {
-                                          eveningCategory.splice(index, 0, item);
-                                          isItemSorted = true;
-                                    }
-                              }
-                        });
-                        // If we didn't find an item with a time prop superior, we simply push the item at the end
-                        if (isItemSorted === false) {
-                              eveningCategory.push(item);
-                        }
-                  }
+                  item.position = tasksArrayWithPosition.length;
+                  tasksArrayWithPosition.push(item);
+                  stopMapping = true;
             }
-      });
 
-      let sortedItemsComplete = [...morningCategory, ...afternoonCategory, ...eveningCategory];
+            // If the task have a time..
+            if (item.time !== '' && stopMapping === false) {
+                  let stopMappingB = false;
 
-      sortedItemsComplete.map((item, index) => {
-            item.position = index;
+                  if (stopMappingB === false) {
+                        let stopMappingC = false;
+                        tasksArrayWithPosition.map((itemB, indexB) => {
+                              // If the item have the same time than an item sorted, we put it before
+                              if (item.time === itemB.time && stopMappingC === false) {
+                                    item.position = indexB;
+                                    tasksArrayWithPosition.splice(indexB, 0, item);
+                                    tasksArrayWithPosition.map((itemC, indexC) => {
+                                          if (indexC > indexB) {
+                                                itemC.position++;
+                                          }
+                                    });
+
+                                    stopMappingC = true;
+                                    stopMappingB = true;
+                              }
+                        });
+                  }
+
+                  if (stopMappingB === false) {
+                        let stopMappingC = false;
+                        tasksArrayWithPosition.map((itemB, indexB) => {
+                              let timeToSort = moment(item.time, 'h:mma');
+                              let timeWithPosition = moment(itemB.time, 'h:mma');
+
+                              if (timeToSort.isBefore(timeWithPosition) && stopMappingC === false) {
+                                    item.position = indexB;
+                                    tasksArrayWithPosition.splice(indexB, 0, item);
+                                    tasksArrayWithPosition.map((itemC, indexC) => {
+                                          if (indexC > indexB) {
+                                                itemC.position++;
+                                          }
+                                    });
+
+                                    stopMappingC = true;
+                                    stopMappingB = true;
+                              }
+                        });
+                  }
+
+                  if (stopMappingB === false) {
+                        item.position = tasksArrayWithPosition.length;
+                        tasksArrayWithPosition.push(item);
+                  }
+
+                  //FIXME:
+                  //areTasksSorted = true;
+            }
       });
 
       return {
             date: getToday,
-            tasks: sortedItemsComplete,
+            tasks: tasksArrayWithPosition,
             areTasksSorted: areTasksSorted,
             general: state.general,
             closeDateMoverParentProp: ownProps.closeDateMover

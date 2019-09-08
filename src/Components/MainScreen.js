@@ -4,8 +4,10 @@ import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert
 import { Ionicons } from '@expo/vector-icons';
 import Task from './Elements/Task';
 import ItemMenu from './Elements/ItemMenu';
+import EventMenu from './Elements/EventMenu';
 import ItemList from './ItemList';
 import TaskAdder from './Elements/TaskAdder';
+import EventAdder from './Elements/EventAdder';
 import NavigationView from './NavigationView';
 import MonthlyCalendar from './MonthlyCalendar';
 
@@ -22,7 +24,11 @@ import { signOut } from '../Store/actions/authAction';
 import {
       openItemMenuAction,
       closeItemMenuAction,
+      closeEventMenuAction,
       openTaskAdderAction,
+      closeTaskAdderAction,
+      openEventAdderAction,
+      closeEventAdderAction,
       openDateMoverAction,
       closeDateMoverAction
 } from '../Store/actions/generalAction';
@@ -36,7 +42,11 @@ function mapDispatchToProps(dispatch) {
             openDateMoverProp: () => dispatch(openDateMoverAction()),
             closeDateMoverProp: () => dispatch(closeDateMoverAction()),
             closeItemMenuProp: () => dispatch(closeItemMenuAction()),
+            closeEventMenuProp: () => dispatch(closeEventMenuAction()),
             openTaskAdderProp: () => dispatch(openTaskAdderAction()),
+            closeTaskAdderProp: () => dispatch(closeTaskAdderAction()),
+            openEventAdderProp: () => dispatch(openEventAdderAction()),
+            closeEventAdderProp: () => dispatch(closeEventAdderAction()),
             // OTHERS
             signOutProp: () => dispatch(signOut())
       };
@@ -53,6 +63,10 @@ class MainScreen extends Component {
             // DateMover
             this.clock = new Clock();
             this.transY = new Value(400);
+
+            this.state = {
+                  isAddItemMenuOpen: false
+            };
       }
 
       componentDidMount() {
@@ -91,20 +105,51 @@ class MainScreen extends Component {
                   return true;
             }
 
+            if (this.props.general.isEventMenuOpen === true) {
+                  this.props.closeEventMenuProp();
+                  return true;
+            }
+
             if (this.props.general.isDateMoverOpen === true) {
                   this.transY.setValue(400);
                   return true;
             }
+
+            if (this.state.isAddItemMenuOpen === true) {
+                  this.setState({ isAddItemMenuOpen: false });
+                  return true;
+            }
+
+            if (this.props.general.isEventAdderOpen === true) {
+                  this.props.closeEventAdderProp();
+                  return true;
+            }
       };
 
-      openTaskAdder = () => {
+      openAddItemMenu = () => {
             if (this.props.general.isDateMoverOpen === true) {
                   this.closeDateMover();
             }
             if (this.props.general.isItemMenuOpen === true) {
                   this.props.closeItemMenuProp();
             }
+            if (this.props.general.isEventMenuOpen === true) {
+                  this.props.closeEventMenuProp();
+            }
+            if (this.props.general.isTaskAdderOpen === true) {
+                  this.props.closeTaskAdderProp();
+            }
+            this.setState({ isAddItemMenuOpen: true });
+      };
+
+      openTaskAdder = () => {
+            this.setState({ isAddItemMenuOpen: false });
             this.props.openTaskAdderProp();
+      };
+
+      openEventAdder = () => {
+            this.setState({ isAddItemMenuOpen: false });
+            this.props.openEventAdderProp();
       };
 
       // DateMover
@@ -139,6 +184,86 @@ class MainScreen extends Component {
 
             return (
                   <View style={styles.container}>
+                        {/*---------------------------------------------------- ADDITEMMENU ---------------------------------------------------- */}
+
+                        {this.state.isAddItemMenuOpen === true ? (
+                              <View
+                                    style={{
+                                          backgroundColor: 'black',
+                                          opacity: 0.6,
+                                          position: 'absolute',
+                                          top: 0,
+                                          bottom: 0,
+                                          left: 0,
+                                          right: 0,
+                                          zIndex: 998,
+                                          elevation: 98
+                                    }}
+                              />
+                        ) : null}
+
+                        {this.state.isAddItemMenuOpen === true ? (
+                              <View
+                                    style={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          bottom: 0,
+                                          left: 0,
+                                          right: 0,
+                                          zIndex: 999,
+                                          elevation: 99,
+                                          justifyContent: 'flex-end',
+                                          alignItems: 'center'
+                                    }}
+                              >
+                                    <TouchableOpacity
+                                          style={{
+                                                backgroundColor: 'white',
+                                                width: width - 32,
+                                                height: 80,
+                                                borderRadius: 12,
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                marginVertical: 8
+                                          }}
+                                          onPress={this.openTaskAdder}
+                                    >
+                                          <Text>Add a task</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                          style={{
+                                                backgroundColor: 'white',
+                                                width: width - 32,
+                                                height: 80,
+                                                borderRadius: 12,
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                marginVertical: 8
+                                          }}
+                                          onPress={this.openEventAdder}
+                                    >
+                                          <Text>Add an event</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                          style={{
+                                                backgroundColor: 'white',
+                                                width: width - 32,
+                                                height: 50,
+                                                borderRadius: 12,
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                marginVertical: 8,
+                                                marginBottom: 24
+                                          }}
+                                          onPress={() => this.setState({ isAddItemMenuOpen: false })}
+                                    >
+                                          <Text>Cancel</Text>
+                                    </TouchableOpacity>
+                              </View>
+                        ) : null}
+
+                        {/* ------------------------------------------------------------------------------------------------------------- */}
+
                         <View style={styles.header}>
                               {/* TODO: Create a function to get the day title and put in helper */}
                               <Text style={{ fontWeight: '900', fontSize: 36 }}>
@@ -153,8 +278,8 @@ class MainScreen extends Component {
                         <ItemList style={{ zIndex: 10 }} closeDateMover={this.closeDateMover} />
 
                         {/* TODO: Create a component */}
-                        {/* ------------------------------------------ Add Task Button ------------------------------------------ */}
-                        <TouchableOpacity style={styles.addButtonContainer} onPress={this.openTaskAdder}>
+                        {/* ------------------------------------------ Add Items Button ------------------------------------------ */}
+                        <TouchableOpacity style={styles.addButtonContainer} onPress={this.openAddItemMenu}>
                               <View style={styles.addButton}>
                                     <Ionicons name="ios-add" size={50} color={'white'} />
                               </View>
@@ -163,6 +288,7 @@ class MainScreen extends Component {
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
                         {this.props.general.isItemMenuOpen === true && <ItemMenu />}
+                        {this.props.general.isEventMenuOpen === true && <EventMenu />}
 
                         <NavigationView openDateMover={() => this.openDateMover()} />
 
@@ -220,9 +346,11 @@ class MainScreen extends Component {
                               </TouchableOpacity>
                         </Animated.View>
 
-                        {/*-------------------------------------------------- Task Adder -------------------------------------------------- */}
+                        {/*-------------------------------------------------- Items Adder -------------------------------------------------- */}
                         {/* The task adder depend of the key board, if the key board close it will be automatically closed */}
                         {this.props.general.isTaskAdderOpen ? <TaskAdder /> : null}
+
+                        {this.props.general.isEventAdderOpen ? <EventAdder /> : null}
                   </View>
             );
       }

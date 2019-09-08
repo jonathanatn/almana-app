@@ -1,10 +1,6 @@
-// Sauvegarder des projets, comme une liste de course ou un template
-
-// TODO: Only show date and time if they are set
-
 // STATIC UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Animated, Dimensions, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Animated, Dimensions, TextInput, Alert } from 'react-native';
 import { KeyboardAvoidingView, Keyboard } from 'react-native';
 import DateTimePicker from 'react-native-modal-datetime-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,56 +11,45 @@ import { Ionicons } from '@expo/vector-icons';
 import { firestoreConnect } from 'react-redux-firebase';
 import { connect } from 'react-redux';
 import { compose } from 'redux';
-import { editTaskNameAction, syncTaskNameAction, editTaskCompletionAction } from '../../Store/actions/taskAction';
-import {
-      editTaskTimeAction,
-      editTaskDateAction,
-      deleteTaskAction,
-      deleteTaskTimeAction
-} from '../../Store/actions/taskAction';
-import { closeItemMenuAction } from '../../Store/actions/generalAction';
+import { editEventStartTimeAction, editEventEndTimeAction, deleteEventAction } from '../../Store/actions/eventAction';
+import { editEventDateAction, editEventNameAction, syncEventNameAction } from '../../Store/actions/eventAction';
+import { closeEventMenuAction } from '../../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
-            editTaskNameProp: (name, id, previousName) => dispatch(editTaskNameAction(name, id, previousName)),
-            syncTaskNameProp: (name, id) => dispatch(syncTaskNameAction(name, id)),
-            editTaskCompletionProp: (state, id) => dispatch(editTaskCompletionAction(state, id)),
-            editTaskTimeProp: (hour, id) => dispatch(editTaskTimeAction(hour, id)),
-            editTaskDateProp: (date, id) => dispatch(editTaskDateAction(date, id)),
-            deleteTaskProp: id => dispatch(deleteTaskAction(id)),
-            closeItemMenuProp: () => dispatch(closeItemMenuAction()),
-            deleteTaskTimeProp: id => dispatch(deleteTaskTimeAction(id))
+            editEventNameProp: (name, id, previousName) => dispatch(editEventNameAction(name, id, previousName)),
+            syncEventNameProp: (name, id) => dispatch(syncEventNameAction(name, id)),
+            editEventStartTimeProp: (time, endTime, id) => dispatch(editEventStartTimeAction(time, endTime, id)),
+            editEventEndTimeProp: (endTime, id) => dispatch(editEventEndTimeAction(endTime, id)),
+            editEventDateProp: (date, id) => dispatch(editEventDateAction(date, id)),
+            deleteEventProp: id => dispatch(deleteEventAction(id)),
+            closeEventMenuProp: () => dispatch(closeEventMenuAction())
       };
 }
 
 // HELPERS
 import { getToday } from '../../Utils/helpers';
 import moment from 'moment';
-const { width, height } = Dimensions.get('window');
-const menuheight = 340;
 
-class ItemMenu extends Component {
+class EventMenu extends Component {
       state = {
             yValue: new Animated.Value(-400),
-            subtaskPlaceholder: 'Add a subtask..',
             id: '',
             name: '',
-            completed: '',
             subtask: {},
             date: '',
             time: '',
+            endTime: '',
             reminder: '',
             recurrency: '',
-            label: [],
-            projectId: '',
             isDatePickerVisible: false,
-            isTimePickerVisible: false,
-            dateFormattedForDatePicker: new Date()
+            isStartTimePickerVisible: false,
+            isEndTimePickerVisible: false
       };
 
       async componentDidMount() {
             this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
             this.keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', this._keyboardWillHide);
-            if (this.props.general.isItemMenuOpen === true) {
+            if (this.props.general.isEventMenuOpen === true) {
                   Animated.timing(this.state.yValue, {
                         toValue: 0,
                         duration: 100
@@ -89,6 +74,10 @@ class ItemMenu extends Component {
                   completed: this.props.general.selectedItem.completed,
                   date: this.props.general.selectedItem.date != '' ? this.props.general.selectedItem.date : 'No date',
                   time: this.props.general.selectedItem.time != '' ? this.props.general.selectedItem.time : 'No time',
+                  endTime:
+                        this.props.general.selectedItem.endTime != ''
+                              ? this.props.general.selectedItem.endTime
+                              : 'No time',
                   dateFormattedForDatePicker: date
             });
       }
@@ -100,13 +89,13 @@ class ItemMenu extends Component {
 
       // keyboardWillHide does'nt work on Android
       _keyboardDidHide = () => {
-            this.confirmChangeTaskName();
+            this.confirmChangeEventName();
       };
 
       _keyboardWillHide = () => {
             // On iOS the date picker close the keyboard which cause to unmount the component and make the date picker unavailable
             if (Platform.OS === 'ios') {
-                  this.confirmChangeTaskName();
+                  this.confirmChangeEventName();
             }
       };
 
@@ -126,100 +115,130 @@ class ItemMenu extends Component {
             let date = moment(dateReceived).format('L');
             let previousDate = this.state.date;
 
-            // Close the task menu, if we change the date for another day
+            // Close the event menu, if we change the date for another day
             if (date !== previousDate) {
-                  this.editTaskDate(date);
+                  this.editEventDate(date);
 
                   this.hideDatePicker();
-                  this.props.closeItemMenuProp();
+                  this.props.closeEventMenuProp();
             } else {
                   this.hideDatePicker();
             }
       };
 
-      showTimePicker = () => {
-            this.setState({ isTimePickerVisible: true });
+      showStartTimePicker = () => {
+            this.setState({ isStartTimePickerVisible: true });
       };
 
-      hideTimePicker = () => {
-            this.setState({ isTimePickerVisible: false });
+      hideStartTimePicker = () => {
+            this.setState({ isStartTimePickerVisible: false });
       };
 
-      handleTimePicked = timeReceived => {
+      handleStartTimePicked = timeReceived => {
             let time = moment(timeReceived).format('LT');
 
             if (time.length < 8) {
                   time = '0' + time;
             }
 
-            this.editTaskTime(time, this.props.general.selectedItem.id);
-            this.hideTimePicker();
+            let endTime = moment(time, 'LT')
+                  .add(1, 'hours')
+                  .format('LT');
+
+            if (endTime.length === 7) {
+                  endTime = '0' + endTime;
+            }
+
+            this.setState(
+                  {
+                        time: time,
+                        endTime: endTime
+                  },
+                  () => {
+                        this.props.editEventStartTimeProp(time, endTime, this.props.general.selectedItem.id);
+                        this.hideStartTimePicker();
+                  }
+            );
+      };
+
+      showEndTimePicker = () => {
+            this.setState({ isEndTimePickerVisible: true });
+      };
+
+      hideEndTimePicker = () => {
+            this.setState({ isEndTimePickerVisible: false });
+      };
+
+      handleEndTimePicked = timeReceived => {
+            let endTime = moment(timeReceived).format('LT');
+
+            let endTimeToCompare = moment(endTime, 'h:mma');
+            let startTimeToCompare = moment(this.state.time, 'h:mma');
+
+            if (endTime.length < 8) {
+                  endTime = '0' + endTime;
+            }
+
+            if (endTimeToCompare.isBefore(startTimeToCompare)) {
+                  this.hideEndTimePicker();
+                  Alert.alert(
+                        'Error',
+                        'The end time of the event can not be earlier than the start time.',
+                        [
+                              {
+                                    text: 'OK'
+                              }
+                        ],
+                        { cancelable: false }
+                  );
+            } else {
+                  this.setState(
+                        {
+                              endTime: endTime
+                        },
+                        () => {
+                              // this.editEventEndTime(time, this.props.general.selectedItem.id);
+                              this.props.editEventEndTimeProp(endTime, this.props.general.selectedItem.id);
+                              this.hideEndTimePicker();
+                        }
+                  );
+            }
       };
 
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      ////////////////////////////////////      Edit Task Func      //////////////////////////////////////////
+      ////////////////////////////////////      Edit Event Func      //////////////////////////////////////////
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-      changeTaskName = name => {
+      changeEventName = name => {
             this.setState({
                   name: name
             });
-            this.props.syncTaskNameProp(name, this.props.general.selectedItem.id);
+            this.props.syncEventNameProp(name, this.props.general.selectedItem.id);
       };
 
-      confirmChangeTaskName = () => {
+      confirmChangeEventName = () => {
             // TODO:
             // If keyboard open and input item name focus => register the previous name
             let previousName = '';
 
             // if keyboard close and previousname and name to send are different
-            this.props.editTaskNameProp(this.state.name, this.props.general.selectedItem.id, previousName);
+            this.props.editEventNameProp(this.state.name, this.props.general.selectedItem.id, previousName);
       };
 
-      toggleCompletion = () => {
-            this.setState(
-                  {
-                        completed: !this.state.completed
-                  },
-                  () => {
-                        this.props.editTaskCompletionProp(
-                              this.props.task.completed,
-                              this.props.general.selectedItem.id
-                        );
-                  }
-            );
-      };
-
-      editTaskTime = time => {
-            this.setState({
-                  time: time
-            });
-
-            this.props.editTaskTimeProp(time, this.props.general.selectedItem.id);
-      };
-
-      editTaskDate = date => {
+      editEventDate = date => {
             this.setState({
                   date: date
             });
 
-            this.props.editTaskDateProp(date, this.props.general.selectedItem.id);
+            this.props.editEventDateProp(date, this.props.general.selectedItem.id);
       };
 
       deleteTask = () => {
-            this.props.deleteTaskProp(this.props.general.selectedItem);
-            this.props.closeItemMenuProp();
-      };
-
-      deleteTaskTime = () => {
-            this.setState({
-                  time: 'No time'
-            });
-            this.props.deleteTaskTimeProp(this.props.general.selectedItem.id);
+            this.props.deleteEventProp(this.props.general.selectedItem);
+            this.props.closeEventMenuProp();
       };
 
       render() {
-            let subtask = [0, 1, 2];
             return (
                   <Animated.View style={[styles.container, { bottom: this.state.yValue }]}>
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
@@ -227,17 +246,9 @@ class ItemMenu extends Component {
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
                         <View style={{ flexDirection: 'row' }}>
-                              <TouchableOpacity onPress={() => this.toggleCompletion()}>
-                                    <Ionicons
-                                          name="ios-checkmark-circle-outline"
-                                          size={30}
-                                          color={this.props.task && this.props.task.completed ? 'red' : 'grey'}
-                                    />
-                              </TouchableOpacity>
-
                               <TextInput
                                     style={{ height: 40, flex: 1, marginLeft: 8, paddingBottom: 8, fontSize: 16 }}
-                                    onChangeText={name => this.changeTaskName(name)}
+                                    onChangeText={name => this.changeEventName(name)}
                                     value={this.state.name}
                               />
 
@@ -258,14 +269,15 @@ class ItemMenu extends Component {
                                     </TouchableOpacity>
                               </View>
 
-                              <View style={{ width: 100 }}>
-                                    <TouchableOpacity onPress={this.showTimePicker}>
-                                          <Text>Time</Text>
+                              <View style={{ width: 100, flexDirection: 'column' }}>
+                                    <TouchableOpacity style={{ marginBottom: 12 }} onPress={this.showStartTimePicker}>
+                                          <Text>Start time:</Text>
                                           <Text>{this.state.time}</Text>
                                     </TouchableOpacity>
 
-                                    <TouchableOpacity onPress={() => this.deleteTaskTime()}>
-                                          <Text style={{ marginTop: 8 }}>Delete time</Text>
+                                    <TouchableOpacity onPress={this.showEndTimePicker}>
+                                          <Text>End time:</Text>
+                                          <Text>{this.state.endTime}</Text>
                                     </TouchableOpacity>
                               </View>
                         </View>
@@ -280,9 +292,15 @@ class ItemMenu extends Component {
                         />
                         <DateTimePicker
                               mode={'time'}
-                              isVisible={this.state.isTimePickerVisible}
-                              onConfirm={this.handleTimePicked}
-                              onCancel={this.hideTimePicker}
+                              isVisible={this.state.isStartTimePickerVisible}
+                              onConfirm={this.handleStartTimePicked}
+                              onCancel={this.hideStartTimePicker}
+                        />
+                        <DateTimePicker
+                              mode={'time'}
+                              isVisible={this.state.isEndTimePickerVisible}
+                              onConfirm={this.handleEndTimePicked}
+                              onCancel={this.hideEndTimePicker}
                         />
 
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
@@ -352,15 +370,8 @@ class ItemMenu extends Component {
       }
 }
 
-function mapStateToProp(state, ownProps) {
-      // console.log(state.general);
-      let task = state.tasks[state.general.selectedItem.id];
-
-      return {
-            general: state.general,
-            task: task
-      };
-}
+const { width, height } = Dimensions.get('window');
+const menuheight = 340;
 
 const styles = StyleSheet.create({
       container: {
@@ -389,7 +400,17 @@ const styles = StyleSheet.create({
       }
 });
 
+function mapStateToProp(state, ownProps) {
+      // console.log(state.general);
+      let event = state.events[ownProps.id];
+
+      return {
+            general: state.general,
+            event: event
+      };
+}
+
 export default connect(
       mapStateToProp,
       mapDispatchToProps
-)(ItemMenu);
+)(EventMenu);
