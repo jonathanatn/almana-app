@@ -22,7 +22,7 @@ import {
       deleteTaskAction,
       deleteTaskTimeAction
 } from '../../Store/actions/taskAction';
-import { closeItemMenuAction } from '../../Store/actions/generalAction';
+import { closeTaskMenuAction } from '../../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
             editTaskNameProp: (name, id, previousName) => dispatch(editTaskNameAction(name, id, previousName)),
@@ -31,7 +31,7 @@ function mapDispatchToProps(dispatch) {
             editTaskTimeProp: (hour, id) => dispatch(editTaskTimeAction(hour, id)),
             editTaskDateProp: (date, id) => dispatch(editTaskDateAction(date, id)),
             deleteTaskProp: id => dispatch(deleteTaskAction(id)),
-            closeItemMenuProp: () => dispatch(closeItemMenuAction()),
+            closeTaskMenuAction: () => dispatch(closeTaskMenuAction()),
             deleteTaskTimeProp: id => dispatch(deleteTaskTimeAction(id))
       };
 }
@@ -42,7 +42,7 @@ import moment from 'moment';
 const { width, height } = Dimensions.get('window');
 const menuheight = 340;
 
-class ItemMenu extends Component {
+class TaskMenu extends Component {
       state = {
             yValue: new Animated.Value(-400),
             subtaskPlaceholder: 'Add a subtask..',
@@ -64,7 +64,7 @@ class ItemMenu extends Component {
       async componentDidMount() {
             this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
             this.keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', this._keyboardWillHide);
-            if (this.props.general.isItemMenuOpen === true) {
+            if (this.props.general.isTaskMenuOpen === true) {
                   Animated.timing(this.state.yValue, {
                         toValue: 0,
                         duration: 100
@@ -82,7 +82,7 @@ class ItemMenu extends Component {
             let month = dateSelected.substring(0, 2);
             let year = dateSelected.substring(6);
 
-            let date = new Date(year, month, day, 0, 0, 0, 0);
+            let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
 
             await this.setState({
                   name: this.props.general.selectedItem.name,
@@ -131,7 +131,7 @@ class ItemMenu extends Component {
                   this.editTaskDate(date);
 
                   this.hideDatePicker();
-                  this.props.closeItemMenuProp();
+                  this.props.closeTaskMenuProp();
             } else {
                   this.hideDatePicker();
             }
@@ -208,7 +208,7 @@ class ItemMenu extends Component {
 
       deleteTask = () => {
             this.props.deleteTaskProp(this.props.general.selectedItem);
-            this.props.closeItemMenuProp();
+            this.props.closeTaskMenuProp();
       };
 
       deleteTaskTime = () => {
@@ -253,14 +253,14 @@ class ItemMenu extends Component {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 }}>
                               <View style={{ width: 100 }}>
                                     <TouchableOpacity onPress={this.showDatePicker}>
-                                          <Text>Date</Text>
+                                          <Text>Date:</Text>
                                           <Text>{this.state.date}</Text>
                                     </TouchableOpacity>
                               </View>
 
                               <View style={{ width: 100 }}>
                                     <TouchableOpacity onPress={this.showTimePicker}>
-                                          <Text>Time</Text>
+                                          <Text>Start time:</Text>
                                           <Text>{this.state.time}</Text>
                                     </TouchableOpacity>
 
@@ -392,4 +392,4 @@ const styles = StyleSheet.create({
 export default connect(
       mapStateToProp,
       mapDispatchToProps
-)(ItemMenu);
+)(TaskMenu);

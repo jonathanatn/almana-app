@@ -1,6 +1,6 @@
 // STATIC UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform, Alert } from 'react-native';
 import { TextInput, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from 'react-native-modal-datetime-picker';
@@ -62,7 +62,7 @@ class EventAdder extends Component {
             let month = dateSelected.substring(0, 2);
             let year = dateSelected.substring(6);
 
-            let date = new Date(year, month, day, 0, 0, 0, 0);
+            let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
 
             this.setState({
                   date: this.props.general.dateSelectedDateMover,
@@ -134,15 +134,24 @@ class EventAdder extends Component {
             this.hideDatePicker();
       };
 
-      handleStartTimePicked = startTimeReceived => {
-            let startTime = moment(startTimeReceived).format('LT');
+      handleStartTimePicked = timeReceived => {
+            let time = moment(timeReceived).format('LT');
 
-            if (startTime.length < 8) {
-                  startTime = '0' + startTime;
+            if (time.length < 8) {
+                  time = '0' + time;
+            }
+
+            let endTime = moment(time, 'LT')
+                  .add(1, 'hours')
+                  .format('LT');
+
+            if (endTime.length === 7) {
+                  endTime = '0' + endTime;
             }
 
             this.setState({
-                  time: startTime
+                  time: time,
+                  endTime: endTime
             });
 
             this.hideStartTimePicker();
@@ -151,15 +160,40 @@ class EventAdder extends Component {
       handleEndTimePicked = endTimeReceived => {
             let endTime = moment(endTimeReceived).format('LT');
 
+            let endTimeToCompare = moment(endTime, 'h:mma');
+            let startTimeToCompare = moment(this.state.time, 'h:mma');
+
             if (endTime.length < 8) {
                   endTime = '0' + endTime;
             }
 
-            this.setState({
-                  endTime
-            });
+            if (endTimeToCompare.isBefore(startTimeToCompare)) {
+                  this.hideEndTimePicker();
+                  Alert.alert(
+                        'Error',
+                        'The end time of the event can not be earlier than the start time.',
+                        [
+                              {
+                                    text: 'OK'
+                              }
+                        ],
+                        { cancelable: false }
+                  );
+            } else {
+                  this.setState(
+                        {
+                              endTime: endTime
+                        },
+                        () => {
+                              this.hideEndTimePicker();
+                        }
+                  );
+            }
 
-            this.hideEndTimePicker();
+            // this.setState({
+            //       endTime
+            // });
+            // this.hideEndTimePicker();
       };
 
       showDatePicker = () => {
@@ -236,7 +270,7 @@ class EventAdder extends Component {
                                           <Text>Start time: {this.state.time}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={() => this.showEndTimePicker()}>
-                                          <Text>Start time: {this.state.endTime}</Text>
+                                          <Text>End time: {this.state.endTime}</Text>
                                     </TouchableOpacity>
                               </View>
                         </View>

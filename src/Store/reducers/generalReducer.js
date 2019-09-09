@@ -1,6 +1,6 @@
 import {
-      OPEN_ITEM_MENU,
-      CLOSE_ITEM_MENU,
+      OPEN_TASK_MENU,
+      CLOSE_TASK_MENU,
       OPEN_EVENT_MENU,
       CLOSE_EVENT_MENU,
       SET_SELECTED_ITEM,
@@ -17,7 +17,7 @@ import {
 // import { getToday } from '../../Utils/helpers';
 
 const generalState = {
-      isItemMenuOpen: false,
+      isTaskMenuOpen: false,
       isEventMenuOpen: false,
       selectedItem: {},
       isTaskAdderOpen: false,
@@ -31,15 +31,15 @@ function generalReducer(state = generalState, action) {
             //////////////////////////////////////////////////////////////////////////////////////////////////////
             /////////////////////////////////////// ITEMMENU  ////////////////////////////////////////
             /////////////////////////////////////////////////////////////////////////////////////////////////////
-            case OPEN_ITEM_MENU:
+            case OPEN_TASK_MENU:
                   return {
                         ...state,
-                        isItemMenuOpen: true
+                        isTaskMenuOpen: true
                   };
-            case CLOSE_ITEM_MENU:
+            case CLOSE_TASK_MENU:
                   return {
                         ...state,
-                        isItemMenuOpen: false
+                        isTaskMenuOpen: false
                   };
             case OPEN_EVENT_MENU:
                   return {

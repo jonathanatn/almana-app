@@ -8,7 +8,7 @@
                   "port": 21000
             },
             "platforms": ["ios", "android", "web"],
-            "version": "2.0.0",
+            "version": "2.1.0",
             "orientation": "portrait",
             "icon": "./assets/icon-app.png",
             "splash": {
@@ -26,7 +26,7 @@
             },
             "android": {
                   "package": "com.alma.almana",
-                  "versionCode": 2
+                  "versionCode": 4
             }
       }
 }

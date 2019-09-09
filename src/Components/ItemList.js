@@ -17,8 +17,13 @@ import { compose } from 'redux';
 import { connect } from 'react-redux';
 import { receiveTasksAction, editTasksPositionAction, editTaskPeriodAction } from '../Store/actions/taskAction';
 import { editEventsPositionAction } from '../Store/actions/eventAction';
-import { setSelectedItemAction, openItemMenuAction, openEventMenuAction } from '../Store/actions/generalAction';
-import { closeItemMenuAction, closeDateMoverAction, closeEventMenuAction } from '../Store/actions/generalAction';
+import { setSelectedItemAction, openTaskMenuAction, openEventMenuAction } from '../Store/actions/generalAction';
+import {
+      closeTaskMenuAction,
+      closeDateMoverAction,
+      closeEventMenuAction,
+      closeTaskAdderAction
+} from '../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
             // TASKS
@@ -31,10 +36,11 @@ function mapDispatchToProps(dispatch) {
 
             // GENERAL
             setSelectedItemProp: item => dispatch(setSelectedItemAction(item)),
-            openItemMenuProp: () => dispatch(openItemMenuAction()),
-            closeItemMenuProp: () => dispatch(closeItemMenuAction()),
+            openTaskMenuProp: () => dispatch(openTaskMenuAction()),
+            closeTaskMenuProp: () => dispatch(closeTaskMenuAction()),
             openEventMenuProp: () => dispatch(openEventMenuAction()),
-            closeEventMenuProp: () => dispatch(closeEventMenuAction())
+            closeEventMenuProp: () => dispatch(closeEventMenuAction()),
+            closeTaskAdderProp: () => dispatch(closeTaskAdderAction())
       };
 }
 
@@ -112,22 +118,25 @@ class ItemList extends React.Component {
             if (this.props.general.isDateMoverOpen === true) {
                   this.props.closeDateMoverParentProp();
             }
+            if (this.props.general.isTaskAdderOpen === true) {
+                  this.props.closeTaskAdderProp();
+            }
 
-            // ItemMenu is rendered in MainScreen.js
-            if (this.props.general.isItemMenuOpen === true || this.props.general.isEventMenuOpen === true) {
+            // TaskMenu & EventMenu are rendered in MainScreen.js
+            if (this.props.general.isTaskMenuOpen === true || this.props.general.isEventMenuOpen === true) {
                   // If one of the item menu is open, we close it
-                  await this.props.closeItemMenuProp();
+                  await this.props.closeTaskMenuProp();
                   await this.props.closeEventMenuProp();
                   // After we open the right menu depending the item, to make the animation
                   if (!item.event) {
-                        this.props.openItemMenuProp();
+                        this.props.openTaskMenuProp();
                   } else {
                         this.props.openEventMenuProp();
                   }
                   // Else menu are close so we open the good one
             } else {
                   if (!item.event) {
-                        this.props.openItemMenuProp();
+                        this.props.openTaskMenuProp();
                   } else {
                         this.props.openEventMenuProp();
                   }

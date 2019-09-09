@@ -4,24 +4,24 @@ import { receiveTasksAction } from './taskAction';
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// ITEMMENU ACTION  ////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-export const OPEN_ITEM_MENU = 'OPEN_ITEM_MENU';
-export const CLOSE_ITEM_MENU = 'CLOSE_ITEM_MENU';
+export const OPEN_TASK_MENU = 'OPEN_TASK_MENU';
+export const CLOSE_TASK_MENU = 'CLOSE_TASK_MENU';
 export const OPEN_EVENT_MENU = 'OPEN_EVENT_MENU';
 export const CLOSE_EVENT_MENU = 'CLOSE_EVENT_MENU';
 export const SET_SELECTED_ITEM = 'SET_SELECTED_ITEM';
 
-export function openItemMenuAction() {
+export function openTaskMenuAction() {
       return dispatch => {
             dispatch({
-                  type: OPEN_ITEM_MENU
+                  type: OPEN_TASK_MENU
             });
       };
 }
 
-export function closeItemMenuAction() {
+export function closeTaskMenuAction() {
       return dispatch => {
             dispatch({
-                  type: CLOSE_ITEM_MENU
+                  type: CLOSE_TASK_MENU
             });
       };
 }

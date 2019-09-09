@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Task from './Elements/Task';
-import ItemMenu from './Elements/ItemMenu';
+import TaskMenu from './Elements/TaskMenu';
 import EventMenu from './Elements/EventMenu';
 import ItemList from './ItemList';
 import TaskAdder from './Elements/TaskAdder';
@@ -22,8 +22,8 @@ import { connect } from 'react-redux';
 import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
 import { signOut } from '../Store/actions/authAction';
 import {
-      openItemMenuAction,
-      closeItemMenuAction,
+      openTaskMenuAction,
+      closeTaskMenuAction,
       closeEventMenuAction,
       openTaskAdderAction,
       closeTaskAdderAction,
@@ -41,7 +41,7 @@ function mapDispatchToProps(dispatch) {
             // GENERAL
             openDateMoverProp: () => dispatch(openDateMoverAction()),
             closeDateMoverProp: () => dispatch(closeDateMoverAction()),
-            closeItemMenuProp: () => dispatch(closeItemMenuAction()),
+            closeTaskMenuProp: () => dispatch(closeTaskMenuAction()),
             closeEventMenuProp: () => dispatch(closeEventMenuAction()),
             openTaskAdderProp: () => dispatch(openTaskAdderAction()),
             closeTaskAdderProp: () => dispatch(closeTaskAdderAction()),
@@ -100,8 +100,8 @@ class MainScreen extends Component {
       };
 
       handleBackPress = () => {
-            if (this.props.general.isItemMenuOpen === true) {
-                  this.props.closeItemMenuProp();
+            if (this.props.general.isTaskMenuOpen === true) {
+                  this.props.closeTaskMenuProp();
                   return true;
             }
 
@@ -115,8 +115,8 @@ class MainScreen extends Component {
                   return true;
             }
 
-            if (this.state.isAddItemMenuOpen === true) {
-                  this.setState({ isAddItemMenuOpen: false });
+            if (this.state.isAddTaskMenuOpen === true) {
+                  this.setState({ isAddTaskMenuOpen: false });
                   return true;
             }
 
@@ -130,8 +130,8 @@ class MainScreen extends Component {
             if (this.props.general.isDateMoverOpen === true) {
                   this.closeDateMover();
             }
-            if (this.props.general.isItemMenuOpen === true) {
-                  this.props.closeItemMenuProp();
+            if (this.props.general.isTaskMenuOpen === true) {
+                  this.props.closeTaskMenuProp();
             }
             if (this.props.general.isEventMenuOpen === true) {
                   this.props.closeEventMenuProp();
@@ -287,7 +287,7 @@ class MainScreen extends Component {
 
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
-                        {this.props.general.isItemMenuOpen === true && <ItemMenu />}
+                        {this.props.general.isTaskMenuOpen === true && <TaskMenu />}
                         {this.props.general.isEventMenuOpen === true && <EventMenu />}
 
                         <NavigationView openDateMover={() => this.openDateMover()} />

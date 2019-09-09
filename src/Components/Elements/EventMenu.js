@@ -67,7 +67,7 @@ class EventMenu extends Component {
             let month = dateSelected.substring(0, 2);
             let year = dateSelected.substring(6);
 
-            let date = new Date(year, month, day, 0, 0, 0, 0);
+            let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
 
             await this.setState({
                   name: this.props.general.selectedItem.name,
