@@ -4,42 +4,48 @@ import {
       SIGNOUT_ERROR,
       SIGNOUT_SUCCESS,
       SIGNUP_SUCCESS,
-      SIGNUP_ERROR
+      SIGNUP_ERROR,
+      RESET_AUTH_ERROR
 } from '../actions/authAction';
 
 function authReducer(state = { authError: null }, action) {
       switch (action.type) {
-            case LOGIN_ERROR:
+            case RESET_AUTH_ERROR:
                   return {
                         ...state,
-                        authError: 'Login failed'
+                        authError: null
                   };
             case LOGIN_SUCCESS:
                   return {
                         ...state,
+                        uid: action.user.uid,
                         authError: null
                   };
-            case SIGNOUT_SUCCESS:
-                  console.log(action.type);
-                  return {
-                        ...state
-                  };
-            case SIGNOUT_ERROR:
-                  console.log(action.type);
-                  return {
-                        ...state
-                  };
-            case SIGNUP_SUCCESS:
-                  console.log(action.type);
-                  return {
-                        ...state,
-                        authError: null
-                  };
-            case SIGNUP_ERROR:
-                  console.log(action.type);
+            case LOGIN_ERROR:
                   return {
                         ...state,
                         authError: action.err.message
+                  };
+
+            case SIGNUP_SUCCESS:
+                  return {
+                        ...state,
+                        uid: action.user.uid,
+                        authError: null
+                  };
+            case SIGNUP_ERROR:
+                  return {
+                        ...state,
+                        authError: action.err.message
+                  };
+            case SIGNOUT_SUCCESS:
+                  return {
+                        ...state,
+                        uid: null
+                  };
+            case SIGNOUT_ERROR:
+                  return {
+                        ...state
                   };
             default:
                   return state;

@@ -14,23 +14,23 @@ class Event extends Component {
                         >
                               <Text
                                     style={{
-                                          fontSize: 10,
+                                          fontSize: 11,
                                           color: 'rgba(145, 145, 145, 1.0)'
                                     }}
                               >
-                                    17:00
+                                    {this.props.time.substring(0, 5)}
                               </Text>
                               <Text
                                     style={{
-                                          fontSize: 10,
+                                          fontSize: 11,
                                           color: 'rgba(145, 145, 145, 1.0)'
                                     }}
                               >
-                                    18:00
+                                    {this.props.endTime.substring(0, 5)}
                               </Text>
                         </View>
                         <View style={styles.CircleShape} />
-                        <Text style={{ fontSize: 16 }}>Meeting with sarah</Text>
+                        <Text style={{ fontSize: 16 }}>{this.props.name}</Text>
                   </View>
             );
       }
@@ -40,8 +40,8 @@ const styles = StyleSheet.create({
       componentContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-            height: 72,
-            marginVertical: 10,
+            height: 70,
+            marginHorizontal: 8,
             backgroundColor: 'rgba(245, 245, 245, 1.0)',
             borderRadius: 8
       },
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
             height: 10,
             borderRadius: 150 / 2,
             marginHorizontal: 16,
-            backgroundColor: '#FF00FF'
+            backgroundColor: '#FF2D55'
       }
 });
 

@@ -1,10 +1,20 @@
 // TODO: On back to today, update the calendar day selected
+// FIXME: The calendar height change alone, because it upload 3 month in advance so if there is 6 weeks in one of them the height will higher
+
+// STATIC UI
 import React, { Component, PureComponent } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, FlatList, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
+// DATA
+import { connect } from 'react-redux';
+import { setDateSelectedDateMoverAction, setVisibleMonthDateMoverAction } from '../Store/actions/generalAction';
+
+//HELPERS
+import moment from 'moment';
 const { width } = Dimensions.get('window');
 
-export default class ParentComp extends PureComponent {
+class FlatListCalendar extends PureComponent {
       constructor(props) {
             super(props);
             this.state = {
@@ -22,11 +32,17 @@ export default class ParentComp extends PureComponent {
             this.monthNumber = 12;
       }
 
+      //Needed to use the scrollToIndex method from the parent, because the button is in the parent
+      componentDidMount() {
+            this.props.onRef(this);
+      }
+      componentWillUnmount() {
+            this.props.onRef(undefined);
+      }
+
       onDayPress = (day, dayNumber, monthNumber) => {
-            // this.props.getSelectedDay(dayNumber);
-            // this.props.getSelectedMonth(monthNumber);
-            this.props.getSelectedDate(dayNumber, monthNumber);
-            // this.props
+            // this.props.getSelectedDate(dayNumber, monthNumber);
+            this.props.setDateSelectedDateMoverProp(dayNumber, monthNumber);
 
             //Keeping track on last date selected because on the re-render of the child component (because of too much swiper on the FlatList)
             // We will loose the selected day so we save it in the parent component
@@ -35,23 +51,35 @@ export default class ParentComp extends PureComponent {
 
             if (this.dayBefore !== null) {
                   this.dayBefore.setNativeProps({
-                        backgroundColor: 'white'
+                        style: { borderColor: '#FF2D55', borderWidth: 0 }
                   });
             }
 
             this.dayBefore = day;
 
             day.setNativeProps({
-                  backgroundColor: 'blue'
+                  style: { borderColor: '#FF2D55', borderWidth: 2 }
             });
       };
 
-      onViewableItemsChanged = async ({ viewableItems, changed }) => {
-            // console.log('Visible items are', viewableItems);
-            // console.log('Changed items are', changed);
+      onViewableItemsChanged = ({ viewableItems, changed }) => {
+            if (viewableItems[0] && viewableItems[0].index === 0) {
+                  var visibleMonth = moment()
+                        .add(viewableItems[0].index - 12, 'month')
+                        .format('MMMM YYYY');
+                  // this.props.getVisibleMonth(visibleMonth);
+                  this.props.setVisibleMonthDateMoverProp(visibleMonth);
+            }
+            if (viewableItems[0] && viewableItems[0].index) {
+                  var visibleMonth = moment()
+                        .add(viewableItems[0].index - 12, 'month')
+                        .format('MMMM YYYY');
+                  // this.props.getVisibleMonth(visibleMonth);
+                  this.props.setVisibleMonthDateMoverProp(visibleMonth);
+            }
 
-            // FIXME: Scroll to index bug if we call it more than 2 screen than the index
-            (await viewableItems[0].index) && this.props.getVisibleMonth(viewableItems[0].index);
+            // (viewableItems[0].index) && this.props.getVisibleMonth(viewableItems[0].index);
+            // (await viewableItems[0].index) && this.props.getVisibleMonth(viewableItems[0].index);
       };
 
       // FIXME:
@@ -78,16 +106,35 @@ export default class ParentComp extends PureComponent {
             }
             return (
                   <View style={[styles.container, { flexDirection: 'column' }]}>
-                        <TouchableOpacity onPress={this.scrollToIndex}>
-                              <Text>Test backToday</Text>
-                        </TouchableOpacity>
-                        {/* <Text>test {this.state.month}</Text> */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: -8 }}>
+                              <View style={styles.dayContainer}>
+                                    <Text style={{ color: 'grey', opacity: 0.6, fontSize: 9 }}>M</Text>
+                              </View>
+                              <View style={styles.dayContainer}>
+                                    <Text style={{ color: 'grey', opacity: 0.6, fontSize: 9 }}>T</Text>
+                              </View>
+                              <View style={styles.dayContainer}>
+                                    <Text style={{ color: 'grey', opacity: 0.6, fontSize: 9 }}>W</Text>
+                              </View>
+                              <View style={styles.dayContainer}>
+                                    <Text style={{ color: 'grey', opacity: 0.6, fontSize: 9 }}>T</Text>
+                              </View>
+                              <View style={styles.dayContainer}>
+                                    <Text style={{ color: 'grey', opacity: 0.6, fontSize: 9 }}>F</Text>
+                              </View>
+                              <View style={styles.dayContainer}>
+                                    <Text style={{ color: 'grey', opacity: 0.6, fontSize: 9 }}>S</Text>
+                              </View>
+                              <View style={styles.dayContainer}>
+                                    <Text style={{ color: 'grey', opacity: 0.6, fontSize: 9 }}>S</Text>
+                              </View>
+                        </View>
                         <FlatList
                               ref={ref => (this.flatListRef = ref)}
                               data={data}
                               keyExtractor={index => index.toString()}
                               renderItem={item => (
-                                    <Playground
+                                    <Calendar
                                           index={item.index}
                                           currentMonthIndex={currentMonthIndex}
                                           onDayPress={this.onDayPress}
@@ -116,14 +163,16 @@ export default class ParentComp extends PureComponent {
                               })}
                               initialNumToRender={1}
                               windowSize={5}
-                              maxToRenderPerBatch={1}
+                              // maxToRenderPerBatch={1}
+                              removeClippedSubviews={true}
+                              onScrollToIndexFailed={12}
                         />
                   </View>
             );
       }
 }
 
-class Playground extends PureComponent {
+class Calendar extends PureComponent {
       componentDidMount() {
             //If the index of the month === the current month index (the middle of month available) we select the current day
             if (this.props.index === this.props.currentMonthIndex) {
@@ -133,7 +182,7 @@ class Playground extends PureComponent {
 
                   // We keep a color on the current day to find it more easily
                   this[`itemText-${day - 1}`].setNativeProps({
-                        style: { color: 'red' }
+                        style: { color: '#FF2D55' }
                   });
             }
 
@@ -187,6 +236,8 @@ class Playground extends PureComponent {
                   }
             }
 
+            //FIXME: Give a date to every items and after set the state when onPress and if state = date, change style
+
             return (
                   <View style={styles.container}>
                         {daysPreviousMonth.map(i => {
@@ -204,7 +255,12 @@ class Playground extends PureComponent {
                                                       )
                                                 }
                                           >
-                                                <Text style={{ color: 'grey', opacity: 0.6 }}>{i + 1}</Text>
+                                                <Text
+                                                      // ref={thisItem => (this[`itembText-${i}`] = thisItem)}
+                                                      style={{ color: 'grey', opacity: 0.6 }}
+                                                >
+                                                      {i + 1}
+                                                </Text>
                                           </TouchableOpacity>
                                     </View>
                               );
@@ -252,17 +308,29 @@ class Playground extends PureComponent {
       }
 }
 
+function mapDispatchToProps(dispatch) {
+      return {
+            setDateSelectedDateMoverProp: (day, month) => dispatch(setDateSelectedDateMoverAction(day, month)),
+            setVisibleMonthDateMoverProp: visibleMonth => dispatch(setVisibleMonthDateMoverAction(visibleMonth))
+      };
+}
+
+export default connect(
+      null,
+      mapDispatchToProps
+)(FlatListCalendar);
+
 const styles = StyleSheet.create({
       container: {
-            flex: 1,
+            // flex: 1,
             flexDirection: 'row',
             flexWrap: 'wrap',
             width: width,
-            paddingTop: 50,
-            backgroundColor: '#fff'
+            justifyContent: 'center'
       },
       dayContainer: {
-            width: width / 7,
+            width: width / 7.2,
+            height: 36,
             justifyContent: 'center',
             alignItems: 'center'
       },
