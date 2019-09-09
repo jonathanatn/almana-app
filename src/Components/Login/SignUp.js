@@ -11,7 +11,7 @@ function mapDispatchToProps(dispatch) {
 
 class Login extends Component {
       static navigationOptions = {
-            title: 'Welcome'
+            title: 'Welcome '
       };
 
       state = {

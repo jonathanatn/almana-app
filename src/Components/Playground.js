@@ -1,14 +1,74 @@
 // STATIC UI
 import React, { Component } from 'react';
-import { Text, TextInput, KeyboardAvoidingView, View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Constants } from 'expo';
-// import console = require('console');
-
+import { Text, TextInput, View, StyleSheet, TouchableOpacity, AsyncStorage } from 'react-native';
+import { Notifications } from 'expo';
+import * as Permissions from 'expo-permissions';
 // ANIMATED UI
-
 // DATA
-
 // HELPERS
+
+const NOTIFICATION_KEY = 'Almana:notifications';
+
+function clearLocalNotification() {
+      return AsyncStorage.removeItem(NOTIFICATION_KEY).then(Notifications.cancelAllScheduledNotificationsAsync);
+}
+
+function createNotification() {
+      return {
+            title: 'Almana Notification',
+            body: 'Message notification',
+            ios: {
+                  sound: true
+            },
+            android: {
+                  sound: true,
+                  priority: 'high',
+                  sticky: false,
+                  vibrate: true
+            }
+      };
+}
+
+function setLocalNotification() {
+      AsyncStorage.getAllKeys((err, keys) => {
+            AsyncStorage.multiGet(keys, (error, stores) => {
+                  stores.map((result, i, store) => {
+                        console.log({ [store[i][0]]: store[i][1] });
+                        return true;
+                  });
+            });
+      });
+      AsyncStorage.getItem(NOTIFICATION_KEY)
+            .then(JSON.parse)
+            .then(data => {
+                  // We didn't set notification
+                  if (data === null) {
+                        Permissions.askAsync(Permissions.NOTIFICATIONS).then(status => {
+                              if (status === 'granted') {
+                                    Notifications.cancelAllScheduledNotificationsAsync();
+
+                                    let tomorrow = new Date();
+                                    tomorrow.setDate(tomorrow.getDate());
+                                    tomorrow.setHours(0);
+                                    tomorrow.setMinutes(0);
+                                    tomorrow.setSeconds(5);
+
+                                    Notifications.scheduleLocalNotificationAsync(createNotification(), {
+                                          time: tomorrow
+                                          // repeat: 'day'
+                                    });
+
+                                    AsyncStorage.setItem(NOTIFICATION_KEY, JSON.stringify(true));
+                              }
+                        });
+                  }
+            });
+      console.log(AsyncStorage.getItem(NOTIFICATION_KEY));
+}
+
+function test() {
+      console.log('test');
+}
 
 export default class App extends Component {
       state = {
@@ -19,35 +79,9 @@ export default class App extends Component {
             return (
                   <View style={styles.containerParent}>
                         <View style={styles.container}>
-                              <TextInput
-                                    style={styles.input}
-                                    placeholder="email@example.com"
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    keyboardType="email-address"
-                                    returnKeyType="send"
-                                    onSubmitEditing={this._submit}
-                                    blurOnSubmit={true}
-                              />
-
-                              <KeyboardAvoidingView
-                                    behavior="position"
-                                    style={styles.form}
-                                    enabled={this.state.isNameInputFocus ? true : false}
-                              >
-                                    <TextInput
-                                          style={styles.input}
-                                          value={this.state.email}
-                                          onChangeText={email => this.setState({ email })}
-                                          ref={ref => {
-                                                this._emailInput = ref;
-                                          }}
-                                          placeholder="Lunch with collegues.."
-                                          onSubmitEditing={this._submit}
-                                          onFocus={() => this.setState({ isNameInputFocus: true })}
-                                          onEndEditing={() => this.setState({ isNameInputFocus: false })}
-                                    />
-                              </KeyboardAvoidingView>
+                              <TouchableOpacity onPress={setLocalNotification}>
+                                    <Text>Add notification</Text>
+                              </TouchableOpacity>
                         </View>
                   </View>
             );

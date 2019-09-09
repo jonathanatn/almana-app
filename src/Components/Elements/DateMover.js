@@ -115,7 +115,7 @@ class DateMover extends Component {
                               }}
                         >
                               <Text style={{ fontSize: 18, fontWeight: '500', flex: 1 }}>
-                                    {this.state.visibleMonth}
+                                    {this.state.visibleMonth + ' '}
                               </Text>
                               {/* TODO: Make the icon change color if we reach the visible month */}
                               <TouchableOpacity onPress={this.scrollToIndex} style={{ alignSelf: 'flex-end' }}>

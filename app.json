@@ -26,7 +26,7 @@
             },
             "android": {
                   "package": "com.alma.almana",
-                  "versionCode": 4
+                  "versionCode": 5
             }
       }
 }

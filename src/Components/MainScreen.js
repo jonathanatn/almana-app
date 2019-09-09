@@ -268,8 +268,13 @@ class MainScreen extends Component {
                               {/* TODO: Create a function to get the day title and put in helper */}
                               <Text style={{ fontWeight: '900', fontSize: 36 }}>
                                     {this.props.general.dateSelectedDateMover === getToday
-                                          ? 'Today'
-                                          : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
+                                          ? 'Today '
+                                          : title.format('dddd') +
+                                            ', ' +
+                                            title.format('D') +
+                                            ' ' +
+                                            title.format('MMM') +
+                                            ' '}
                               </Text>
                               <TouchableOpacity onPress={() => this.signOut()}>
                                     <Ionicons name="ios-log-out" size={24} color={'black'} />

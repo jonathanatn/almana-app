@@ -73,7 +73,7 @@ const SignUpStackNav = createStackNavigator(
 
 const MainStackNav = createStackNavigator(
       {
-            // Playground,
+            Playground,
             MainScreen
       },
       {
@@ -101,19 +101,4 @@ const styles = StyleSheet.create({
             alignItems: 'center',
             justifyContent: 'center'
       }
-      // defaultFontFamily: {
-      //       fontFamily: 'lucida grande'
-      // }
 });
-
-// // Oppo phone cut off bold text due to a specific font setting
-// // Hack suggested here: https://github.com/facebook/react-native/issues/15114
-// function fixOppoTextCutOff() {
-//       const oldRender = Text.prototype.render;
-//       Text.prototype.render = function render(...args) {
-//             const origin = oldRender.call(this, ...args);
-//             return React.cloneElement(origin, {
-//                   style: [styles.defaultFontFamily, origin.props.style]
-//             });
-//       };
-// }
