@@ -281,7 +281,7 @@ class EventAdder extends Component {
                                     this.props.closeEventAdderProp();
                               }}
                         >
-                              <Text style={{ fontWeight: 'bold', fontSize: 19 }}>Cancel</Text>
+                              <Text style={{ fontWeight: 'bold', fontSize: 19 }}>Cancel </Text>
                         </TouchableOpacity>
 
                         {/*/////////////////////////////////////////         Date Picker       //////////////////////////////////////////// */}

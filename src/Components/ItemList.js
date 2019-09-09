@@ -614,9 +614,9 @@ function mapStateToProp(state, ownProps) {
             }
       }
 
-      let morningCategory = [{ type: 'periodCategory', name: 'Morning', position: 0, period: 'Morning' }];
-      let afternoonCategory = [{ type: 'periodCategory', name: 'Afternoon', position: 0, period: 'Afternoon' }];
-      let eveningCategory = [{ type: 'periodCategory', name: 'Evening', position: 0, period: 'Evening' }];
+      let morningCategory = [{ type: 'periodCategory', name: 'Morning ', position: 0, period: 'Morning' }];
+      let afternoonCategory = [{ type: 'periodCategory', name: 'Afternoon ', position: 0, period: 'Afternoon' }];
+      let eveningCategory = [{ type: 'periodCategory', name: 'Evening ', position: 0, period: 'Evening' }];
       let itemsToSort = [];
 
       itemsArray.map((item, index) => {
