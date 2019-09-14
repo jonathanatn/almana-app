@@ -1,33 +1,13 @@
-export const ADD_EVENT = 'ADD_EVENT';
-export const ADD_EVENT_ROLLBACK = 'ADD_EVENT_ROLLBACK';
-
-export const EDIT_EVENT_NAME = 'EDIT_EVENT_NAME';
-export const EDIT_EVENT_NAME_ROLLBACK = 'EDIT_EVENT_NAME_ROLLBACK';
-export const SYNC_EVENT_NAME = 'SYNC_EVENT_NAME';
-
-export const EDIT_EVENT_COMPLETION = 'EDIT_EVENT_COMPLETION';
-export const EDIT_EVENT_COMPLETION_ROLLBACK = 'EDIT_EVENT_COMPLETION_ROLLBACK';
-
-export const EDIT_EVENT_DATE = 'EDIT_EVENT_DATE';
-export const EDIT_EVENT_DATE_ROLLBACK = 'EDIT_EVENT_DATE_ROLLBACK';
-
-export const EDIT_EVENT_START_TIME = 'EDIT_EVENT_START_TIME';
-export const EDIT_EVENT_TIME_ROLLBACK = 'EDIT_EVENT_TIME_ROLLBACK';
-
-export const EDIT_EVENT_END_TIME = 'EDIT_EVENT_END_TIME';
-
-export const EDIT_EVENTS_POSITION = 'EDIT_EVENTS_POSITION';
-export const EDIT_EVENTS_POSITION_ROLLBACK = 'EDIT_EVENTS_POSITION_ROLLBACK';
-
-export const DELETE_EVENT = 'DELETE_EVENT';
-export const DELETE_EVENT_ROLLBACK = 'DELETE_EVENT_ROLLBACK';
-
-import { getPeriod } from '../../Utils/helpers';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform, Alert } from 'react-native';
+import * as Permissions from 'expo-permissions';
+import { Notifications } from 'expo';
+import { getPeriod, setLocalNotification } from '../../Utils/helpers';
+import moment from 'moment';
 
 // Create an id based on the beginning of the user id and a mix of random characters
 // Set that id as a key for the firestore document and as a "id" field in the document for easier manipulation
 export function addEventAction(event) {
-      return (dispatch, getState, { getFirebase, getFirestore }) => {
+      return async (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
             const userId = getState().firebase.auth.uid;
 
@@ -38,6 +18,7 @@ export function addEventAction(event) {
             }
 
             const period = getPeriod(event.time);
+            const dateAdded = new Date();
 
             dispatch({
                   type: ADD_EVENT,
@@ -48,24 +29,126 @@ export function addEventAction(event) {
                                     .collection('events')
                                     .doc(autoId)
                                     .set({
+                                          // Meta
+                                          dateAdded: dateAdded,
                                           id: autoId,
                                           uid: userId,
+                                          // Property
                                           type: 'event',
-                                          period: period,
                                           name: event.name,
-                                          subtask: { ...event.subtask },
                                           date: event.date,
                                           time: event.time,
                                           endTime: event.endTime,
                                           reminder: event.reminder,
-                                          reccurency: event.reccurency,
-                                          dateAdded: event.dateAdded,
-                                          position: event.position
+                                          period: period,
+                                          position: event.position,
+                                          subtask: { ...event.subtask }
                                     })
                               // rollback: { type: ADD_TASK_ROLLBACK, meta: { id: autoId, uid: userId, task } }
                         }
                   }
             });
+
+            let reminderId;
+            console.log(event.reminder.time);
+            if (event.reminder.time !== 'none') {
+                  await setLocalNotification(id, name, date, time, reminder).then(id => (reminderId = id));
+            } else {
+                  reminderId = '';
+            }
+
+            event.reminder.id = reminderId;
+
+            dispatch(setEventReminderAction(autoId, event.reminder));
+      };
+}
+
+export const SET_EVENT_REMINDER = 'SET_EVENT_REMINDER';
+export function setEventReminderAction(id, reminder) {
+      return dispatch => {
+            dispatch({
+                  type: SET_EVENT_REMINDER,
+                  id: id,
+                  reminder: reminder
+            });
+
+            // // Formatting date for new Date
+            // let year = date.substring(6);
+            // let month = date.substring(0, 2);
+            // let day = date.substring(3, 5);
+
+            // // Formatting time for new Date
+            // let time24h = moment(time, 'h:mm A').format('HH:mm:ss');
+            // let hour = time24h.substring(0, 2);
+            // let minute = time24h.substring(3, 5);
+
+            // let reminderDate;
+
+            // if (reminder.time === '1-hour') {
+            //       reminderDate = new Date(year, parseInt(month, 10) - 1, day, parseInt(hour, 10) - 1, minute);
+            //       // console.log('reminder 1hour');
+            // } else if (reminder.time === '3-hour') {
+            //       reminderDate = new Date(year, parseInt(month, 10) - 1, day, parseInt(hour, 10) - 3, minute);
+            //       // console.log('reminder 3hour');
+            // } else if (reminder.time === '1-day') {
+            //       reminderDate = new Date(year, parseInt(month, 10) - 1, parseInt(day, 10) - 1, hour, minute);
+            //       // console.log('reminder 1day');
+            // } else if (reminder.time === '3-day') {
+            //       reminderDate = new Date(year, parseInt(month, 10) - 1, parseInt(day, 10) - 3, hour, minute);
+            //       // console.log('reminder 3day');
+            // }
+
+            // let today = new Date();
+            // let idReminder;
+
+            // // If the reminder have an idea it mean it had a reminder setted so we clear it
+            // if (reminder.id !== '') {
+            //       console.log(reminder.id);
+            //       Notifications.cancelScheduledNotificationAsync(reminder.id);
+            // }
+
+            // // If the reminde is not 'none' and if the reminder is not set in the past
+            // if (reminder.time !== 'none' && today < reminderDate) {
+            //       // console.log('reminder set');
+            //       Notifications.scheduleLocalNotificationAsync(
+            //             {
+            //                   title: name,
+            //                   body: time
+            //             },
+            //             {
+            //                   time: reminderDate
+            //             }
+            //       ).then(e => {
+            //             idReminder = e;
+            //             // console.log(idReminder);
+            //             dispatch({
+            //                   type: SET_EVENT_REMINDER,
+            //                   id: id,
+            //                   reminder: {
+            //                         time: reminder.time,
+            //                         id: idReminder
+            //                   }
+            //             });
+            //       });
+            // } else {
+            //       console.log('reminder none');
+            //       // If the reminder is === 'none', we simply dispatch the action
+            //       dispatch({
+            //             type: SET_EVENT_REMINDER,
+            //             id: id,
+            //             reminder: {
+            //                   time: reminder.time,
+            //                   id: ''
+            //             }
+            //       });
+            // }
+
+            // const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+            // if (status === 'granted') {
+
+            // } else {
+            //       throw new Error('Location permission not granted');
+            // }
       };
 }
 
@@ -243,3 +326,27 @@ export function editEventsPositionAction(events) {
             });
       };
 }
+
+export const ADD_EVENT = 'ADD_EVENT';
+export const ADD_EVENT_ROLLBACK = 'ADD_EVENT_ROLLBACK';
+
+export const EDIT_EVENT_NAME = 'EDIT_EVENT_NAME';
+export const EDIT_EVENT_NAME_ROLLBACK = 'EDIT_EVENT_NAME_ROLLBACK';
+export const SYNC_EVENT_NAME = 'SYNC_EVENT_NAME';
+
+export const EDIT_EVENT_COMPLETION = 'EDIT_EVENT_COMPLETION';
+export const EDIT_EVENT_COMPLETION_ROLLBACK = 'EDIT_EVENT_COMPLETION_ROLLBACK';
+
+export const EDIT_EVENT_DATE = 'EDIT_EVENT_DATE';
+export const EDIT_EVENT_DATE_ROLLBACK = 'EDIT_EVENT_DATE_ROLLBACK';
+
+export const EDIT_EVENT_START_TIME = 'EDIT_EVENT_START_TIME';
+export const EDIT_EVENT_TIME_ROLLBACK = 'EDIT_EVENT_TIME_ROLLBACK';
+
+export const EDIT_EVENT_END_TIME = 'EDIT_EVENT_END_TIME';
+
+export const EDIT_EVENTS_POSITION = 'EDIT_EVENTS_POSITION';
+export const EDIT_EVENTS_POSITION_ROLLBACK = 'EDIT_EVENTS_POSITION_ROLLBACK';
+
+export const DELETE_EVENT = 'DELETE_EVENT';
+export const DELETE_EVENT_ROLLBACK = 'DELETE_EVENT_ROLLBACK';

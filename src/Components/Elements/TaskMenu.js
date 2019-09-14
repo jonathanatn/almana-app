@@ -31,7 +31,7 @@ function mapDispatchToProps(dispatch) {
             editTaskTimeProp: (hour, id) => dispatch(editTaskTimeAction(hour, id)),
             editTaskDateProp: (date, id) => dispatch(editTaskDateAction(date, id)),
             deleteTaskProp: id => dispatch(deleteTaskAction(id)),
-            closeTaskMenuAction: () => dispatch(closeTaskMenuAction()),
+            closeTaskMenuProp: () => dispatch(closeTaskMenuAction()),
             deleteTaskTimeProp: id => dispatch(deleteTaskTimeAction(id))
       };
 }

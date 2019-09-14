@@ -128,14 +128,14 @@ class ItemList extends React.Component {
                   await this.props.closeTaskMenuProp();
                   await this.props.closeEventMenuProp();
                   // After we open the right menu depending the item, to make the animation
-                  if (!item.event) {
+                  if (item.type !== 'event') {
                         this.props.openTaskMenuProp();
                   } else {
                         this.props.openEventMenuProp();
                   }
                   // Else menu are close so we open the good one
             } else {
-                  if (!item.event) {
+                  if (item.type !== 'event') {
                         this.props.openTaskMenuProp();
                   } else {
                         this.props.openEventMenuProp();

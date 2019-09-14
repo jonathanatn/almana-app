@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ToastAndroid } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ToastAndroid, Dimensions } from 'react-native';
 import { connect } from 'react-redux';
 import { signUp, resetAuthErrorAction } from '../../Store/actions/authAction';
 function mapDispatchToProps(dispatch) {
@@ -9,9 +9,16 @@ function mapDispatchToProps(dispatch) {
       };
 }
 
+// HELPERS
+const { width } = Dimensions.get('window');
+
 class Login extends Component {
       static navigationOptions = {
-            title: 'Welcome '
+            title: 'Welcome ',
+            // FIXME: Hack for Oppo phone
+            headerTitleStyle: {
+                  width: width - 75
+            }
       };
 
       state = {

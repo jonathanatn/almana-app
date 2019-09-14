@@ -16,6 +16,12 @@
                   "resizeMode": "contain",
                   "backgroundColor": "#ffffff"
             },
+            "notification": {
+                  "icon": "./assets/icon-notification.png",
+                  "color": "#FF2D55",
+                  "androidMode": "collapse",
+                  "androidCollapsedTitle": "Reminders"
+            },
             "updates": {
                   "fallbackToCacheTimeout": 0
             },
