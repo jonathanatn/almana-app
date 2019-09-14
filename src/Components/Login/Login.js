@@ -1,6 +1,6 @@
 // STATIC UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ToastAndroid } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ToastAndroid, Dimensions, Platform } from 'react-native';
 
 // DATA
 import { connect } from 'react-redux';
@@ -13,9 +13,16 @@ function mapDispatchToProps(dispatch) {
       };
 }
 
+// HELPERS
+const { width } = Dimensions.get('window');
+
 class Login extends Component {
       static navigationOptions = {
-            title: 'Log in '
+            title: 'Log in ',
+            // FIXME: Hack for Oppo phone
+            headerTitleStyle: {
+                  width: width - 75
+            }
       };
 
       state = {

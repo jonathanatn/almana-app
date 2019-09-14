@@ -1,9 +1,11 @@
 // STATIC UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Animated, Dimensions, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Animated, Dimensions, TextInput, Alert, Modal } from 'react-native';
 import { KeyboardAvoidingView, Keyboard } from 'react-native';
 import DateTimePicker from 'react-native-modal-datetime-picker';
 import { Ionicons } from '@expo/vector-icons';
+import Menu, { MenuItem, MenuDivider } from 'react-native-material-menu';
+import * as Permissions from 'expo-permissions';
 
 // ANIMATED UI
 
@@ -12,7 +14,12 @@ import { firestoreConnect } from 'react-redux-firebase';
 import { connect } from 'react-redux';
 import { compose } from 'redux';
 import { editEventStartTimeAction, editEventEndTimeAction, deleteEventAction } from '../../Store/actions/eventAction';
-import { editEventDateAction, editEventNameAction, syncEventNameAction } from '../../Store/actions/eventAction';
+import {
+      editEventDateAction,
+      editEventNameAction,
+      syncEventNameAction,
+      setEventReminderAction
+} from '../../Store/actions/eventAction';
 import { closeEventMenuAction } from '../../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
@@ -22,12 +29,15 @@ function mapDispatchToProps(dispatch) {
             editEventEndTimeProp: (endTime, id) => dispatch(editEventEndTimeAction(endTime, id)),
             editEventDateProp: (date, id) => dispatch(editEventDateAction(date, id)),
             deleteEventProp: id => dispatch(deleteEventAction(id)),
+            setEventReminderProp: (id, reminder) => dispatch(setEventReminderAction(id, reminder)),
+
+            // GENERAL
             closeEventMenuProp: () => dispatch(closeEventMenuAction())
       };
 }
 
 // HELPERS
-import { getToday } from '../../Utils/helpers';
+import { getToday, clearLocalNotification, setLocalNotification } from '../../Utils/helpers';
 import moment from 'moment';
 
 class EventMenu extends Component {
@@ -46,7 +56,7 @@ class EventMenu extends Component {
             isEndTimePickerVisible: false
       };
 
-      async componentDidMount() {
+      componentDidMount() {
             this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
             this.keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', this._keyboardWillHide);
             if (this.props.general.isEventMenuOpen === true) {
@@ -67,9 +77,10 @@ class EventMenu extends Component {
             let month = dateSelected.substring(0, 2);
             let year = dateSelected.substring(6);
 
+            // Format the date for the DatePicker selected date
             let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
 
-            await this.setState({
+            this.setState({
                   name: this.props.general.selectedItem.name,
                   completed: this.props.general.selectedItem.completed,
                   date: this.props.general.selectedItem.date != '' ? this.props.general.selectedItem.date : 'No date',
@@ -78,7 +89,8 @@ class EventMenu extends Component {
                         this.props.general.selectedItem.endTime != ''
                               ? this.props.general.selectedItem.endTime
                               : 'No time',
-                  dateFormattedForDatePicker: date
+                  dateFormattedForDatePicker: date,
+                  reminder: this.props.general.selectedItem.reminder
             });
       }
 
@@ -111,16 +123,29 @@ class EventMenu extends Component {
             this.setState({ isDatePickerVisible: false });
       };
 
-      handleDatePicked = dateReceived => {
+      handleDatePicked = async dateReceived => {
             let date = moment(dateReceived).format('L');
             let previousDate = this.state.date;
 
             // Close the event menu, if we change the date for another day
             if (date !== previousDate) {
-                  this.editEventDate(date);
+                  // await this.editEventDate(date);
 
-                  this.hideDatePicker();
-                  this.props.closeEventMenuProp();
+                  // this.hideDatePicker();
+                  // this.props.closeEventMenuProp();
+
+                  this.setState(
+                        {
+                              date: date
+                        },
+                        async () => {
+                              await this.setReminder(this.state.reminder.time);
+                              this.props.editEventDateProp(date, this.props.general.selectedItem.id);
+
+                              this.hideDatePicker();
+                              this.props.closeEventMenuProp();
+                        }
+                  );
             } else {
                   this.hideDatePicker();
             }
@@ -155,6 +180,7 @@ class EventMenu extends Component {
                         endTime: endTime
                   },
                   () => {
+                        this.setReminder(this.state.reminder.time);
                         this.props.editEventStartTimeProp(time, endTime, this.props.general.selectedItem.id);
                         this.hideStartTimePicker();
                   }
@@ -225,36 +251,155 @@ class EventMenu extends Component {
             this.props.editEventNameProp(this.state.name, this.props.general.selectedItem.id, previousName);
       };
 
-      editEventDate = date => {
-            this.setState({
-                  date: date
-            });
-
-            this.props.editEventDateProp(date, this.props.general.selectedItem.id);
-      };
-
-      deleteTask = () => {
+      deleteTask = async () => {
+            const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+            if (status === 'granted') {
+                  clearLocalNotification(this.state.reminder.id);
+            }
             this.props.deleteEventProp(this.props.general.selectedItem);
             this.props.closeEventMenuProp();
+      };
+
+      setReminder = async reminderSelected => {
+            const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+            if (status === 'granted') {
+                  let { id } = this.props.general.selectedItem;
+                  let { name, date, time, reminder } = this.state;
+
+                  // 0 - Get the user choice
+                  reminder.time = reminderSelected;
+
+                  //  1- Clear the previous notif if it exist
+                  await clearLocalNotification(reminder.id);
+
+                  let newReminderId;
+                  // 2 - Set the new notification
+                  if (reminder.time !== 'none') {
+                        await setLocalNotification(id, name, date, time, reminder).then(id => (newReminderId = id));
+                        console.log('promise resolve id', newReminderId);
+                  } else {
+                        // console.log('dont set notif');
+                        newReminderId = '';
+                  }
+                  // console.log('Id sent back', newReminderId);
+
+                  // 3 - Get the new id returned by setLocalNotification
+                  reminder.id = newReminderId;
+
+                  // 4 - Set the new state / Dispatch the change
+                  await this.setState(
+                        {
+                              reminder: reminder
+                        },
+                        () => {
+                              this.props.setEventReminderProp(id, reminder);
+                        }
+                  );
+            } else {
+                  // TODO: create an alert
+                  throw new Error('Location permission not granted');
+            }
       };
 
       render() {
             return (
                   <Animated.View style={[styles.container, { bottom: this.state.yValue }]}>
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+                        //////////////////////////////////////////         Reminder          ///////////////////////////////////////////// 
+                        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
+
+                        {/* <View style={{ flexDirection: 'row' }}>
+                              <View
+                                    style={{
+                                          flexDirection: 'row',
+                                          backgroundColor: '#FF2D55',
+                                          borderRadius: 100,
+                                          padding: 4,
+                                          paddingHorizontal: 12,
+                                          marginBottom: 12
+                                    }}
+                              >
+                                    <Ionicons name="md-notifications" size={19} color="white" />
+                                    <Text style={{ color: 'white', marginLeft: 8 }}>1h before</Text>
+                              </View>
+                        </View> */}
+
+                        {this.state.reminder.time !== 'none' && (
+                              <Menu
+                                    ref={ref => (this.reminderMenu = ref)}
+                                    button={
+                                          // <Text onPress={() => this.reminderMenu.show()}>Show menu</Text>
+                                          <View style={{ flexDirection: 'row' }}>
+                                                <TouchableOpacity
+                                                      onPress={() => this.reminderMenu.show()}
+                                                      style={{
+                                                            flexDirection: 'row',
+                                                            backgroundColor: '#FF2D55',
+                                                            borderRadius: 100,
+                                                            padding: 4,
+                                                            paddingHorizontal: 12,
+                                                            marginBottom: 12
+                                                      }}
+                                                >
+                                                      <Ionicons name="md-notifications" size={19} color="white" />
+                                                      <Text style={{ color: 'white', marginLeft: 8 }}>
+                                                            {getReminderText(this.state.reminder.time)}
+                                                      </Text>
+                                                </TouchableOpacity>
+                                          </View>
+                                    }
+                              >
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('none');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>None</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-hour');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>1 hour before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-hour');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>3 hours before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-day');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>1 day before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-day');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>3 days before</Text>}
+                                    />
+                              </Menu>
+                        )}
+
+                        {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Header          ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
                         <View style={{ flexDirection: 'row' }}>
+                              {/* <KeyboardAvoidingView style={{ flexDirection: 'row' }} behavior="position" enabled> */}
                               <TextInput
                                     style={{ height: 40, flex: 1, marginLeft: 8, paddingBottom: 8, fontSize: 16 }}
                                     onChangeText={name => this.changeEventName(name)}
                                     value={this.state.name}
                               />
 
-                              <TouchableOpacity style={{ width: 30, alignItems: 'center' }} onPress={this.deleteTask}>
-                                    <Ionicons name="md-trash" size={30} />
-                              </TouchableOpacity>
+                              {/* </KeyboardAvoidingView> */}
                         </View>
 
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
@@ -356,12 +501,67 @@ class EventMenu extends Component {
                         //////////////////////////////////////////         Bottom Bar Menu        ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
+                        <View style={styles.bottomBarMenu}>
+                              <Menu
+                                    ref={ref => (this.reminderMenu2 = ref)}
+                                    button={
+                                          // <Text onPress={() => this.reminderMenu.show()}>Show menu</Text>
+                                          <TouchableOpacity onPress={() => this.reminderMenu2.show()}>
+                                                <Ionicons
+                                                      name="md-notifications"
+                                                      size={30}
+                                                      color={this.state.reminder.time !== 'none' ? '#FF2D55' : 'grey'}
+                                                />
+                                          </TouchableOpacity>
+                                    }
+                              >
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('none');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>None</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-hour');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>1 hour before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-hour');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>3 hours before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-day');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>1 day before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-day');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>3 days before</Text>}
+                                    />
+                              </Menu>
+                              <TouchableOpacity style={{ width: 30, alignItems: 'center' }} onPress={this.deleteTask}>
+                                    <Ionicons name="md-trash" size={30} />
+                              </TouchableOpacity>
+                        </View>
+
                         {/* <View style={styles.bottomBarMenu}>
-                              <TouchableOpacity onPress={() => this.toggleCompletion()}>
+                              <TouchableOpacity>
                                     <Ionicons
-                                          name="ios-checkmark-circle-outline"
+                                          name="md-notifications"
                                           size={30}
-                                          color={this.state.completed ? 'red' : 'grey'}
+                                          color={this.state.reminder.time !== 'none' ? '#FF2D55' : 'grey'}
                                     />
                               </TouchableOpacity>
                         </View> */}
@@ -392,6 +592,8 @@ const styles = StyleSheet.create({
       },
       bottomBarMenu: {
             flexDirection: 'row',
+            justifyContent: 'space-between',
+            paddingHorizontal: 24,
             position: 'absolute',
             left: 0,
             right: 0,
@@ -414,3 +616,20 @@ export default connect(
       mapStateToProp,
       mapDispatchToProps
 )(EventMenu);
+
+function getReminderText(time) {
+      switch (time) {
+            case '1-hour':
+                  return '1h before';
+                  break;
+            case '3-hour':
+                  return '3h before';
+                  break;
+            case '1-day':
+                  return '1 day bef.';
+                  break;
+            case '3-day':
+                  return '3 days bef.';
+                  break;
+      }
+}

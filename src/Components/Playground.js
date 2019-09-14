@@ -1,19 +1,114 @@
 // STATIC UI
 import React, { Component } from 'react';
-import { Text, TextInput, View, StyleSheet, TouchableOpacity, AsyncStorage } from 'react-native';
+import { Text, TextInput, View, StyleSheet, TouchableOpacity, Alert, AsyncStorage } from 'react-native';
 import { Notifications } from 'expo';
+import { connect } from 'react-redux';
 import * as Permissions from 'expo-permissions';
 // ANIMATED UI
-// DATA
-// HELPERS
 
+// DATA
+import { setLocalNotificationAction } from '../Store/actions/notificationAction';
+function mapDispatchToProps(dispatch) {
+      return {
+            setLocalNotificationProp: () => dispatch(setLocalNotificationAction())
+      };
+}
+
+// HELPERS
 const NOTIFICATION_KEY = 'Almana:notifications';
+
+class Playground extends Component {
+      createNotification = async () => {
+            // const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+            // if (status === 'granted') {
+            let date = new Date(2019, 8, 10, 14, 0);
+
+            let idNotif = 0;
+
+            // try {
+            //       await AsyncStorage.setItem('@MySuperStore:key', 123);
+            // } catch (error) {
+            //       console.log(error);
+            // }
+
+            // try {
+            //       const value = await AsyncStorage.getItem('@MySuperStore:key');
+            //       if (value !== null) {
+            //             // We have data!!
+            //             console.log(typeof value);
+            //       }
+            // } catch (error) {
+            //       console.log(error);
+            // }
+
+            let notificationId = {
+                  notification: Notifications.scheduleLocalNotificationAsync(
+                        {
+                              title: 'Even work in method',
+                              body: 'Wow, I can show up even when app is closed'
+                        },
+                        {
+                              time: new Date().getTime() + 5000
+                              // time: date
+                        }
+                  )
+                        .then(e => {
+                              idNotif = e;
+                        })
+                        .then(() => Notifications.cancelScheduledNotificationAsync(idNotif))
+            };
+
+            // Notifications.cancelScheduledNotificationAsync(idNotif);
+            // notificationId.notification.then(e => Notifications.cancelScheduledNotificationAsync(e));
+            // } else {
+            //       throw new Error('Location permission not granted');
+            // }
+      };
+
+      render() {
+            return (
+                  <View style={styles.containerParent}>
+                        <View style={styles.container}>
+                              <TouchableOpacity onPress={this.createNotification}>
+                                    <Text>Add notification</Text>
+                              </TouchableOpacity>
+                        </View>
+                  </View>
+            );
+      }
+}
+
+function mapStateToProp(state, ownProps) {
+      // console.log(state.general);
+      let notifications = state.notifications;
+
+      return {
+            notification: notifications
+      };
+}
+
+export default connect(
+      mapStateToProp,
+      mapDispatchToProps
+)(Playground);
+
+const styles = StyleSheet.create({
+      containerParent: {
+            flex: 1,
+            backgroundColor: '#ecf0f1',
+            paddingTop: 20,
+            justifyContent: 'flex-end'
+      },
+      container: {
+            height: 300
+      }
+});
 
 function clearLocalNotification() {
       return AsyncStorage.removeItem(NOTIFICATION_KEY).then(Notifications.cancelAllScheduledNotificationsAsync);
 }
 
-function createNotification() {
+function createNotification2() {
       return {
             title: 'Almana Notification',
             body: 'Message notification',
@@ -30,14 +125,14 @@ function createNotification() {
 }
 
 function setLocalNotification() {
-      AsyncStorage.getAllKeys((err, keys) => {
-            AsyncStorage.multiGet(keys, (error, stores) => {
-                  stores.map((result, i, store) => {
-                        console.log({ [store[i][0]]: store[i][1] });
-                        return true;
-                  });
-            });
-      });
+      // AsyncStorage.getAllKeys((err, keys) => {
+      //       AsyncStorage.multiGet(keys, (error, stores) => {
+      //             stores.map((result, i, store) => {
+      //                   console.log({ [store[i][0]]: store[i][1] });
+      //                   return true;
+      //             });
+      //       });
+      // });
       AsyncStorage.getItem(NOTIFICATION_KEY)
             .then(JSON.parse)
             .then(data => {
@@ -45,16 +140,19 @@ function setLocalNotification() {
                   if (data === null) {
                         Permissions.askAsync(Permissions.NOTIFICATIONS).then(status => {
                               if (status === 'granted') {
+                                    console.log('granted');
                                     Notifications.cancelAllScheduledNotificationsAsync();
 
-                                    let tomorrow = new Date();
-                                    tomorrow.setDate(tomorrow.getDate());
-                                    tomorrow.setHours(0);
-                                    tomorrow.setMinutes(0);
-                                    tomorrow.setSeconds(5);
+                                    let today = new Date();
+                                    today.setDate(today.getDate());
+                                    today.setHours(0);
+                                    today.setMinutes(0);
+                                    today.setSeconds(5);
+
+                                    let date = new Date(2019, 8, 10, 13, 22);
 
                                     Notifications.scheduleLocalNotificationAsync(createNotification(), {
-                                          time: tomorrow
+                                          time: date
                                           // repeat: 'day'
                                     });
 
@@ -63,71 +161,4 @@ function setLocalNotification() {
                         });
                   }
             });
-      console.log(AsyncStorage.getItem(NOTIFICATION_KEY));
 }
-
-function test() {
-      console.log('test');
-}
-
-export default class App extends Component {
-      state = {
-            isNameInputFocus: false
-      };
-
-      render() {
-            return (
-                  <View style={styles.containerParent}>
-                        <View style={styles.container}>
-                              <TouchableOpacity onPress={setLocalNotification}>
-                                    <Text>Add notification</Text>
-                              </TouchableOpacity>
-                        </View>
-                  </View>
-            );
-      }
-
-      _submit = () => {
-            alert(`Confirmation email has been sent to ${this.state.email}`);
-      };
-}
-
-const styles = StyleSheet.create({
-      containerParent: {
-            flex: 1,
-            backgroundColor: '#ecf0f1',
-            paddingTop: 20,
-            justifyContent: 'flex-end'
-      },
-      container: {
-            height: 300
-            // elevation: 15,
-            // shadowColor: 'black',
-            // shadowOffset: { width: 0, height: 0.5 * 5 },
-            // shadowOpacity: 0.3,
-            // shadowRadius: 0.8 * 8,
-            // borderTopLeftRadius: 15,
-            // borderTopRightRadius: 15
-      },
-      input: {
-            margin: 20,
-            // marginBottom: 0,
-            // marginTop: 20,
-            height: 34,
-            paddingHorizontal: 10,
-            borderRadius: 4,
-            borderColor: '#ccc',
-            borderWidth: 1,
-            fontSize: 16
-      },
-      legal: {
-            margin: 10,
-            color: '#333',
-            fontSize: 12,
-            textAlign: 'center'
-      },
-      form: {
-            flex: 1
-            // justifyContent: 'space-between'
-      }
-});

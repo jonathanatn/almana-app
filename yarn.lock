@@ -1083,6 +1083,11 @@
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
   integrity sha1-p3c2C1s5oaLlEG+OhY8v0tBgxXA=
 
+"@react-native-community/async-storage@^1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@react-native-community/async-storage/-/async-storage-1.6.1.tgz#19be07fc1d65c77bdeb20f46108ba12076aad1c5"
+  integrity sha512-1WA28xfdhG+unkTEk/lXnqI2izv6belo0CYw7UdvaeHm8TIYT6eTmIIdGR7oiCa2xSKEnaPQqRMH6h7gyLNbww==
+
 "@react-native-community/cli@^1.2.1":
   version "1.11.2"
   resolved "https://registry.yarnpkg.com/@react-native-community/cli/-/cli-1.11.2.tgz#b14967f24a389f5a16889a747345cf0e5757a2f1"
@@ -5024,6 +5029,13 @@ react-native-maps@0.24.2:
   version "0.24.2"
   resolved "https://registry.yarnpkg.com/react-native-maps/-/react-native-maps-0.24.2.tgz#19974f967cb0c2e24dab74ca879118e0932571b2"
   integrity sha512-1iNIDikp2dkCG+8DguaEviYZiMSYyvwqYT7pO2YTZvuFRDSc/P9jXMhTUnSh4wNDlEeQ47OJ09l0pwWVBZ7wxg==
+
+react-native-material-menu@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/react-native-material-menu/-/react-native-material-menu-1.0.0.tgz#bf3d366f7d7044accae1bc6fffe1cf13ac8d88ec"
+  integrity sha512-VUygQvyQQrtM5HBiDLHo0JGoWjegAw/IxpwgXbL9sJfPMDHizx9saZck+IkbTwTvL6PjpnwjI2fuCldoqvDGzQ==
+  dependencies:
+    prop-types "^15.6.0"
 
 react-native-modal-datetime-picker@^7.5.0:
   version "7.5.0"

@@ -73,7 +73,7 @@ const SignUpStackNav = createStackNavigator(
 
 const MainStackNav = createStackNavigator(
       {
-            Playground,
+            // Playground,
             MainScreen
       },
       {
