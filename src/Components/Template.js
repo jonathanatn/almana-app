@@ -1,20 +1,16 @@
 // STATIC UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Task from './Elements/Task';
-import ItemMenu from './Elements/ItemMenu';
 
 // ANIMATED UI
 
 // DATA
 import { connect } from 'react-redux';
-import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
+import { receiveTasksAction } from '../Store/actions/taskAction';
 function mapDispatchToProps(dispatch) {
       return {
-            receiveTasksProp: date => dispatch(receiveTasksAction(date)),
-            addTaskProp: task => dispatch(addTaskAction(task)),
-            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks))
+            receiveTasksProp: date => dispatch(receiveTasksAction(date))
       };
 }
 
@@ -48,25 +44,6 @@ export default connect(
 
 const styles = StyleSheet.create({
       container: {
-            flex: 1,
-            backgroundColor: 'white'
-      },
-      addButtonContainer: {
-            width: 80,
-            height: 80,
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'absolute',
-            top: height / 2 - 60,
-            right: -30,
-            zIndex: 1
-      },
-      addButton: {
-            width: 60,
-            height: 60,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#FF2D55',
-            borderRadius: 30
+            flex: 1
       }
 });

@@ -1,6 +1,16 @@
 // STATIC UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, BackHandler } from 'react-native';
+import {
+      StyleSheet,
+      Text,
+      View,
+      TouchableOpacity,
+      Dimensions,
+      ScrollView,
+      Alert,
+      BackHandler,
+      Platform
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Task from './Elements/Task';
 import TaskMenu from './Elements/TaskMenu';
@@ -122,6 +132,11 @@ class MainScreen extends Component {
 
             if (this.props.general.isEventAdderOpen === true) {
                   this.props.closeEventAdderProp();
+                  return true;
+            }
+
+            if (this.state.isAddItemMenuOpen === true) {
+                  this.setState({ isAddItemMenuOpen: false });
                   return true;
             }
       };
@@ -320,7 +335,14 @@ class MainScreen extends Component {
                                                       backgroundColor: '#FF2D55',
                                                       position: 'relative',
                                                       right: -15,
-                                                      bottom: 13,
+                                                      ...Platform.select({
+                                                            ios: {
+                                                                  bottom: 16
+                                                            },
+                                                            android: {
+                                                                  bottom: 13
+                                                            }
+                                                      }),
                                                       borderRadius: 50
                                                 }}
                                           />
@@ -399,6 +421,11 @@ const styles = StyleSheet.create({
       addButton: {
             width: 60,
             height: 60,
+            ...Platform.select({
+                  ios: {
+                        paddingTop: 5
+                  }
+            }),
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: '#FF2D55',

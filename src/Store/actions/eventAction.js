@@ -40,6 +40,7 @@ export function addEventAction(event) {
                                           time: event.time,
                                           endTime: event.endTime,
                                           reminder: event.reminder,
+                                          repeat: event.repeat,
                                           period: period,
                                           position: event.position,
                                           subtask: { ...event.subtask }
@@ -50,9 +51,15 @@ export function addEventAction(event) {
             });
 
             let reminderId;
-            console.log(event.reminder.time);
             if (event.reminder.time !== 'none') {
-                  await setLocalNotification(id, name, date, time, reminder).then(id => (reminderId = id));
+                  await setLocalNotification(
+                        autoId,
+                        event.name,
+                        event.date,
+                        event.time,
+                        event.reminder,
+                        event.repeat
+                  ).then(id => (reminderId = id));
             } else {
                   reminderId = '';
             }
@@ -63,6 +70,7 @@ export function addEventAction(event) {
       };
 }
 
+//FIXME: Not send online (think about the rollback before)
 export const SET_EVENT_REMINDER = 'SET_EVENT_REMINDER';
 export function setEventReminderAction(id, reminder) {
       return dispatch => {
@@ -71,84 +79,27 @@ export function setEventReminderAction(id, reminder) {
                   id: id,
                   reminder: reminder
             });
+      };
+}
 
-            // // Formatting date for new Date
-            // let year = date.substring(6);
-            // let month = date.substring(0, 2);
-            // let day = date.substring(3, 5);
+export const SET_EVENT_REPEAT = 'SET_EVENT_REPEAT';
+export function setEventRepeatAction(id, repeat) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
 
-            // // Formatting time for new Date
-            // let time24h = moment(time, 'h:mm A').format('HH:mm:ss');
-            // let hour = time24h.substring(0, 2);
-            // let minute = time24h.substring(3, 5);
-
-            // let reminderDate;
-
-            // if (reminder.time === '1-hour') {
-            //       reminderDate = new Date(year, parseInt(month, 10) - 1, day, parseInt(hour, 10) - 1, minute);
-            //       // console.log('reminder 1hour');
-            // } else if (reminder.time === '3-hour') {
-            //       reminderDate = new Date(year, parseInt(month, 10) - 1, day, parseInt(hour, 10) - 3, minute);
-            //       // console.log('reminder 3hour');
-            // } else if (reminder.time === '1-day') {
-            //       reminderDate = new Date(year, parseInt(month, 10) - 1, parseInt(day, 10) - 1, hour, minute);
-            //       // console.log('reminder 1day');
-            // } else if (reminder.time === '3-day') {
-            //       reminderDate = new Date(year, parseInt(month, 10) - 1, parseInt(day, 10) - 3, hour, minute);
-            //       // console.log('reminder 3day');
-            // }
-
-            // let today = new Date();
-            // let idReminder;
-
-            // // If the reminder have an idea it mean it had a reminder setted so we clear it
-            // if (reminder.id !== '') {
-            //       console.log(reminder.id);
-            //       Notifications.cancelScheduledNotificationAsync(reminder.id);
-            // }
-
-            // // If the reminde is not 'none' and if the reminder is not set in the past
-            // if (reminder.time !== 'none' && today < reminderDate) {
-            //       // console.log('reminder set');
-            //       Notifications.scheduleLocalNotificationAsync(
-            //             {
-            //                   title: name,
-            //                   body: time
-            //             },
-            //             {
-            //                   time: reminderDate
-            //             }
-            //       ).then(e => {
-            //             idReminder = e;
-            //             // console.log(idReminder);
-            //             dispatch({
-            //                   type: SET_EVENT_REMINDER,
-            //                   id: id,
-            //                   reminder: {
-            //                         time: reminder.time,
-            //                         id: idReminder
-            //                   }
-            //             });
-            //       });
-            // } else {
-            //       console.log('reminder none');
-            //       // If the reminder is === 'none', we simply dispatch the action
-            //       dispatch({
-            //             type: SET_EVENT_REMINDER,
-            //             id: id,
-            //             reminder: {
-            //                   time: reminder.time,
-            //                   id: ''
-            //             }
-            //       });
-            // }
-
-            // const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
-            // if (status === 'granted') {
-
-            // } else {
-            //       throw new Error('Location permission not granted');
-            // }
+            dispatch({
+                  type: SET_EVENT_REPEAT,
+                  payload: { id, repeat },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('events')
+                                    .doc(id)
+                                    .set({ repeat: repeat }, { merge: true })
+                              // rollback: { type: EDIT_TASK_NAME_ROLLBACK, meta: { id, previousName } }
+                        }
+                  }
+            });
       };
 }
 

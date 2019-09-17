@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from 'react-native-modal-datetime-picker';
 import Menu, { MenuItem, MenuDivider } from 'react-native-material-menu';
 import * as Permissions from 'expo-permissions';
+import RepeatButton from './Items/RepeatButton';
 
 // ANIMATED UI
 
@@ -37,6 +38,7 @@ class EventAdder extends Component {
                   id: '',
                   time: 'none'
             },
+            repeat: 'never',
             isDatePickerVisible: false,
             isStartTimePickerVisible: false,
             isEndTimePickerVisible: false,
@@ -112,7 +114,7 @@ class EventAdder extends Component {
                         time: this.state.time,
                         endTime: this.state.endTime,
                         reminder: this.state.reminder,
-                        reccurency: '',
+                        repeat: this.state.repeat,
                         position: -1
                   });
             }
@@ -235,6 +237,12 @@ class EventAdder extends Component {
                   // TODO: create an alert
                   throw new Error('Location permission not granted');
             }
+      };
+
+      setRepeat = repeat => {
+            this.setState({
+                  repeat: repeat
+            });
       };
 
       render() {
@@ -427,6 +435,7 @@ class EventAdder extends Component {
                                           children={<Text>3 days before</Text>}
                                     />
                               </Menu>
+                              <RepeatButton setRepeat={this.setRepeat} />
                               <TouchableOpacity
                                     onPress={() => {
                                           this.props.closeEventAdderProp();

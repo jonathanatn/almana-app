@@ -1,11 +1,12 @@
 // STATIC UI
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Animated, Dimensions, TextInput, Alert, Modal } from 'react-native';
-import { KeyboardAvoidingView, Keyboard } from 'react-native';
+import { KeyboardAvoidingView, Keyboard, Platform } from 'react-native';
 import DateTimePicker from 'react-native-modal-datetime-picker';
 import { Ionicons } from '@expo/vector-icons';
 import Menu, { MenuItem, MenuDivider } from 'react-native-material-menu';
 import * as Permissions from 'expo-permissions';
+import RepeatButton from './Items/RepeatButton';
 
 // ANIMATED UI
 
@@ -14,12 +15,8 @@ import { firestoreConnect } from 'react-redux-firebase';
 import { connect } from 'react-redux';
 import { compose } from 'redux';
 import { editEventStartTimeAction, editEventEndTimeAction, deleteEventAction } from '../../Store/actions/eventAction';
-import {
-      editEventDateAction,
-      editEventNameAction,
-      syncEventNameAction,
-      setEventReminderAction
-} from '../../Store/actions/eventAction';
+import { editEventDateAction, editEventNameAction, syncEventNameAction } from '../../Store/actions/eventAction';
+import { setEventReminderAction, setEventRepeatAction } from '../../Store/actions/eventAction';
 import { closeEventMenuAction } from '../../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
@@ -30,6 +27,7 @@ function mapDispatchToProps(dispatch) {
             editEventDateProp: (date, id) => dispatch(editEventDateAction(date, id)),
             deleteEventProp: id => dispatch(deleteEventAction(id)),
             setEventReminderProp: (id, reminder) => dispatch(setEventReminderAction(id, reminder)),
+            setEventRepeatProp: (id, repeat) => dispatch(setEventRepeatAction(id, repeat)),
 
             // GENERAL
             closeEventMenuProp: () => dispatch(closeEventMenuAction())
@@ -50,7 +48,7 @@ class EventMenu extends Component {
             time: '',
             endTime: '',
             reminder: '',
-            recurrency: '',
+            repeat: '',
             isDatePickerVisible: false,
             isStartTimePickerVisible: false,
             isEndTimePickerVisible: false
@@ -90,7 +88,8 @@ class EventMenu extends Component {
                               ? this.props.general.selectedItem.endTime
                               : 'No time',
                   dateFormattedForDatePicker: date,
-                  reminder: this.props.general.selectedItem.reminder
+                  reminder: this.props.general.selectedItem.reminder,
+                  repeat: this.props.general.selectedItem.repeat
             });
       }
 
@@ -249,6 +248,7 @@ class EventMenu extends Component {
 
             // if keyboard close and previousname and name to send are different
             this.props.editEventNameProp(this.state.name, this.props.general.selectedItem.id, previousName);
+            this.setReminder(this.state.reminder.time, this.state.repeat);
       };
 
       deleteTask = async () => {
@@ -260,7 +260,7 @@ class EventMenu extends Component {
             this.props.closeEventMenuProp();
       };
 
-      setReminder = async reminderSelected => {
+      setReminder = async (reminderSelected, repeat = this.state.repeat) => {
             const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
             if (status === 'granted') {
                   let { id } = this.props.general.selectedItem;
@@ -275,8 +275,9 @@ class EventMenu extends Component {
                   let newReminderId;
                   // 2 - Set the new notification
                   if (reminder.time !== 'none') {
-                        await setLocalNotification(id, name, date, time, reminder).then(id => (newReminderId = id));
-                        console.log('promise resolve id', newReminderId);
+                        await setLocalNotification(id, name, date, time, reminder, repeat).then(
+                              id => (newReminderId = id)
+                        );
                   } else {
                         // console.log('dont set notif');
                         newReminderId = '';
@@ -301,7 +302,22 @@ class EventMenu extends Component {
             }
       };
 
+      setRepeat = async repeat => {
+            let { reminder } = this.state;
+            this.setState(
+                  {
+                        repeat: repeat
+                  },
+                  () => {
+                        // await this.setReminder(reminder.time, repeat);
+                        this.setReminder(reminder.time, repeat);
+                        this.props.setEventRepeatProp(this.props.general.selectedItem.id, repeat);
+                  }
+            );
+      };
+
       render() {
+            console.log('PARENT', this.state.repeat);
             return (
                   <Animated.View style={[styles.container, { bottom: this.state.yValue }]}>
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
@@ -409,8 +425,20 @@ class EventMenu extends Component {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 }}>
                               <View style={{ width: 100 }}>
                                     <TouchableOpacity onPress={this.showDatePicker}>
-                                          <Text>Date</Text>
-                                          <Text>{this.state.date}</Text>
+                                          {this.state.repeat !== 'never' ? (
+                                                <View>
+                                                      <Text>Start date</Text>
+                                                      <View style={{ flexDirection: 'row' }}>
+                                                            <Ionicons name="ios-repeat" size={20} color="black" />
+                                                            <Text style={{ marginLeft: 8 }}>{this.state.date}</Text>
+                                                      </View>
+                                                </View>
+                                          ) : (
+                                                <View>
+                                                      <Text>Date</Text>
+                                                      <Text>{this.state.date}</Text>
+                                                </View>
+                                          )}
                                     </TouchableOpacity>
                               </View>
 
@@ -426,76 +454,6 @@ class EventMenu extends Component {
                                     </TouchableOpacity>
                               </View>
                         </View>
-
-                        {/*/////////////////////////////////////////         Date Picker       //////////////////////////////////////////// */}
-                        <DateTimePicker
-                              mode={'date'}
-                              date={this.state.dateFormattedForDatePicker}
-                              isVisible={this.state.isDatePickerVisible}
-                              onConfirm={this.handleDatePicked}
-                              onCancel={this.hideDatePicker}
-                        />
-                        <DateTimePicker
-                              mode={'time'}
-                              isVisible={this.state.isStartTimePickerVisible}
-                              onConfirm={this.handleStartTimePicked}
-                              onCancel={this.hideStartTimePicker}
-                        />
-                        <DateTimePicker
-                              mode={'time'}
-                              isVisible={this.state.isEndTimePickerVisible}
-                              onConfirm={this.handleEndTimePicked}
-                              onCancel={this.hideEndTimePicker}
-                        />
-
-                        {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
-                        //////////////////////////////////////////         Subtask         ///////////////////////////////////////////// 
-                        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
-
-                        {/* <View>
-                              {subtask.map((item, index) => {
-                                    return (
-                                          <View key={index} style={{ flexDirection: 'row' }}>
-                                                <TouchableOpacity onPress={() => this.toggleCompletion()}>
-                                                      <Ionicons
-                                                            name="ios-checkmark-circle-outline"
-                                                            size={30}
-                                                            color={this.state.completed ? 'red' : 'grey'}
-                                                      />
-                                                </TouchableOpacity>
-                                                <TextInput
-                                                      style={{
-                                                            height: 40,
-                                                            borderColor: 'gray',
-                                                            borderWidth: 1,
-                                                            flex: 1,
-                                                            marginRight: 20
-                                                      }}
-                                                      onChangeText={name => this.changeTaskName(name)}
-                                                      value={this.state.name}
-                                                />
-                                          </View>
-                                    );
-                              })}
-                              <View style={{ flexDirection: 'row' }}>
-                                    <TextInput
-                                          style={{
-                                                height: 40,
-                                                borderColor: 'gray',
-                                                color: 'grey',
-                                                borderWidth: 1,
-                                                flex: 1,
-                                                marginLeft: 24
-                                          }}
-                                          onChangeText={name => this.changeTaskName(name)}
-                                          value={this.state.subtaskPlaceholder}
-                                    />
-                              </View>
-                        </View> */}
-
-                        {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
-                        //////////////////////////////////////////         Description        ///////////////////////////////////////////// 
-                        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Bottom Bar Menu        ///////////////////////////////////////////// 
@@ -551,20 +509,35 @@ class EventMenu extends Component {
                                           children={<Text>3 days before</Text>}
                                     />
                               </Menu>
+                              <RepeatButton
+                                    setRepeat={this.setRepeat}
+                                    repeat={this.props.general.selectedItem.repeat}
+                              />
                               <TouchableOpacity style={{ width: 30, alignItems: 'center' }} onPress={this.deleteTask}>
                                     <Ionicons name="md-trash" size={30} />
                               </TouchableOpacity>
                         </View>
 
-                        {/* <View style={styles.bottomBarMenu}>
-                              <TouchableOpacity>
-                                    <Ionicons
-                                          name="md-notifications"
-                                          size={30}
-                                          color={this.state.reminder.time !== 'none' ? '#FF2D55' : 'grey'}
-                                    />
-                              </TouchableOpacity>
-                        </View> */}
+                        {/*/////////////////////////////////////////         Date Picker       //////////////////////////////////////////// */}
+                        <DateTimePicker
+                              mode={'date'}
+                              date={this.state.dateFormattedForDatePicker}
+                              isVisible={this.state.isDatePickerVisible}
+                              onConfirm={this.handleDatePicked}
+                              onCancel={this.hideDatePicker}
+                        />
+                        <DateTimePicker
+                              mode={'time'}
+                              isVisible={this.state.isStartTimePickerVisible}
+                              onConfirm={this.handleStartTimePicked}
+                              onCancel={this.hideStartTimePicker}
+                        />
+                        <DateTimePicker
+                              mode={'time'}
+                              isVisible={this.state.isEndTimePickerVisible}
+                              onConfirm={this.handleEndTimePicked}
+                              onCancel={this.hideEndTimePicker}
+                        />
                   </Animated.View>
             );
       }

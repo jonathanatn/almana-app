@@ -127,7 +127,14 @@ class DateMover extends Component {
                                                 backgroundColor: '#FF2D55',
                                                 position: 'relative',
                                                 right: -15,
-                                                bottom: 13,
+                                                // ...Platform.select({
+                                                //       ios: {
+                                                //             bottom: 20
+                                                //       },
+                                                //       android: {
+                                                //             bottom: 13
+                                                //       }
+                                                // }),
                                                 borderRadius: 50
                                           }}
                                     />

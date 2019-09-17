@@ -2,6 +2,7 @@ import {
       ADD_EVENT,
       ADD_EVENT_ROLLBACK,
       SET_EVENT_REMINDER,
+      SET_EVENT_REPEAT,
       DELETE_EVENT,
       DELETE_EVENT_ROLLBACK,
       EDIT_EVENT_NAME,
@@ -37,12 +38,19 @@ function events(state = {}, action) {
                         ...stateToRollback
                   };
             case SET_EVENT_REMINDER:
-                  // console.log('REDUCER', action.reminder);
                   return {
                         ...state,
                         [action.id]: {
                               ...state[action.id],
                               reminder: action.reminder
+                        }
+                  };
+            case SET_EVENT_REPEAT:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              repeat: action.payload.repeat
                         }
                   };
             case EDIT_EVENT_NAME:
