@@ -1,7 +1,7 @@
 // STATIC UI
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Dimensions, TextInput, Alert, Modal } from 'react-native';
-import { KeyboardAvoidingView, Keyboard, Platform, NativeModules } from 'react-native';
+import { KeyboardAvoidingView, Keyboard, Platform, NativeModules, SafeAreaView } from 'react-native';
 import DateTimePicker from 'react-native-modal-datetime-picker';
 import { Ionicons } from '@expo/vector-icons';
 import Menu, { MenuItem, MenuDivider } from 'react-native-material-menu';
@@ -13,6 +13,7 @@ import Animated, { Easing } from 'react-native-reanimated';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 const { cond, eq, add, call, set, Value, event, block, and, greaterThan, lessThan, stopClock, defined } = Animated;
 const { or, startClock, lessOrEq, greaterOrEq, Clock, clockRunning, spring, interpolate, Extrapolate } = Animated;
+const { useCode } = Animated;
 
 // DATA
 import { firestoreConnect } from 'react-redux-firebase';
@@ -50,7 +51,7 @@ class EventMenu extends Component {
 
             this.dragY = new Value(0);
             this.absoluteY = new Value(0);
-            this.offsetY = new Value(-420);
+            this.offsetY = new Value(0);
             this.gestureState = new Value(-1);
 
             this.onGestureEvent = event([
@@ -64,12 +65,20 @@ class EventMenu extends Component {
             ]);
 
             this.addY = add(this.dragY, this.offsetY);
-            this.transY = new Value(-420);
+            this.transY = new Value(0);
             this.clock = new Clock();
             this.menuStarted = new Value(0);
             this.menuReduced = new Value(1);
             this.menuExpanded = new Value(0);
             this.dragging = new Value(0);
+
+            this.openMenu = new Value(0);
+
+            this.bottomBarY = interpolate(this.transY, {
+                  inputRange: [-250, 150],
+                  outputRange: [0, 140],
+                  extrapolate: Extrapolate.CLAMP
+            });
 
             this.state = {
                   id: '',
@@ -97,17 +106,6 @@ class EventMenu extends Component {
             }
             this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
             this.keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', this._keyboardWillHide);
-            if (this.props.general.isEventMenuOpen === true) {
-                  Animated.timing(this.state.yValue, {
-                        toValue: 0,
-                        duration: 100
-                  }).start();
-            } else {
-                  Animated.timing(this.state.yValue, {
-                        toValue: 0,
-                        duration: 100
-                  }).start();
-            }
 
             let dateSelected = this.props.general.dateSelectedDateMover;
 
@@ -132,6 +130,54 @@ class EventMenu extends Component {
                   repeat: this.props.general.selectedItem.repeat
             });
       }
+
+      componentDidUpdate(prevProps) {
+            if (this.props.general.isEventMenuOpen === true && prevProps.general.isEventMenuOpen === false) {
+                  let dateSelected = this.props.general.dateSelectedDateMover;
+
+                  let day = dateSelected.substring(3, 5);
+                  let month = dateSelected.substring(0, 2);
+                  let year = dateSelected.substring(6);
+
+                  // Format the date for the DatePicker selected date
+                  let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
+
+                  this.setState({
+                        name: this.props.general.selectedItem.name,
+                        completed: this.props.general.selectedItem.completed,
+                        date:
+                              this.props.general.selectedItem.date != ''
+                                    ? this.props.general.selectedItem.date
+                                    : 'No date',
+                        time:
+                              this.props.general.selectedItem.time != ''
+                                    ? this.props.general.selectedItem.time
+                                    : 'No time',
+                        endTime:
+                              this.props.general.selectedItem.endTime != ''
+                                    ? this.props.general.selectedItem.endTime
+                                    : 'No time',
+                        dateFormattedForDatePicker: date,
+                        reminder: this.props.general.selectedItem.reminder,
+                        repeat: this.props.general.selectedItem.repeat
+                  });
+                  // this.transY.setValue(-420);
+                  // this.offsetY.setValue(-420);
+                  // this.menuReduced.setValue(1);
+
+                  this.openMenu.setValue(1);
+            }
+            if (this.props.general.isEventMenuOpen === false) {
+                  this.transY.setValue(0);
+                  this.offsetY.setValue(0);
+                  this.menuReduced.setValue(0);
+            }
+      }
+
+      closeMenu = () => {
+            // this.textInputRef.blur();
+            this.props.closeEventMenuProp();
+      };
 
       componentWillUnmount() {
             this.keyboardDidHideListener.remove();
@@ -357,421 +403,437 @@ class EventMenu extends Component {
       };
 
       render() {
-            console.log('PARENT', this.state.repeat);
             return (
-                  <PanGestureHandler
-                        maxPointers={1}
-                        onGestureEvent={this.onGestureEvent}
-                        onHandlerStateChange={this.onGestureEvent}
-                        minDist={10}
-                  >
-                        <Animated.View
-                              style={[
-                                    styles.container,
-                                    {
-                                          ...Platform.select({
-                                                ios: {
-                                                      bottom: -height - 10 - this.state.iosStatusBarHeight
-                                                },
-                                                android: {
-                                                      bottom: -height - 10
-                                                }
-                                          }),
-                                          transform: [{ translateY: this.transY }]
-                                    }
-                              ]}
+                  <SafeAreaView style={{ flex: 1, elevation: 15, zIndex: 99 }}>
+                        <PanGestureHandler
+                              maxPointers={1}
+                              onGestureEvent={this.onGestureEvent}
+                              onHandlerStateChange={this.onGestureEvent}
+                              minDist={10}
                         >
-                              <Animated.Code>
-                                    {() =>
-                                          block([
-                                                //                                              cond(eq(this.menuStarted, 0), [
-                                                //       set(
-                                                //             this.transY,
-                                                //             cond(
-                                                //                   defined(this.transY),
-                                                //                   runSpring(this.clock, this.transY, 50, -420, 20)
-                                                //             )
-                                                //       ),
-                                                //       cond(lessThan(this.transY, -419), [
-                                                //             set(this.offsetY, -420),
-                                                //             stopClock(this.clock),
-                                                //             set(this.menuStarted, 1)
-                                                //       ])
-                                                // ]),
-                                                cond(
-                                                      and(
-                                                            eq(this.gestureState, State.ACTIVE),
-                                                            greaterOrEq(this.transY, -height),
-                                                            eq(this.dragging, 0)
-                                                      ),
-                                                      [stopClock(this.clock), set(this.transY, this.addY)]
-                                                ),
-                                                cond(
-                                                      and(
-                                                            eq(this.gestureState, State.ACTIVE),
-                                                            lessOrEq(this.transY, -height),
-                                                            eq(this.dragging, 0)
-                                                      ),
-                                                      [set(this.transY, -height), set(this.offsetY, -height)]
-                                                ),
-                                                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                ////////////////////////////////////////////////////////// Move Menu ///////////////////////////////////////////////////////////
-                                                cond(
-                                                      and(
-                                                            eq(this.gestureState, State.END),
-                                                            and(
-                                                                  lessThan(this.transY, -370),
-                                                                  greaterThan(this.transY, -470)
-                                                            ),
-                                                            eq(this.menuReduced, 1)
-                                                      ),
-                                                      [
-                                                            set(
-                                                                  this.transY,
-                                                                  cond(
-                                                                        defined(this.transY),
-                                                                        runSpring(this.clock, this.transY, 50, -420, 7)
-                                                                  )
-                                                            )
-                                                      ]
-                                                ),
-
-                                                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                //////////////////////////////////////////////////////// Close Menu /////////////////////////////////////////////////////////
-                                                cond(
-                                                      and(
-                                                            eq(this.gestureState, State.END),
-                                                            greaterOrEq(this.transY, -370),
-                                                            eq(this.menuReduced, 1)
-                                                      ),
-                                                      [
-                                                            set(
-                                                                  this.transY,
-                                                                  cond(
-                                                                        defined(this.transY),
-                                                                        runSpring(this.clock, this.transY, 50, 0, 20)
-                                                                  )
-                                                            ),
-                                                            set(this.dragging, 1),
-                                                            cond(greaterThan(this.transY, -1), [
-                                                                  set(this.offsetY, 0),
-                                                                  stopClock(this.clock),
-                                                                  set(this.menuReduced, 0),
-                                                                  set(this.menuStarted, 0),
-                                                                  set(this.dragging, 0),
-                                                                  call([], this.closeMenu)
-                                                            ])
-                                                      ]
-                                                ),
-
-                                                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                //////////////////////////////////////////////////////// Expand Menu /////////////////////////////////////////////////////////
-                                                cond(
-                                                      and(
-                                                            eq(this.gestureState, State.END),
-                                                            lessOrEq(this.transY, -470),
-                                                            eq(this.menuReduced, 1)
-                                                      ),
-                                                      [
-                                                            set(
-                                                                  this.transY,
-                                                                  cond(
-                                                                        defined(this.transY),
-                                                                        runSpring(
-                                                                              this.clock,
-                                                                              this.transY,
-                                                                              50,
-                                                                              -height,
-                                                                              20
-                                                                        )
-                                                                  )
-                                                            ),
-                                                            set(this.dragging, 1),
-                                                            cond(lessThan(this.transY, -height + 1), [
-                                                                  set(this.offsetY, -height),
-                                                                  stopClock(this.clock),
-                                                                  set(this.menuReduced, 0),
-                                                                  set(this.menuExpanded, 1),
-                                                                  set(this.dragging, 0)
-                                                            ])
-                                                      ]
-                                                ),
-                                                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                //////////////////////////////////////////////////////// Reduce Menu /////////////////////////////////////////////////////////
-                                                cond(
-                                                      and(
-                                                            eq(this.gestureState, State.END),
-                                                            greaterOrEq(this.transY, -height + 20),
-                                                            eq(this.menuExpanded, 1)
-                                                      ),
-                                                      [
-                                                            set(
-                                                                  this.transY,
-                                                                  cond(
-                                                                        defined(this.transY),
-                                                                        runSpring(this.clock, this.transY, 50, -420, 20)
-                                                                  )
-                                                            ),
-                                                            set(this.dragging, 1),
-                                                            cond(greaterThan(this.transY, -421), [
-                                                                  set(this.offsetY, -420),
-                                                                  stopClock(this.clock),
-                                                                  set(this.menuExpanded, 0),
-                                                                  set(this.menuReduced, 1),
-                                                                  set(this.dragging, 0)
-                                                            ])
-                                                      ]
-                                                ),
-
-                                                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                //////////////////////////////////////////////////////// Move Expanded Menu /////////////////////////////////////////////////////////
-                                                cond(
-                                                      and(
-                                                            eq(this.gestureState, State.END),
-                                                            lessThan(this.transY, -height + 20),
-                                                            eq(this.menuExpanded, 1)
-                                                      ),
-                                                      [
-                                                            set(
-                                                                  this.transY,
-                                                                  cond(
-                                                                        defined(this.transY),
-                                                                        runSpring(
-                                                                              this.clock,
-                                                                              this.transY,
-                                                                              50,
-                                                                              -height,
-                                                                              7
-                                                                        )
-                                                                  )
-                                                            ),
-                                                            set(this.dragging, 1),
-                                                            cond(lessOrEq(this.transY, -height + 1), [
-                                                                  set(this.offsetY, -height),
-                                                                  stopClock(this.clock),
-                                                                  set(this.dragging, 0)
-                                                            ])
-                                                      ]
-                                                )
-                                          ])
-                                    }
-                              </Animated.Code>
-                              {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+                              <Animated.View
+                                    style={[
+                                          styles.container,
+                                          {
+                                                ...Platform.select({
+                                                      ios: {
+                                                            bottom: -height - 10 - this.state.iosStatusBarHeight
+                                                      },
+                                                      android: {
+                                                            bottom: -height - 10
+                                                      }
+                                                }),
+                                                transform: [{ translateY: this.transY }]
+                                          }
+                                    ]}
+                              >
+                                    {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Reminder          ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
-                              {this.state.reminder.time !== 'none' && (
-                                    <Menu
-                                          ref={ref => (this.reminderMenu = ref)}
-                                          button={
-                                                // <Text onPress={() => this.reminderMenu.show()}>Show menu</Text>
-                                                <View style={{ flexDirection: 'row' }}>
-                                                      <TouchableOpacity
-                                                            onPress={() => this.reminderMenu.show()}
-                                                            style={{
-                                                                  flexDirection: 'row',
-                                                                  backgroundColor: '#FF2D55',
-                                                                  borderRadius: 100,
-                                                                  padding: 4,
-                                                                  paddingHorizontal: 12,
-                                                                  marginBottom: 12
-                                                            }}
-                                                      >
-                                                            <Ionicons name="md-notifications" size={19} color="white" />
-                                                            <Text style={{ color: 'white', marginLeft: 8 }}>
-                                                                  {getReminderText(this.state.reminder.time)}
-                                                            </Text>
-                                                      </TouchableOpacity>
-                                                </View>
-                                          }
-                                    >
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('none');
-                                                      this.reminderMenu.hide();
-                                                }}
-                                                children={<Text>None</Text>}
-                                          />
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('1-hour');
-                                                      this.reminderMenu.hide();
-                                                }}
-                                                children={<Text>1 hour before</Text>}
-                                          />
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('3-hour');
-                                                      this.reminderMenu.hide();
-                                                }}
-                                                children={<Text>3 hours before</Text>}
-                                          />
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('1-day');
-                                                      this.reminderMenu.hide();
-                                                }}
-                                                children={<Text>1 day before</Text>}
-                                          />
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('3-day');
-                                                      this.reminderMenu.hide();
-                                                }}
-                                                children={<Text>3 days before</Text>}
-                                          />
-                                    </Menu>
-                              )}
+                                    {this.state.reminder && this.state.reminder.time !== 'none' ? (
+                                          <Menu
+                                                ref={ref => (this.reminderMenu = ref)}
+                                                style={{ paddingBottom: 50 }}
+                                                button={
+                                                      // <Text onPress={() => this.reminderMenu.show()}>Show menu</Text>
+                                                      <View style={{ flexDirection: 'row' }}>
+                                                            <TouchableOpacity
+                                                                  onPress={() => this.reminderMenu.show()}
+                                                                  style={{
+                                                                        flexDirection: 'row',
+                                                                        backgroundColor: '#FF2D55',
+                                                                        borderRadius: 100,
+                                                                        padding: 4,
+                                                                        paddingHorizontal: 12,
+                                                                        marginBottom: 12
+                                                                  }}
+                                                            >
+                                                                  <Ionicons
+                                                                        name="md-notifications"
+                                                                        size={19}
+                                                                        color="white"
+                                                                  />
+                                                                  <Text style={{ color: 'white', marginLeft: 8 }}>
+                                                                        {getReminderText(this.state.reminder.time)}
+                                                                  </Text>
+                                                            </TouchableOpacity>
+                                                      </View>
+                                                }
+                                          >
+                                                <MenuItem
+                                                      onPress={() => {
+                                                            this.setReminder('none');
+                                                            this.reminderMenu.hide();
+                                                      }}
+                                                      children={<Text>None</Text>}
+                                                />
+                                                <MenuItem
+                                                      onPress={() => {
+                                                            this.setReminder('1-hour');
+                                                            this.reminderMenu.hide();
+                                                      }}
+                                                      children={<Text>1 hour before</Text>}
+                                                />
+                                                <MenuItem
+                                                      onPress={() => {
+                                                            this.setReminder('3-hour');
+                                                            this.reminderMenu.hide();
+                                                      }}
+                                                      children={<Text>3 hours before</Text>}
+                                                />
+                                                <MenuItem
+                                                      onPress={() => {
+                                                            this.setReminder('1-day');
+                                                            this.reminderMenu.hide();
+                                                      }}
+                                                      children={<Text>1 day before</Text>}
+                                                />
+                                                <MenuItem
+                                                      onPress={() => {
+                                                            this.setReminder('3-day');
+                                                            this.reminderMenu.hide();
+                                                      }}
+                                                      children={<Text>3 days before</Text>}
+                                                />
+                                          </Menu>
+                                    ) : null}
 
-                              {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+                                    {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Header          ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
-                              <View style={{ flexDirection: 'row' }}>
-                                    {/* <KeyboardAvoidingView style={{ flexDirection: 'row' }} behavior="position" enabled> */}
-                                    <TextInput
-                                          style={{ height: 40, flex: 1, marginLeft: 8, paddingBottom: 8, fontSize: 16 }}
-                                          onChangeText={name => this.changeEventName(name)}
-                                          value={this.state.name}
-                                    />
+                                    <View style={{ flexDirection: 'row' }}>
+                                          {/* <KeyboardAvoidingView style={{ flexDirection: 'row' }} behavior="position" enabled> */}
+                                          <TextInput
+                                                style={{
+                                                      height: 30,
+                                                      flex: 1,
+                                                      marginLeft: 8,
+                                                      paddingBottom: 8,
+                                                      fontSize: 16,
+                                                      backgroundColor: 'red'
+                                                }}
+                                                onChangeText={name => this.changeEventName(name)}
+                                                value={this.state.name}
+                                                ref={c => {
+                                                      this.textInputRef = c;
+                                                }}
+                                          />
 
-                                    {/* </KeyboardAvoidingView> */}
-                              </View>
+                                          {/* </KeyboardAvoidingView> */}
+                                    </View>
 
-                              {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+                                    {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Date Setter         ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
-                              <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 }}>
-                                    <View style={{ width: 100 }}>
-                                          <TouchableOpacity onPress={this.showDatePicker}>
-                                                {this.state.repeat !== 'never' ? (
-                                                      <View>
-                                                            <Text>Start date</Text>
-                                                            <View style={{ flexDirection: 'row' }}>
-                                                                  <Ionicons name="ios-repeat" size={20} color="black" />
-                                                                  <Text style={{ marginLeft: 8 }}>
-                                                                        {this.state.date}
-                                                                  </Text>
+                                    <View
+                                          style={{
+                                                flexDirection: 'row',
+                                                justifyContent: 'space-around',
+                                                marginTop: 10
+                                          }}
+                                    >
+                                          <View style={{ width: 100 }}>
+                                                <TouchableOpacity onPress={this.showDatePicker}>
+                                                      {this.state.repeat !== 'never' ? (
+                                                            <View>
+                                                                  <Text>Start date</Text>
+                                                                  <View style={{ flexDirection: 'row' }}>
+                                                                        <Ionicons
+                                                                              name="ios-repeat"
+                                                                              size={20}
+                                                                              color="black"
+                                                                        />
+                                                                        <Text style={{ marginLeft: 8 }}>
+                                                                              {this.state.date}
+                                                                        </Text>
+                                                                  </View>
                                                             </View>
-                                                      </View>
-                                                ) : (
-                                                      <View>
-                                                            <Text>Date</Text>
-                                                            <Text>{this.state.date}</Text>
-                                                      </View>
-                                                )}
-                                          </TouchableOpacity>
+                                                      ) : (
+                                                            <View>
+                                                                  <Text>Date</Text>
+                                                                  <Text>{this.state.date}</Text>
+                                                            </View>
+                                                      )}
+                                                </TouchableOpacity>
+                                          </View>
+
+                                          <View style={{ width: 100, flexDirection: 'column' }}>
+                                                <TouchableOpacity
+                                                      style={{ marginBottom: 12 }}
+                                                      onPress={this.showStartTimePicker}
+                                                >
+                                                      <Text>Start time:</Text>
+                                                      <Text>{this.state.time}</Text>
+                                                </TouchableOpacity>
+
+                                                <TouchableOpacity onPress={this.showEndTimePicker}>
+                                                      <Text>End time:</Text>
+                                                      <Text>{this.state.endTime}</Text>
+                                                </TouchableOpacity>
+                                          </View>
                                     </View>
 
-                                    <View style={{ width: 100, flexDirection: 'column' }}>
-                                          <TouchableOpacity
-                                                style={{ marginBottom: 12 }}
-                                                onPress={this.showStartTimePicker}
-                                          >
-                                                <Text>Start time:</Text>
-                                                <Text>{this.state.time}</Text>
-                                          </TouchableOpacity>
+                                    {/*/////////////////////////////////////////         Date Picker       //////////////////////////////////////////// */}
+                                    <DateTimePicker
+                                          mode={'date'}
+                                          date={this.state.dateFormattedForDatePicker}
+                                          isVisible={this.state.isDatePickerVisible}
+                                          onConfirm={this.handleDatePicked}
+                                          onCancel={this.hideDatePicker}
+                                    />
+                                    <DateTimePicker
+                                          mode={'time'}
+                                          isVisible={this.state.isStartTimePickerVisible}
+                                          onConfirm={this.handleStartTimePicked}
+                                          onCancel={this.hideStartTimePicker}
+                                    />
+                                    <DateTimePicker
+                                          mode={'time'}
+                                          isVisible={this.state.isEndTimePickerVisible}
+                                          onConfirm={this.handleEndTimePicked}
+                                          onCancel={this.hideEndTimePicker}
+                                    />
+                              </Animated.View>
+                        </PanGestureHandler>
 
-                                          <TouchableOpacity onPress={this.showEndTimePicker}>
-                                                <Text>End time:</Text>
-                                                <Text>{this.state.endTime}</Text>
-                                          </TouchableOpacity>
-                                    </View>
-                              </View>
-
-                              {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+                        {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Bottom Bar Menu        ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
-                              <View style={styles.bottomBarMenu}>
-                                    <Menu
-                                          ref={ref => (this.reminderMenu2 = ref)}
-                                          button={
-                                                // <Text onPress={() => this.reminderMenu.show()}>Show menu</Text>
-                                                <TouchableOpacity onPress={() => this.reminderMenu2.show()}>
-                                                      <Ionicons
-                                                            name="md-notifications"
-                                                            size={30}
-                                                            color={
-                                                                  this.state.reminder.time !== 'none'
-                                                                        ? '#FF2D55'
-                                                                        : 'grey'
-                                                            }
-                                                      />
-                                                </TouchableOpacity>
-                                          }
-                                    >
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('none');
-                                                      this.reminderMenu2.hide();
-                                                }}
-                                                children={<Text>None</Text>}
-                                          />
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('1-hour');
-                                                      this.reminderMenu2.hide();
-                                                }}
-                                                children={<Text>1 hour before</Text>}
-                                          />
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('3-hour');
-                                                      this.reminderMenu2.hide();
-                                                }}
-                                                children={<Text>3 hours before</Text>}
-                                          />
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('1-day');
-                                                      this.reminderMenu2.hide();
-                                                }}
-                                                children={<Text>1 day before</Text>}
-                                          />
-                                          <MenuItem
-                                                onPress={() => {
-                                                      this.setReminder('3-day');
-                                                      this.reminderMenu2.hide();
-                                                }}
-                                                children={<Text>3 days before</Text>}
-                                          />
-                                    </Menu>
-                                    <RepeatButton
-                                          setRepeat={this.setRepeat}
-                                          repeat={this.props.general.selectedItem.repeat}
+                        <Animated.View
+                              style={[
+                                    styles.bottomBarMenu,
+                                    {
+                                          transform: [{ translateY: this.bottomBarY }]
+                                    }
+                              ]}
+                        >
+                              <Menu
+                                    ref={ref => (this.reminderMenu2 = ref)}
+                                    button={
+                                          // <Text onPress={() => this.reminderMenu.show()}>Show menu</Text>
+                                          <TouchableOpacity onPress={() => this.reminderMenu2.show()}>
+                                                <Ionicons
+                                                      name="md-notifications"
+                                                      size={30}
+                                                      color={
+                                                            this.state.reminder && this.state.reminder.time !== 'none'
+                                                                  ? '#FF2D55'
+                                                                  : 'grey'
+                                                      }
+                                                />
+                                          </TouchableOpacity>
+                                    }
+                              >
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('none');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>None</Text>}
                                     />
-                                    <TouchableOpacity
-                                          style={{ width: 30, alignItems: 'center' }}
-                                          onPress={this.deleteTask}
-                                    >
-                                          <Ionicons name="md-trash" size={30} />
-                                    </TouchableOpacity>
-                              </View>
-
-                              {/*/////////////////////////////////////////         Date Picker       //////////////////////////////////////////// */}
-                              <DateTimePicker
-                                    mode={'date'}
-                                    date={this.state.dateFormattedForDatePicker}
-                                    isVisible={this.state.isDatePickerVisible}
-                                    onConfirm={this.handleDatePicked}
-                                    onCancel={this.hideDatePicker}
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-hour');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>1 hour before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-hour');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>3 hours before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-day');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>1 day before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-day');
+                                                this.reminderMenu2.hide();
+                                          }}
+                                          children={<Text>3 days before</Text>}
+                                    />
+                              </Menu>
+                              <RepeatButton
+                                    setRepeat={this.setRepeat}
+                                    repeat={this.props.general.selectedItem.repeat}
                               />
-                              <DateTimePicker
-                                    mode={'time'}
-                                    isVisible={this.state.isStartTimePickerVisible}
-                                    onConfirm={this.handleStartTimePicked}
-                                    onCancel={this.hideStartTimePicker}
-                              />
-                              <DateTimePicker
-                                    mode={'time'}
-                                    isVisible={this.state.isEndTimePickerVisible}
-                                    onConfirm={this.handleEndTimePicked}
-                                    onCancel={this.hideEndTimePicker}
-                              />
+                              <TouchableOpacity style={{ width: 30, alignItems: 'center' }} onPress={this.deleteTask}>
+                                    <Ionicons name="md-trash" size={30} />
+                              </TouchableOpacity>
                         </Animated.View>
-                  </PanGestureHandler>
+                        <Animated.Code>
+                              {() =>
+                                    block([
+                                          cond(eq(this.openMenu, 1), [
+                                                set(
+                                                      this.transY,
+                                                      cond(
+                                                            defined(this.transY),
+                                                            runSpring(this.clock, this.transY, 0, -420, 150)
+                                                      )
+                                                ),
+                                                cond(lessThan(this.transY, -419), [
+                                                      set(this.offsetY, -420),
+                                                      stopClock(this.clock),
+                                                      set(this.menuReduced, 1),
+                                                      set(this.openMenu, 0)
+                                                ])
+                                          ]),
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.ACTIVE),
+                                                      greaterOrEq(this.transY, -height),
+                                                      eq(this.dragging, 0)
+                                                ),
+                                                [stopClock(this.clock), set(this.transY, this.addY)]
+                                          ),
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.ACTIVE),
+                                                      lessOrEq(this.transY, -height),
+                                                      eq(this.dragging, 0)
+                                                ),
+                                                [set(this.transY, -height), set(this.offsetY, -height)]
+                                          ),
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          ////////////////////////////////////////////////////////// Move Menu ///////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      and(lessThan(this.transY, -370), greaterThan(this.transY, -470)),
+                                                      eq(this.menuReduced, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, -420, 150)
+                                                            )
+                                                      )
+                                                ]
+                                          ),
+
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          //////////////////////////////////////////////////////// Close Menu /////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      greaterOrEq(this.transY, -370),
+                                                      eq(this.menuReduced, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, 0, 20)
+                                                            )
+                                                      ),
+                                                      set(this.dragging, 1),
+                                                      cond(greaterThan(this.transY, -1), [
+                                                            set(this.offsetY, 0),
+                                                            stopClock(this.clock),
+                                                            set(this.menuReduced, 0),
+                                                            set(this.menuStarted, 0),
+                                                            set(this.dragging, 0),
+                                                            call([], this.closeMenu)
+                                                      ])
+                                                ]
+                                          ),
+
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          //////////////////////////////////////////////////////// Expand Menu /////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      lessOrEq(this.transY, -470),
+                                                      eq(this.menuReduced, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, -height, 20)
+                                                            )
+                                                      ),
+                                                      set(this.dragging, 1),
+                                                      cond(lessThan(this.transY, -height + 1), [
+                                                            set(this.offsetY, -height),
+                                                            stopClock(this.clock),
+                                                            set(this.menuReduced, 0),
+                                                            set(this.menuExpanded, 1),
+                                                            set(this.dragging, 0)
+                                                      ])
+                                                ]
+                                          ),
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          //////////////////////////////////////////////////////// Reduce Menu /////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      greaterOrEq(this.transY, -height + 20),
+                                                      eq(this.menuExpanded, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, -420, 20)
+                                                            )
+                                                      ),
+                                                      set(this.dragging, 1),
+                                                      cond(greaterThan(this.transY, -421), [
+                                                            set(this.offsetY, -420),
+                                                            stopClock(this.clock),
+                                                            set(this.menuExpanded, 0),
+                                                            set(this.menuReduced, 1),
+                                                            set(this.dragging, 0)
+                                                      ])
+                                                ]
+                                          ),
+
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          //////////////////////////////////////////////////////// Move Expanded Menu /////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      lessThan(this.transY, -height + 20),
+                                                      eq(this.menuExpanded, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, -height, 7)
+                                                            )
+                                                      ),
+                                                      set(this.dragging, 1),
+                                                      cond(lessOrEq(this.transY, -height + 1), [
+                                                            set(this.offsetY, -height),
+                                                            stopClock(this.clock),
+                                                            set(this.dragging, 0)
+                                                      ])
+                                                ]
+                                          )
+                                    ])
+                              }
+                        </Animated.Code>
+                  </SafeAreaView>
             );
       }
 }
@@ -779,14 +841,13 @@ class EventMenu extends Component {
 const styles = StyleSheet.create({
       container: {
             padding: 16,
-            backgroundColor: 'white',
             width: width,
             height: height + 10,
+            // backgroundColor: 'white',
             position: 'absolute',
             borderTopLeftRadius: 30,
             borderTopRightRadius: 30,
-            elevation: 15,
-            zIndex: 99,
+            elevation: 16,
             shadowColor: 'black',
             shadowOffset: { width: 0, height: 0.5 * 5 },
             shadowOpacity: 0.3,
@@ -795,12 +856,23 @@ const styles = StyleSheet.create({
       bottomBarMenu: {
             flexDirection: 'row',
             justifyContent: 'space-between',
+            backgroundColor: 'white',
             paddingHorizontal: 24,
             position: 'absolute',
+            elevation: 16,
+
             left: 0,
             right: 0,
             bottom: 0,
-            height: 50
+            paddingTop: 20,
+            ...Platform.select({
+                  ios: {
+                        height: 90
+                  },
+                  android: {
+                        height: 70
+                  }
+            })
       }
 });
 

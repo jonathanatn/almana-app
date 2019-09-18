@@ -308,7 +308,8 @@ class MainScreen extends Component {
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
                         {this.props.general.isTaskMenuOpen === true && <TaskMenu />}
-                        {this.props.general.isEventMenuOpen === true && <EventMenu />}
+                        {/* {this.props.general.isEventMenuOpen === true && <EventMenu />} */}
+                        <EventMenu />
 
                         <NavigationView openDateMover={() => this.openDateMover()} />
 

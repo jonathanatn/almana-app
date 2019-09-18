@@ -84,7 +84,7 @@ class ItemList extends React.Component {
       };
 
       componentDidUpdate(prevProps) {
-            console.log('component did update');
+            // console.log('component did update');
 
             // let tasks = [...this.props.tasks]
             //  tasks = tasks.filter(function(obj) {
@@ -138,16 +138,21 @@ class ItemList extends React.Component {
             }
 
             // TaskMenu & EventMenu are rendered in MainScreen.js
-            if (this.props.general.isTaskMenuOpen === true || this.props.general.isEventMenuOpen === true) {
+            if (this.props.general.isEventMenuOpen === true) {
                   // If one of the item menu is open, we close it
                   await this.props.closeTaskMenuProp();
                   await this.props.closeEventMenuProp();
-                  // After we open the right menu depending the item, to make the animation
-                  if (item.type !== 'event') {
-                        this.props.openTaskMenuProp();
-                  } else {
+
+                  setTimeout(() => {
                         this.props.openEventMenuProp();
-                  }
+                  }, 100);
+
+                  // After we open the right menu depending the item, to make the animation
+                  // if (item.type !== 'event') {
+                  //       this.props.openTaskMenuProp();
+                  // } else {
+                  //       this.props.openEventMenuProp();
+                  // }
                   // Else menu are close so we open the good one
             } else {
                   if (item.type !== 'event') {
