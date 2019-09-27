@@ -370,7 +370,7 @@ class EventMenu extends Component {
             if(this.state.reminder.time !== 'none'){
             const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
             if (status === 'granted') {
-                  // FIXME: For back compatibility
+                  // For back compatibility
                   if(this.props.general.selectedItem.reminder){
                   clearLocalNotification(this.state.reminder.id);
                   }
