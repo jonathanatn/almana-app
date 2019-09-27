@@ -184,20 +184,17 @@ export function editEventStartTimeAction(time, endTime, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
-            const period = getPeriod(time);
+            // const period = getPeriod(time);
 
             dispatch({
                   type: EDIT_EVENT_START_TIME,
-                  payload: { time, endTime, id, period: period },
+                  payload: { time, endTime, id },
                   meta: {
                         offline: {
                               effect: firestore
                                     .collection('events')
                                     .doc(id)
-                                    .set(
-                                          { time: time, endTime: endTime, position: -1, period: period },
-                                          { merge: true }
-                                    )
+                                    .set({ time: time, endTime: endTime }, { merge: true })
                               // .catch(err => {
                               //       console.log(err);
                               // })
@@ -221,7 +218,7 @@ export function editEventEndTimeAction(endTime, id) {
                               effect: firestore
                                     .collection('events')
                                     .doc(id)
-                                    .set({ endTime: endTime, position: -1 }, { merge: true })
+                                    .set({ endTime: endTime }, { merge: true })
                               // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
                               // rollback: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
                         }
@@ -243,7 +240,31 @@ export function editEventDateAction(date, id) {
                                     .collection('events')
                                     .doc(id)
                                     // Position is put to -1 so when our component re-build, he knows that he have to re-sort that task
-                                    .set({ date: date, position: -1 }, { merge: true })
+                                    .set({ date: date }, { merge: true })
+                              // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                              // rollback: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                        }
+                  }
+            });
+      };
+}
+
+export const EDIT_EVENT_POSITION = 'EDIT_EVENT_POSITION';
+export function editEventPositionAction(id, position) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+            dispatch({
+                  type: EDIT_EVENT_POSITION,
+                  payload: { id: id, position: position },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('events')
+                                    .doc(id)
+                                    .set({ position: position }, { merge: true })
+                              // .catch(err => {
+                              //       console.log(err);
+                              // })
                               // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
                               // rollback: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
                         }

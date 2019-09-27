@@ -95,11 +95,9 @@ export function setLocalNotification(id, name, date, time, reminder, repeat) {
             if (repeat === 'daily') {
                   let i = 1;
                   while (reminderDate < new Date()) {
-                        console.log(i);
                         reminderDate.setDate(reminderDate.getDate() + i);
                         i++;
                   }
-                  console.log(reminderDate);
 
                   return Notifications.scheduleLocalNotificationAsync(
                         createNotification(name, time),

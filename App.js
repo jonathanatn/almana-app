@@ -1,12 +1,14 @@
 // UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, AsyncStorage } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, AsyncStorage, Animated, Easing } from 'react-native';
 import { createAppContainer, createStackNavigator, createSwitchNavigator } from 'react-navigation';
 import Login from './src/Components/Login/Login';
 import SignUp from './src/Components/Login/SignUp';
 import LoadingScreen from './src/Components/Login/LoadingScreen';
 import MainScreen from './src/Components/MainScreen';
 import Playground from './src/Components/Playground';
+import ProjectsScreen from './src/Components/ProjectsScreen';
+import TasksProjectScreen from './src/Components/TasksProjectScreen';
 
 // STATE MANAGEMENT
 import { createStore, applyMiddleware, compose } from 'redux';
@@ -71,14 +73,24 @@ const SignUpStackNav = createStackNavigator(
       }
 );
 
+const StackNavigatorConfig = {
+      headerMode: 'none',
+      transitionConfig: () => ({
+            transitionSpec: {
+                  duration: 0,
+                  timing: Animated.timing,
+                  easing: Easing.step0
+            }
+      })
+};
+
 const MainStackNav = createStackNavigator(
       {
-            // Playground,
-            MainScreen
+            MainScreen,
+            ProjectsScreen,
+            TasksProjectScreen
       },
-      {
-            headerMode: 'none'
-      }
+      StackNavigatorConfig
 );
 
 const SwitchNav = createSwitchNavigator(

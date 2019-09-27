@@ -2,7 +2,9 @@ import {
       RECEIVE_TASKS,
       ADD_TASK,
       ADD_TASK_ROLLBACK,
-      DELETE_TASK,
+      SET_TASK_REMINDER,
+      SET_TASK_REPEAT,
+      DELETE_TASKS,
       DELETE_TASK_ROLLBACK,
       EDIT_TASK_NAME,
       EDIT_TASK_NAME_ROLLBACK,
@@ -15,7 +17,9 @@ import {
       EDIT_TASK_TIME_ROLLBACK,
       DELETE_TASK_TIME,
       EDIT_TASK_PERIOD,
+      EDIT_TASK_POSITION,
       EDIT_TASKS_POSITION,
+      EDIT_PROJECT_TASKS_POSITION,
       EDIT_TASKS_POSITION_ROLLBACK
 } from '../actions/taskAction';
 
@@ -32,9 +36,7 @@ function tasks(state = {}, action) {
                         [action.payload.id]: {
                               ...action.payload.task,
                               id: action.payload.id,
-                              uid: action.payload.uid,
-                              type: action.payload.type,
-                              period: action.payload.period
+                              uid: action.payload.uid
                         }
                   };
             case ADD_TASK_ROLLBACK:
@@ -44,6 +46,22 @@ function tasks(state = {}, action) {
 
                   return {
                         ...stateToRollback
+                  };
+            case SET_TASK_REMINDER:
+                  return {
+                        ...state,
+                        [action.id]: {
+                              ...state[action.id],
+                              reminder: action.reminder
+                        }
+                  };
+            case SET_TASK_REPEAT:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              repeat: action.payload.repeat
+                        }
                   };
             case EDIT_TASK_NAME:
                   return {
@@ -86,12 +104,10 @@ function tasks(state = {}, action) {
                               completed: action.meta.completion
                         }
                   };
-            case DELETE_TASK:
+            case DELETE_TASKS:
                   let newState = Object.assign({}, state);
                   newState[action.payload.id] = Object.assign({}, state[action.payload.id]);
                   delete newState[action.payload.id];
-
-                  // console.log(newState);
 
                   return {
                         ...newState
@@ -107,8 +123,7 @@ function tasks(state = {}, action) {
                         ...state,
                         [action.payload.id]: {
                               ...state[action.payload.id],
-                              date: action.payload.date,
-                              position: -1
+                              date: action.payload.date
                         }
                   };
             case EDIT_TASK_TIME:
@@ -116,9 +131,7 @@ function tasks(state = {}, action) {
                         ...state,
                         [action.payload.id]: {
                               ...state[action.payload.id],
-                              time: action.payload.time,
-                              position: -1,
-                              period: action.payload.period
+                              time: action.payload.time
                         }
                   };
             case DELETE_TASK_TIME:
@@ -126,7 +139,9 @@ function tasks(state = {}, action) {
                         ...state,
                         [action.payload.id]: {
                               ...state[action.payload.id],
-                              time: ''
+                              time: '',
+                              reminder: action.payload.reminder,
+                              repeat: action.payload.repeat
                         }
                   };
             case EDIT_TASK_PERIOD:
@@ -137,13 +152,28 @@ function tasks(state = {}, action) {
                               period: action.payload.period
                         }
                   };
+            case EDIT_TASK_POSITION:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              position: action.payload.position
+                        }
+                  };
             case EDIT_TASKS_POSITION:
                   return {
                         ...state,
                         [action.payload.id]: {
                               ...state[action.payload.id],
-                              position: action.payload.position,
-                              period: action.payload.period
+                              position: action.payload.position
+                        }
+                  };
+            case EDIT_PROJECT_TASKS_POSITION:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              project: action.payload.project
                         }
                   };
             default:

@@ -1,7 +1,7 @@
 // STATIC UI
 import React from 'react';
 import { StyleSheet, View, Dimensions, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
-import { Platform, TouchableNativeFeedback, Keyboard } from 'react-native';
+import { Platform, TouchableNativeFeedback } from 'react-native';
 import Task from './Elements/Task';
 import Event from './Elements/Event';
 
@@ -120,7 +120,6 @@ class ItemList extends React.Component {
                   item.id === this.props.general.selectedItem.id &&
                   (this.props.general.isEventMenuOpen === true || this.props.general.isTaskMenuOpen === true)
             ) {
-
                   // if (item.type === 'task') {
                   this.props.closeTaskMenuProp();
                   // } else if (item.type === 'event') {
@@ -190,18 +189,33 @@ class ItemList extends React.Component {
 
             this.setState({
                   dragging: true,
-                  indexDragged: index
+                  indexDragged: index,
+                  displayDraggedItem: true
             });
 
             // After a ling a press we give a feedback to the user so he knows that he is dragging
             // But it would make but iOS to do it that way so instead we make a conditional style in the _renderITem function for iOS
-            Platform.OS === 'android' &&
-                  this.setState({
-                        displayDraggedItem: true
-                  });
+            // Platform.OS === 'android' &&
+            //       this.setState({
+            //             displayDraggedItem: true
+            //       });
+      };
+
+      // State.END doesn't fire normally on iOS if you don't move the PanGesture, this is a hack:
+      handlePressOut = e => {
+            if (
+                  Platform.OS === 'ios' &&
+                  e.touchHistory.touchBank[1].currentPageY > e.touchHistory.touchBank[1].startPageY - 10 &&
+                  e.touchHistory.touchBank[1].currentPageY < e.touchHistory.touchBank[1].startPageY + 10
+            ) {
+                  this.gestureState.setValue(3);
+            }
       };
 
       reset = () => {
+            this.transY.setValue(0);
+            this.dragY.setValue(0);
+            this.gestureState.setValue(0);
             this.setState({
                   dragging: false,
                   indexDragged: '',
@@ -216,15 +230,16 @@ class ItemList extends React.Component {
             });
       };
 
-      displayDraggedItem = () => {
-            if (this.state.dragging === true && this.state.displayDraggedItem === false && Platform.OS === 'ios') {
-                  this.setState({
-                        displayDraggedItem: true
-                  });
-            }
-      };
+      // displayDraggedItem = () => {
+      //       if (this.state.dragging === true && this.state.displayDraggedItem === false && Platform.OS === 'ios') {
+      //             this.setState({
+      //                   displayDraggedItem: true
+      //             });
+      //       }
+      // };
 
       sortCalculation = ([y]) => {
+            console.log(y);
             // Forward dragging (From top to bottom)
             if (
                   this.state.dragging === true &&
@@ -440,10 +455,7 @@ class ItemList extends React.Component {
                         maxPointers={1}
                         onGestureEvent={this.onGestureEvent}
                         onHandlerStateChange={this.onGestureEvent}
-                        //FIXME: With a smaller minDist, FlatList scroll doesn't work
-                        minDist={20}
-                        // enabled={this.state.dragging ? true : false}
-                        // style={{ opacity: 0 }}
+                        minDist={10}
                   >
                         <Animated.View
                               style={[
@@ -492,6 +504,7 @@ class ItemList extends React.Component {
                                     onLongPress={() => this.handlerLongClick(index, item)}
                                     onPress={() => this.handleItemClick(item)}
                                     activeOpacity={0.5}
+                                    onPressOut={e => this.handlePressOut(e)}
                                     // style={{ flex: 1 }}
 
                                     // We give feedback to the user on iOS so he knows he is dragging
@@ -550,92 +563,45 @@ class ItemList extends React.Component {
       render() {
             return (
                   <View style={styles.container}>
-                        {// https://github.com/kmagiera/react-native-gesture-handler/issues/732
+                        {/* // https://github.com/kmagiera/react-native-gesture-handler/issues/732
                         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         /////////////// State.BEGAN fire on a simple touche and State.ACTIVE fire when we start to drag on Android  ///////////////
                         /////////////// but on iOS it's different State.BEGAN fire when we start to drag and State.ACTIVE follow.         ///////////////
                         /////////////// It become obvious when you use minDist with a big number on the PanGestureHandler.           ///////////////
-                        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                        Platform.OS === 'android' ? (
-                              <Animated.Code>
-                                    {() =>
-                                          block([
-                                                cond(eq(this.gestureState, State.BEGAN), [
-                                                      set(this.transY, 0),
-                                                      set(this.dragY, 0)
-                                                ]),
-                                                cond(eq(this.gestureState, State.ACTIVE), [
-                                                      set(this.transY, this.addY),
-                                                      call([], this.displayDraggedItem),
-                                                      call([this.dragY], this.sortCalculation)
-                                                ]),
-                                                cond(
-                                                      and(
-                                                            eq(this.gestureState, State.END),
-                                                            or(greaterThan(this.dragY, 50), lessThan(this.dragY, -50))
-                                                      ),
-                                                      [call([], this.sort), call([], this.reset)]
+                        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
+                        <Animated.Code>
+                              {() =>
+                                    block([
+                                          cond(eq(this.gestureState, State.BEGAN), []),
+                                          cond(eq(this.gestureState, State.ACTIVE), [
+                                                // set(this.isItemHidden, 0),
+                                                call([this.dragY], this.sortCalculation),
+                                                set(this.transY, this.addY)
+                                          ]),
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      or(greaterThan(this.dragY, 50), lessThan(this.dragY, -50))
                                                 ),
-                                                cond(eq(this.gestureState, State.END), [call([], this.reset)]),
-                                                cond(eq(this.gestureState, State.FAILED), [call([], this.reset)]),
-                                                cond(eq(this.gestureState, State.CANCELLED), [call([], this.reset)]),
-                                                // TODO: Make scroll when drag in the bottom or end
-                                                cond(
-                                                      greaterThan(this.dragY, 50),
-                                                      [
-                                                            set(this.transYB, -70)
-                                                            // call([this.rootViewY], this.scrollOnDrag)
-                                                      ],
-                                                      set(this.transYB, 0)
-                                                ),
-                                                cond(
-                                                      lessThan(this.dragY, -50),
-                                                      [
-                                                            set(this.transYC, 70)
-                                                            // call([this.rootViewY], this.scrollOnDrag)
-                                                      ],
-                                                      set(this.transYC, 0)
-                                                )
-                                          ])
-                                    }
-                              </Animated.Code>
-                        ) : (
-                              <Animated.Code>
-                                    {() =>
-                                          block([
-                                                cond(eq(this.gestureState, State.BEGAN), [
-                                                      call([], this.displayDraggedItem),
-                                                      set(this.transY, 0),
-                                                      set(this.dragY, 0)
-                                                ]),
-                                                cond(eq(this.gestureState, State.ACTIVE), [
-                                                      call([this.dragY], this.sortCalculation),
-                                                      set(this.transY, this.addY)
-                                                ]),
-                                                cond(
-                                                      and(
-                                                            eq(this.gestureState, State.END),
-                                                            or(greaterThan(this.dragY, 50), lessThan(this.dragY, -50))
-                                                      ),
-                                                      [call([], this.sort), call([], this.reset)]
-                                                ),
-                                                cond(eq(this.gestureState, State.END), [call([], this.reset)]),
-                                                cond(eq(this.gestureState, State.FAILED), [call([], this.reset)]),
-                                                cond(eq(this.gestureState, State.CANCELLED), [call([], this.reset)]),
-                                                cond(
-                                                      greaterThan(this.dragY, 50),
-                                                      set(this.transYB, -70),
-                                                      set(this.transYB, 0)
-                                                ),
-                                                cond(
-                                                      lessThan(this.dragY, -50),
-                                                      set(this.transYC, 70),
-                                                      set(this.transYC, 0)
-                                                )
-                                          ])
-                                    }
-                              </Animated.Code>
-                        )}
+                                                [
+                                                      call([], this.sort),
+                                                      call([], this.reset)
+                                                      // set(this.isItemHidden, 1)
+                                                ]
+                                          ),
+                                          // Managed handlePressOut on iOS due to a PanGesture bug
+                                          cond(eq(this.gestureState, State.END), [call([], this.reset)]),
+                                          cond(eq(this.gestureState, State.FAILED), [call([], this.reset)]),
+                                          cond(eq(this.gestureState, State.CANCELLED), [call([], this.reset)]),
+                                          cond(
+                                                greaterThan(this.dragY, 50),
+                                                set(this.transYB, -70),
+                                                set(this.transYB, 0)
+                                          ),
+                                          cond(lessThan(this.dragY, -50), set(this.transYC, 70), set(this.transYC, 0))
+                                    ])
+                              }
+                        </Animated.Code>
 
                         <Animated.View
                               ref={ref => (this.draggedItemRef = ref)}
