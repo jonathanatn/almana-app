@@ -21,7 +21,6 @@ export const EDIT_TASKS_POSITION_ROLLBACK = 'EDIT_TASKS_POSITION_ROLLBACK';
 
 export const EDIT_TASK_PERIOD = 'EDIT_TASK_PERIOD';
 
-export const DELETE_TASK = 'DELETE_TASK';
 export const DELETE_TASK_ROLLBACK = 'DELETE_TASK_ROLLBACK';
 
 export const DELETE_TASK_TIME = 'DELETE_TASK_TIME';
@@ -88,7 +87,7 @@ export function addTaskAction(task) {
 
             dispatch({
                   type: ADD_TASK,
-                  payload: { id: autoId, uid: userId, task, type: 'task', period: 'Evening' },
+                  payload: { id: autoId, uid: userId, task },
                   meta: {
                         offline: {
                               effect: firestore
@@ -97,21 +96,53 @@ export function addTaskAction(task) {
                                     .set({
                                           id: autoId,
                                           uid: userId,
-                                          type: 'task',
-                                          period: 'Evening',
+                                          type: task.type,
                                           name: task.name,
                                           completed: task.completed, //boolean
                                           subtask: { ...task.subtask },
                                           date: task.date,
                                           time: task.time,
                                           reminder: task.reminder,
-                                          reccurency: task.reccurency,
+                                          repeat: task.repeat,
                                           labels: task.labels, //Array
-                                          projectId: task.projectId,
                                           dateAdded: task.dateAdded,
-                                          position: task.position
+                                          position: task.position,
+                                          project: task.project
                                     })
                               // rollback: { type: ADD_TASK_ROLLBACK, meta: { id: autoId, uid: userId, task } }
+                        }
+                  }
+            });
+      };
+}
+
+//FIXME: Not send online (think about the rollback before)
+export const SET_TASK_REMINDER = 'SET_TASK_REMINDER';
+export function setTaskReminderAction(id, reminder) {
+      return dispatch => {
+            dispatch({
+                  type: SET_TASK_REMINDER,
+                  id: id,
+                  reminder: reminder
+            });
+      };
+}
+
+export const SET_TASK_REPEAT = 'SET_TASK_REPEAT';
+export function setTaskRepeatAction(id, repeat) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
+            dispatch({
+                  type: SET_TASK_REPEAT,
+                  payload: { id, repeat },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('tasks')
+                                    .doc(id)
+                                    .set({ repeat: repeat }, { merge: true })
+                              // rollback: { type: EDIT_TASK_NAME_ROLLBACK, meta: { id, previousName } }
                         }
                   }
             });
@@ -169,27 +200,30 @@ export function editTaskCompletionAction(completion, id) {
       };
 }
 
-export function deleteTaskAction(task) {
+export const DELETE_TASKS = 'DELETE_TASKS';
+export function deleteTasksAction(tasks) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
-            dispatch({
-                  type: DELETE_TASK,
-                  payload: { id: task.id, task },
-                  meta: {
-                        offline: {
-                              effect: firestore
-                                    .collection('tasks')
-                                    .doc(task.id)
-                                    .delete()
-                              // rollback: { type: DELETE_TASK_ROLLBACK, meta: { task } }
-                              // .catch(err => {
-                              //       console.log(err);
-                              // });
-                              // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+            tasks.map(item => {
+                  dispatch({
+                        type: DELETE_TASKS,
+                        payload: { id: item.id, item },
+                        meta: {
+                              offline: {
+                                    effect: firestore
+                                          .collection('tasks')
+                                          .doc(item.id)
+                                          .delete()
+                                    // rollback: { type: DELETE_TASK_ROLLBACK, meta: { task } }
+                                    // .catch(err => {
+                                    //       console.log(err);
+                                    // });
+                                    // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                              }
                         }
-                  }
-            });
+                  });
+            })
       };
 }
 
@@ -197,17 +231,18 @@ export function editTaskTimeAction(time, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
-            const period = getPeriod(time);
+            // TODO: Delete getPeriod helper
+            // const period = getPeriod(time);
 
             dispatch({
                   type: EDIT_TASK_TIME,
-                  payload: { time, id, period },
+                  payload: { time, id },
                   meta: {
                         offline: {
                               effect: firestore
                                     .collection('tasks')
                                     .doc(id)
-                                    .set({ time: time, position: -1, period: period }, { merge: true })
+                                    .set({ time: time }, { merge: true })
                                     .catch(err => {
                                           console.log(err);
                                     })
@@ -219,7 +254,7 @@ export function editTaskTimeAction(time, id) {
       };
 }
 
-export function deleteTaskTimeAction(id) {
+export function deleteTaskTimeAction(id, reminder, repeat) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
@@ -227,13 +262,13 @@ export function deleteTaskTimeAction(id) {
 
             dispatch({
                   type: DELETE_TASK_TIME,
-                  payload: { id },
+                  payload: { id, reminder, repeat },
                   meta: {
                         offline: {
                               effect: firestore
                                     .collection('tasks')
                                     .doc(id)
-                                    .set({ time: '' }, { merge: true })
+                                    .set({ time: '', reminder: reminder, repeat: repeat }, { merge: true })
                                     .catch(err => {
                                           console.log(err);
                                     })
@@ -258,7 +293,7 @@ export function editTaskDateAction(date, id) {
                                     .collection('tasks')
                                     .doc(id)
                                     // Position is put to -1 so when our component re-build, he knows that he have to re-sort that task
-                                    .set({ date: date, position: -1 }, { merge: true })
+                                    .set({ date: date }, { merge: true })
                               // .catch(err => {
                               //       console.log(err);
                               // });
@@ -310,26 +345,73 @@ export function editTaskPeriodAction(period, id) {
 //       };
 // }
 
+export const EDIT_TASK_POSITION = 'EDIT_TASK_POSITION';
+export function editTaskPositionAction(id, position) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
+            dispatch({
+                  type: EDIT_TASK_POSITION,
+                  payload: { id: id, position: position },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('tasks')
+                                    .doc(id)
+                                    .set({ position: position }, { merge: true })
+                              // .catch(err => {
+                              //       console.log(err);
+                              // })
+                              // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                              // rollback: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                        }
+                  }
+            });
+      };
+}
+
 export function editTasksPositionAction(tasks) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
 
             tasks.map(item => {
-                  // console.log(item.period);
                   dispatch({
                         type: EDIT_TASKS_POSITION,
-                        payload: { id: item.id, position: item.position, period: item.period },
+                        payload: { id: item.id, position: item.position },
                         meta: {
                               offline: {
                                     effect: firestore
                                           .collection('tasks')
                                           .doc(item.id)
-                                          .set({ position: item.position, period: item.period }, { merge: true })
+                                          .set({ position: item.position }, { merge: true })
                                     // .catch(err => {
                                     //       console.log(err);
                                     // })
                                     // commit: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
                                     // rollback: { type: 'EDIT_TASK_COMPLETION', meta: { completion, id } }
+                              }
+                        }
+                  });
+            });
+      };
+}
+
+// Edit the position inside task's project
+export const EDIT_PROJECT_TASKS_POSITION = 'EDIT_PROJECT_TASKS_POSITION';
+export function editProjectPositionTasksAction(tasks) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
+            tasks.map(item => {
+                  dispatch({
+                        type: EDIT_PROJECT_TASKS_POSITION,
+                        payload: { id: item.id, project: item.project },
+                        meta: {
+                              offline: {
+                                    effect: firestore
+                                          .collection('tasks')
+                                          .doc(item.id)
+                                          .set({ project: item.project }, { merge: true })
                               }
                         }
                   });

@@ -32,6 +32,16 @@ class TaskAdder extends Component {
             textInput: '',
             date: '',
             time: '',
+            reminder: {
+                  id: '',
+                  time: 'none'
+            },
+            repeat: 'never',
+            type: 'task',
+            project: {
+                  id: '',
+                  position: -1
+            },
             dateSelected: '',
             timeSelected: '',
             dateFormattedForDatePicker: ''
@@ -43,6 +53,7 @@ class TaskAdder extends Component {
 
             this.inputRef.focus();
 
+            // Select the date of the day you're in the date picker
             let dateSelected = this.props.general.dateSelectedDateMover;
 
             let day = dateSelected.substring(3, 5);
@@ -52,8 +63,12 @@ class TaskAdder extends Component {
             let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
 
             this.setState({
-                  date: this.props.general.dateSelectedDateMover,
-                  dateFormattedForDatePicker: date
+                  date: this.props.projectId ? '' : this.props.general.dateSelectedDateMover,
+                  dateFormattedForDatePicker: date,
+                  project: {
+                        id: this.props.projectId ? this.props.projectId : '',
+                        position: -1
+                  }
             });
       }
 
@@ -64,7 +79,10 @@ class TaskAdder extends Component {
 
       // keyboardWillHide does'nt work on Android
       _keyboardDidHide = () => {
-            this.props.closeTaskAdderProp();
+            if (Platform.OS === 'android') {
+                  console.log('keyboard hide');
+                  this.props.closeTaskAdderProp();
+            }
       };
 
       _keyboardWillHide = () => {
@@ -111,11 +129,15 @@ class TaskAdder extends Component {
                         subtask: {},
                         date: taskDate,
                         time: '',
-                        reminder: '',
-                        reccurency: '',
+                        reminder: {
+                              id: '',
+                              time: 'none'
+                        },
+                        repeat: 'never',
                         labels: [],
-                        projectId: '',
-                        position: -1
+                        type: this.state.type,
+                        project: this.state.project,
+                        position: ''
                   });
             }
 

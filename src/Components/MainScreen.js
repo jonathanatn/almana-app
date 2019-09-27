@@ -32,7 +32,6 @@ import { connect } from 'react-redux';
 import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
 import { signOut } from '../Store/actions/authAction';
 import {
-      openTaskMenuAction,
       closeTaskMenuAction,
       closeEventMenuAction,
       openTaskAdderAction,
@@ -307,11 +306,12 @@ class MainScreen extends Component {
 
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
-                        {this.props.general.isTaskMenuOpen === true && <TaskMenu />}
+                        {/* {this.props.general.isTaskMenuOpen === true && <TaskMenu />} */}
                         {/* {this.props.general.isEventMenuOpen === true && <EventMenu />} */}
+                        <TaskMenu />
                         <EventMenu />
 
-                        <NavigationView openDateMover={() => this.openDateMover()} />
+                        <NavigationView openDateMover={() => this.openDateMover()} navigation={this.props.navigation} />
 
                         {/*---------------------------------------------------- DateMover ---------------------------------------------------- */}
                         <Animated.View
@@ -409,13 +409,13 @@ const styles = StyleSheet.create({
             marginTop: 70
       },
       addButtonContainer: {
-            width: 80,
-            height: 80,
+            width: 60,
+            height: 60,
             alignItems: 'center',
             justifyContent: 'center',
             position: 'absolute',
             top: height / 2 - 60,
-            right: -30,
+            right: -20,
             zIndex: 9,
             elevation: 6
       },

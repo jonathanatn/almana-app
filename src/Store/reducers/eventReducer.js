@@ -12,6 +12,7 @@ import {
       EDIT_EVENT_DATE_ROLLBACK,
       EDIT_EVENT_START_TIME,
       EDIT_EVENT_END_TIME,
+      EDIT_EVENT_POSITION,
       EDIT_EVENTS_POSITION,
       EDIT_EVENTS_POSITION_ROLLBACK
 } from '../actions/eventAction';
@@ -99,8 +100,7 @@ function events(state = {}, action) {
                         ...state,
                         [action.payload.id]: {
                               ...state[action.payload.id],
-                              date: action.payload.date,
-                              position: -1
+                              date: action.payload.date
                         }
                   };
             case EDIT_EVENT_START_TIME:
@@ -109,9 +109,7 @@ function events(state = {}, action) {
                         [action.payload.id]: {
                               ...state[action.payload.id],
                               time: action.payload.time,
-                              endTime: action.payload.endTime,
-                              position: -1,
-                              period: action.payload.period
+                              endTime: action.payload.endTime
                         }
                   };
             case EDIT_EVENT_END_TIME:
@@ -119,8 +117,15 @@ function events(state = {}, action) {
                         ...state,
                         [action.payload.id]: {
                               ...state[action.payload.id],
-                              endTime: action.payload.endTime,
-                              position: -1
+                              endTime: action.payload.endTime
+                        }
+                  };
+            case EDIT_EVENT_POSITION:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              position: action.payload.position
                         }
                   };
             case EDIT_EVENTS_POSITION:

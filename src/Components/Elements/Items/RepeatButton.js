@@ -8,47 +8,26 @@ import Menu, { MenuItem, MenuDivider } from 'react-native-material-menu';
 
 // DATA
 import { connect } from 'react-redux';
-import { setEventRepeatAction } from '../../../Store/actions/eventAction';
 function mapDispatchToProps(dispatch) {
-      return {
-            setEventRepeatProp: (id, repeat) => dispatch(setEventRepeatAction(id, repeat))
-      };
+      return {};
 }
 
 // HELPERS
-// import { getToday } from '../Utils/helpers';
-// import moment from 'moment';
-// const { width, height } = Dimensions.get('window');
 
 class RepeatButton extends Component {
       state = {
             repeat: 'never'
       };
 
-      componentDidMount() {
-            // Differentiate data coming from ItemMenu or ItemAdder
-            if (this.props.repeat) {
-                  this.setState({
-                        repeat: this.props.repeat
-                  });
-            }
-            // this.setState({
-            //       repeat: this.props.general.selectedItem.repeat
-            // });
-      }
-
       setRepeat(repeat) {
-            // Update parent prop to fire change in the UI
-            // this.props.setRepeat(repeat);
-
             let id = this.props.general.selectedItem.id;
             this.setState(
                   {
                         repeat: repeat
                   },
                   () => {
+                        // Update parent prop to fire change in the UI
                         this.props.setRepeat(repeat);
-                        // this.props.setEventRepeatProp(id, repeat);
                   }
             );
       }
@@ -56,19 +35,10 @@ class RepeatButton extends Component {
       render() {
             return (
                   <View style={styles.container}>
-                        {/* <TouchableOpacity onPress={() => this.menu.show()}>
-                        <Ionicons
-                              name="ios-repeat"
-                              size={30}
-                              //       color={this.state.reminder.time !== 'none' ? '#FF2D55' : 'grey'}
-                              color={'#FF2D55'}
-                        />
-                  </TouchableOpacity> */}
-
                         <Menu
                               ref={ref => (this.menu = ref)}
                               button={
-                                    this.state.repeat === 'never' ? (
+                                    this.props.repeat === 'never' ? (
                                           <TouchableOpacity onPress={() => this.menu.show()}>
                                                 <Ionicons name="ios-repeat" size={30} color={'grey'} />
                                           </TouchableOpacity>
@@ -88,7 +58,7 @@ class RepeatButton extends Component {
                                                 >
                                                       <Ionicons name="ios-repeat" size={24} color="white" />
                                                       <Text style={{ color: 'white', marginLeft: 8, marginBottom: 3 }}>
-                                                            {this.state.repeat}
+                                                            {this.props.repeat}
                                                       </Text>
                                                 </TouchableOpacity>
                                           </View>

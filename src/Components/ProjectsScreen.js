@@ -20,7 +20,7 @@ import moment from 'moment';
 import { getToday } from '../Utils/helpers';
 const { width, height } = Dimensions.get('window');
 
-class MainScreen extends Component {
+class ProjectsScreen extends Component {
       constructor(props) {
             super(props);
             this.state = {
@@ -38,37 +38,20 @@ class MainScreen extends Component {
             this.backHandler.remove();
       }
 
-      // handleBackPress = () => {
-      //       if (this.props.general.isTaskMenuOpen === true) {
-      //             this.props.closeTaskMenuProp();
-      //             return true;
-      //       }
+      handleBackPress = () => {
+            if (this.state.isAddItemMenuOpen === true) {
+                  this.setState({ isAddItemMenuOpen: false });
+                  return true;
+            }
 
-      //       if (this.props.general.isEventMenuOpen === true) {
-      //             this.props.closeEventMenuProp();
-      //             return true;
-      //       }
+            if (this.state.isProjectAdderOpen === true) {
+                  this.setState({ isProjectAdderOpen: false });
+                  return true;
+            }
 
-      //       if (this.props.general.isDateMoverOpen === true) {
-      //             this.transY.setValue(400);
-      //             return true;
-      //       }
-
-      //       if (this.state.isAddTaskMenuOpen === true) {
-      //             this.setState({ isAddTaskMenuOpen: false });
-      //             return true;
-      //       }
-
-      //       if (this.props.general.isEventAdderOpen === true) {
-      //             this.props.closeEventAdderProp();
-      //             return true;
-      //       }
-
-      //       if (this.state.isAddItemMenuOpen === true) {
-      //             this.setState({ isAddItemMenuOpen: false });
-      //             return true;
-      //       }
-      // };
+            this.props.navigation.goBack();
+            return;
+      };
 
       openAddItemMenu = () => {
             // if (this.props.general.isDateMoverOpen === true) {
@@ -93,6 +76,13 @@ class MainScreen extends Component {
                   isProjectAdderOpen: true
             });
             // this.props.openTaskAdderProp();
+      };
+
+      closeProjectAdder = () => {
+            this.setState({
+                  projectType: '',
+                  isProjectAdderOpen: false
+            });
       };
 
       render() {
@@ -181,7 +171,7 @@ class MainScreen extends Component {
                         <View style={styles.header}>
                               <Text style={{ fontWeight: '900', fontSize: 36 }}>Projects</Text>
                         </View>
-                        <ProjectsList style={{ zIndex: 10 }} />
+                        <ProjectsList style={{ zIndex: 10 }} navigation={this.props.navigation} />
 
                         {/* ------------------------------------------ Add Items Button ------------------------------------------ */}
                         <TouchableOpacity style={styles.addButtonContainer} onPress={this.openAddItemMenu}>
@@ -191,7 +181,10 @@ class MainScreen extends Component {
                         </TouchableOpacity>
 
                         {/*-------------------------------------------------- Items Adder -------------------------------------------------- */}
-                        {this.state.isProjectAdderOpen ? <ProjectAdder type={this.state.projectType} /> : null}
+                        {this.state.isProjectAdderOpen ? (
+                              <ProjectAdder type={this.state.projectType} closeProjectAdder={this.closeProjectAdder} />
+                        ) : null}
+                        <NavigationView openDateMover={() => this.openDateMover()} navigation={this.props.navigation} />
                   </View>
             );
       }
@@ -206,7 +199,7 @@ function mapStateToProp(state, ownProps) {
 export default connect(
       mapStateToProp,
       mapDispatchToProps
-)(MainScreen);
+)(ProjectsScreen);
 
 const styles = StyleSheet.create({
       container: {
