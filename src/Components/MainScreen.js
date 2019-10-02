@@ -1,21 +1,12 @@
 // STATIC UI
 import React, { Component } from 'react';
-import {
-      StyleSheet,
-      Text,
-      View,
-      TouchableOpacity,
-      Dimensions,
-      ScrollView,
-      Alert,
-      BackHandler,
-      Platform
-} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, BackHandler } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Task from './Elements/Task';
 import TaskMenu from './Elements/TaskMenu';
 import EventMenu from './Elements/EventMenu';
-import ItemList from './ItemList';
+import ItemList from './ItemList2';
 import TaskAdder from './Elements/TaskAdder';
 import EventAdder from './Elements/EventAdder';
 import NavigationView from './NavigationView';
@@ -198,6 +189,7 @@ class MainScreen extends Component {
 
             return (
                   <View style={styles.container}>
+                        <StatusBar backgroundColor="white" barStyle="dark-content" />
                         {/*---------------------------------------------------- ADDITEMMENU ---------------------------------------------------- */}
 
                         {this.state.isAddItemMenuOpen === true ? (
@@ -294,7 +286,11 @@ class MainScreen extends Component {
                                     <Ionicons name="ios-log-out" size={24} color={'black'} />
                               </TouchableOpacity>
                         </View>
-                        <ItemList style={{ zIndex: 10 }} closeDateMover={this.closeDateMover} />
+                        <ItemList
+                              style={{ zIndex: 10 }}
+                              closeDateMover={this.closeDateMover}
+                              navigation={this.props.navigation}
+                        />
 
                         {/* TODO: Create a component */}
                         {/* ------------------------------------------ Add Items Button ------------------------------------------ */}
@@ -406,7 +402,7 @@ const styles = StyleSheet.create({
             alignItems: 'center',
             marginBottom: 20,
             paddingHorizontal: 12,
-            marginTop: 70
+            marginTop: 50
       },
       addButtonContainer: {
             width: 60,

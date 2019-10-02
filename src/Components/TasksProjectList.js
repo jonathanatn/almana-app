@@ -536,7 +536,6 @@ function mapStateToProp(state, ownProps) {
       let projectId = ownProps.navigation.state.params.id;
 
       let allItems = [...Object.values(tasks), ...Object.values(projectHeadline)];
-      // let allItems = [];
       let userItems = [];
 
       for (let i = 0, len = allItems.length; i < len; i++) {

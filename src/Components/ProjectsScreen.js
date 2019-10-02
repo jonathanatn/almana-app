@@ -1,9 +1,9 @@
 // STATIC UI
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, BackHandler } from 'react-native';
-import { Platform } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ProjectsList from './ProjectsList';
+import ProjectsList from './ProjectsList2';
 import NavigationView from './NavigationView';
 import ProjectAdder from './Elements/ProjectAdder';
 
@@ -88,6 +88,7 @@ class ProjectsScreen extends Component {
       render() {
             return (
                   <View style={styles.container}>
+                        <StatusBar backgroundColor="white" barStyle="dark-content" />
                         {/*---------------------------------------------------- ADDITEMMENU ---------------------------------------------------- */}
 
                         {this.state.isAddItemMenuOpen === true ? (
@@ -169,7 +170,7 @@ class ProjectsScreen extends Component {
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
                         <View style={styles.header}>
-                              <Text style={{ fontWeight: '900', fontSize: 36 }}>Projects</Text>
+                              <Text style={{ fontWeight: '900', fontSize: 36 }}>Projects </Text>
                         </View>
                         <ProjectsList style={{ zIndex: 10 }} navigation={this.props.navigation} />
 
@@ -212,7 +213,7 @@ const styles = StyleSheet.create({
             alignItems: 'center',
             marginBottom: 20,
             paddingHorizontal: 12,
-            marginTop: 70
+            marginTop: 50
       },
       addButtonContainer: {
             width: 60,

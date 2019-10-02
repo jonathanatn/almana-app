@@ -343,8 +343,7 @@ class TaskMenu extends Component {
                         clearLocalNotification(this.state.reminder.id);
                   }
             }
-      }
-            
+            }
             this.props.deleteTasksProp([this.props.general.selectedItem]);
             this.props.closeTaskMenuProp();
       };

@@ -13,7 +13,6 @@ const { diff, or, debug, startClock, lessOrEq, greaterOrEq } = Animated;
 
 // DATA
 import { firestoreConnect } from 'react-redux-firebase';
-import { compose } from 'redux';
 import { connect } from 'react-redux';
 import { editPositionProjectsAction } from '../Store/actions/projectAction';
 function mapDispatchToProps(dispatch) {

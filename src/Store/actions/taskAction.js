@@ -204,7 +204,6 @@ export const DELETE_TASKS = 'DELETE_TASKS';
 export function deleteTasksAction(tasks) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
-
             tasks.map(item => {
                   dispatch({
                         type: DELETE_TASKS,
@@ -223,17 +222,13 @@ export function deleteTasksAction(tasks) {
                               }
                         }
                   });
-            })
+            });
       };
 }
 
 export function editTaskTimeAction(time, id) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {
             const firestore = getFirestore();
-
-            // TODO: Delete getPeriod helper
-            // const period = getPeriod(time);
-
             dispatch({
                   type: EDIT_TASK_TIME,
                   payload: { time, id },

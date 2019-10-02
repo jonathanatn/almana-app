@@ -143,7 +143,15 @@ class TaskAdder extends Component {
 
             this.setState({
                   textInput: '',
-                  time: ''
+                  time: '',
+                  reminder: {
+                        id: '',
+                        time: 'none'
+                  },
+                  project: {
+                        id: this.props.projectId ? this.props.projectId : '',
+                        position: -1
+                  }
             });
             this.inputRef.clear();
       }
