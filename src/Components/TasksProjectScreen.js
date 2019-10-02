@@ -1,9 +1,9 @@
 // STATIC UI
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, BackHandler } from 'react-native';
-import { Platform } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import TasksProjectList from './TasksProjectList';
+import TasksProjectList from './TasksProjectList2';
 import NavigationView from './NavigationView';
 import ProjectAdder from './Elements/ProjectAdder';
 import TaskAdder from './Elements/TaskAdder';
@@ -143,6 +143,7 @@ class TasksProjectScreen extends Component {
             let { name, id } = this.props.navigation.state.params;
             return (
                   <View style={styles.container}>
+                        <StatusBar backgroundColor="white" barStyle="dark-content" />
                         {/*---------------------------------------------------- ADDITEMMENU ---------------------------------------------------- */}
 
                         {this.state.isAddItemMenuOpen === true ? (
@@ -224,7 +225,7 @@ class TasksProjectScreen extends Component {
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
                         <View style={styles.header}>
-                              <Text style={{ fontWeight: '900', fontSize: 36 }}>{name}</Text>
+                              <Text style={{ fontWeight: '900', fontSize: 36 }}>{name + ' '}</Text>
                               <Menu
                                     ref={ref => (this.menu = ref)}
                                     button={
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
             alignItems: 'center',
             marginBottom: 20,
             paddingHorizontal: 12,
-            marginTop: 70
+            marginTop: 50
       },
       addButtonContainer: {
             width: 60,

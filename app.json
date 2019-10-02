@@ -3,12 +3,12 @@
             "name": "Almana",
             "slug": "almana-calendar",
             "privacy": "public",
-            "sdkVersion": "33.0.0",
+            "sdkVersion": "35.0.0",
             "packagerOpts": {
                   "port": 21000
             },
             "platforms": ["ios", "android", "web"],
-            "version": "2.1.0",
+            "version": "1.0.1",
             "orientation": "portrait",
             "icon": "./assets/icon-app.png",
             "splash": {
@@ -28,11 +28,11 @@
             "assetBundlePatterns": ["**/*"],
             "ios": {
                   "bundleIdentifier": "com.alma.almana",
-                  "supportsTablet": true
+                  "supportsTablet": false
             },
             "android": {
                   "package": "com.alma.almana",
-                  "versionCode": 5
+                  "versionCode": 7
             }
       }
 }

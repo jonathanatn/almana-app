@@ -120,7 +120,6 @@ class ItemList extends React.Component {
                   item.id === this.props.general.selectedItem.id &&
                   (this.props.general.isEventMenuOpen === true || this.props.general.isTaskMenuOpen === true)
             ) {
-
                   // if (item.type === 'task') {
                   this.props.closeTaskMenuProp();
                   // } else if (item.type === 'event') {

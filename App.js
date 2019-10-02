@@ -1,6 +1,6 @@
 // UI
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, AsyncStorage, Animated, Easing } from 'react-native';
+import { Animated, Easing } from 'react-native';
 import { createAppContainer, createStackNavigator, createSwitchNavigator } from 'react-navigation';
 import Login from './src/Components/Login/Login';
 import SignUp from './src/Components/Login/SignUp';
@@ -86,6 +86,7 @@ const StackNavigatorConfig = {
 
 const MainStackNav = createStackNavigator(
       {
+            // Playground,
             MainScreen,
             ProjectsScreen,
             TasksProjectScreen
@@ -105,12 +106,3 @@ const SwitchNav = createSwitchNavigator(
 );
 
 const AppContainer = createAppContainer(SwitchNav);
-
-const styles = StyleSheet.create({
-      container: {
-            flex: 1,
-            backgroundColor: 'white',
-            alignItems: 'center',
-            justifyContent: 'center'
-      }
-});
