@@ -68,9 +68,9 @@ class TasksProjectList extends Component {
             };
       }
 
-      shouldComponentUpdate(nextProps, nextState) {
-            return nextProps.items != nextState.data;
-      }
+      // shouldComponentUpdate(nextProps, nextState) {
+      //       return nextProps.items != nextState.data;
+      // }
 
       componentDidMount() {
             this.setState({
@@ -386,6 +386,18 @@ class TasksProjectList extends Component {
                               minDist={20}
                         >
                               <Animated.View style={{ zIndex: 1 }}>
+                                    {this.state.data.length === 0 && (
+                                          <Text
+                                                style={{
+                                                      textAlign: 'center',
+                                                      alignSelf: 'center',
+                                                      position: 'absolute',
+                                                      top: height / 2 - 140
+                                                }}
+                                          >
+                                                Tap on the '+' button to add your first project.
+                                          </Text>
+                                    )}
                                     <FlatList
                                           // keyboardShouldPersistTaps="always"
                                           ref={ref => (this.flatListRef = ref)}

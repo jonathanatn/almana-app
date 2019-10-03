@@ -106,3 +106,10 @@ const SwitchNav = createSwitchNavigator(
 );
 
 const AppContainer = createAppContainer(SwitchNav);
+
+// "unimodules-face-detector-interface": "~3.0.0",
+// "unimodules-face-detector-interface": {
+//       "version": "3.0.0",
+//       "resolved": "https://registry.npmjs.org/unimodules-face-detector-interface/-/unimodules-face-detector-interface-3.0.0.tgz",
+//       "integrity": "sha512-fMQ3ZnhdOjbQ5ZXW62s/t1bbqBaenxzVIcgVEcwvLIFek0mx/EMHFkySgFkFjU11icUvaPEXW1yJtkK4QEpLhg=="
+//     },

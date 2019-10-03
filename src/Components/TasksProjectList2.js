@@ -424,6 +424,19 @@ class TasksProjectList extends Component {
                               minDist={20}
                         >
                               <Animated.View style={{ zIndex: 1 }}>
+                                    {this.state.data.length === 0 && (
+                                          <Text
+                                                style={{
+                                                      textAlign: 'center',
+                                                      alignSelf: 'center',
+                                                      position: 'absolute',
+                                                      top: height / 2 - 140,
+                                                      marginHorizontal: 50
+                                                }}
+                                          >
+                                                Opportunities don't happen, you create them. Add your first task!
+                                          </Text>
+                                    )}
                                     <FlatList
                                           // keyboardShouldPersistTaps="always"
                                           ref={ref => (this.flatListRef = ref)}
