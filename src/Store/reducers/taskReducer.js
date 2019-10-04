@@ -11,6 +11,9 @@ import {
       SYNC_TASK_NAME,
       EDIT_TASK_COMPLETION,
       EDIT_TASK_COMPLETION_ROLLBACK,
+      ADD_REPEATEDTASK_COMPLETION,
+      DELETED_REPEATEDTASK_COMPLETION,
+      RESET_REPEATEDTASK_COMPLETION,
       EDIT_TASK_DATE,
       EDIT_TASK_DATE_ROLLBACK,
       EDIT_TASK_TIME,
@@ -93,6 +96,33 @@ function tasks(state = {}, action) {
                         [action.payload.id]: {
                               ...state[action.payload.id],
                               completed: !action.payload.completion
+                        }
+                  };
+
+            case ADD_REPEATEDTASK_COMPLETION:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              completedArray: action.payload.newDatesArray
+                        }
+                  };
+
+            case DELETED_REPEATEDTASK_COMPLETION:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              completedArray: action.payload.newDatesArray
+                        }
+                  };
+
+            case RESET_REPEATEDTASK_COMPLETION:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              completedArray: []
                         }
                   };
 

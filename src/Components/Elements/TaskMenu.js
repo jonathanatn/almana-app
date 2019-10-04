@@ -18,7 +18,6 @@ import { PanGestureHandler, State } from 'react-native-gesture-handler';
 const { cond, eq, add, call, set, Value, event, block, and, greaterThan, lessThan, stopClock, defined } = Animated;
 const { or, startClock, lessOrEq, greaterOrEq, Clock, clockRunning, spring, interpolate, Extrapolate, sub } = Animated;
 
-
 // DATA
 import { firestoreConnect } from 'react-redux-firebase';
 import { connect } from 'react-redux';
@@ -26,13 +25,23 @@ import { compose } from 'redux';
 import { editTaskNameAction, syncTaskNameAction, editTaskCompletionAction } from '../../Store/actions/taskAction';
 import { editTaskTimeAction, editTaskDateAction, deleteTasksAction } from '../../Store/actions/taskAction';
 import { deleteTaskTimeAction, editTaskPositionAction, setTaskRepeatAction } from '../../Store/actions/taskAction';
-import { setTaskReminderAction  } from '../../Store/actions/taskAction';
+import {
+      deleteRepeatedTaskCompletionAction,
+      addRepeatedTaskCompletionAction,
+      resetRepeatedTaskCompletionAction
+} from '../../Store/actions/taskAction';
+import { setTaskReminderAction } from '../../Store/actions/taskAction';
 import { closeTaskMenuAction } from '../../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
             editTaskNameProp: (name, id, previousName) => dispatch(editTaskNameAction(name, id, previousName)),
             syncTaskNameProp: (name, id) => dispatch(syncTaskNameAction(name, id)),
             editTaskCompletionProp: (state, id) => dispatch(editTaskCompletionAction(state, id)),
+            addRepeatedTaskCompletionProp: (id, date, datesArray) =>
+                  dispatch(addRepeatedTaskCompletionAction(id, date, datesArray)),
+            deleteRepeatedTaskCompletionProp: (id, date, datesArray) =>
+                  dispatch(deleteRepeatedTaskCompletionAction(id, date, datesArray)),
+            resetRepeatedTaskCompletionProp: id => dispatch(resetRepeatedTaskCompletionAction(id)),
             editTaskTimeProp: (hour, id) => dispatch(editTaskTimeAction(hour, id)),
             editTaskDateProp: (date, id) => dispatch(editTaskDateAction(date, id)),
             deleteTasksProp: tasks => dispatch(deleteTasksAction(tasks)),
@@ -100,9 +109,8 @@ class TaskMenu extends Component {
                   menuHeight: 0,
                   height: height + 10
             };
-      
       }
-     
+
       componentDidMount() {
             if (Platform.OS === 'ios') {
                   StatusBarManager.getHeight(statusBarHeight => {
@@ -123,9 +131,29 @@ class TaskMenu extends Component {
             // Format the date for the DatePicker selected date
             let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
 
+            let completed = this.props.general.selectedItem.completed;
+
+            // Check if it's a repeated task because if it's the case we need to check had been done (completed)
+            if (
+                  this.props.MainScreen &&
+                  this.props.general.selectedItem !== {} &&
+                  this.props.general.dateSelectedDateMover !== ''
+            ) {
+                  if (this.props.general.selectedItem.date !== this.props.general.dateSelectedDateMover) {
+                        completed = false;
+                        // Check for back compatibility
+                        this.props.general.selectedItem.completedArray &&
+                              this.props.general.selectedItem.completedArray.map(item => {
+                                    if (item === this.props.general.selectedItem.date) {
+                                          completed = true;
+                                    }
+                              });
+                  }
+            }
+
             this.setState({
                   name: this.props.general.selectedItem.name,
-                  completed: this.props.general.selectedItem.completed,
+                  completed: completed,
                   date: this.props.general.selectedItem.date != '' ? this.props.general.selectedItem.date : 'No date',
                   time: this.props.general.selectedItem.time != '' ? this.props.general.selectedItem.time : 'No time',
                   dateFormattedForDatePicker: date,
@@ -134,22 +162,22 @@ class TaskMenu extends Component {
             });
       }
 
-            // keyboardWillHide does'nt work on Android
-            _keyboardDidHide = () => {
-                  if(this.props.general.isTaskMenuOpen === true && Platform.OS === 'android'){
-                        this.confirmChangeTaskName();
-                        this.textInputRef.blur();
-                  }
-            };
-      
-            _keyboardWillHide = () => {
-                  if(this.props.general.isTaskMenuOpen === true){
+      // keyboardWillHide does'nt work on Android
+      _keyboardDidHide = () => {
+            if (this.props.general.isTaskMenuOpen === true && Platform.OS === 'android') {
+                  this.confirmChangeTaskName();
+                  this.textInputRef.blur();
+            }
+      };
+
+      _keyboardWillHide = () => {
+            if (this.props.general.isTaskMenuOpen === true) {
                   // On iOS the date picker close the keyboard which cause to unmount the component and make the date picker unavailable
-                        if (Platform.OS === 'ios') {
-                              this.confirmChangeTaskName();
-                        }
+                  if (Platform.OS === 'ios') {
+                        this.confirmChangeTaskName();
                   }
-            };
+            }
+      };
 
       componentDidUpdate(prevProps) {
             if (this.props.general.isTaskMenuOpen === true && prevProps.general.isTaskMenuOpen === false) {
@@ -162,9 +190,29 @@ class TaskMenu extends Component {
                   // Format the date for the DatePicker selected date
                   let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
 
+                  let completed = this.props.general.selectedItem.completed;
+
+                  // Check if it's a repeated task because if it's the case we need to check had been done (completed)
+                  if (
+                        this.props.MainScreen &&
+                        this.props.general.selectedItem !== {} &&
+                        this.props.general.dateSelectedDateMover !== ''
+                  ) {
+                        if (this.props.general.selectedItem.date !== this.props.general.dateSelectedDateMover) {
+                              completed = false;
+                              // Check for back compatibility
+                              this.props.general.selectedItem.completedArray &&
+                                    this.props.general.selectedItem.completedArray.map(item => {
+                                          if (item === this.props.general.dateSelectedDateMover) {
+                                                completed = true;
+                                          }
+                                    });
+                        }
+                  }
+
                   this.setState({
                         name: this.props.general.selectedItem.name,
-                        completed: this.props.general.selectedItem.completed,
+                        completed: completed,
                         date:
                               this.props.general.selectedItem.date != ''
                                     ? this.props.general.selectedItem.date
@@ -183,11 +231,11 @@ class TaskMenu extends Component {
             if (this.props.general.isTaskMenuOpen === false && this.state.menuHeight !== 0) {
                   this.setState({
                         menuHeight: 0
-                  })
+                  });
                   this.transY.setValue(0);
                   this.offsetY.setValue(0);
                   this.menuReduced.setValue(0);
-                  Keyboard.dismiss()
+                  Keyboard.dismiss();
             }
       }
 
@@ -219,8 +267,6 @@ class TaskMenu extends Component {
             this.keyboardWillHideListener.remove();
       }
 
-
-
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////      Date/Time Picker Func      //////////////////////////////////////
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,8 +295,8 @@ class TaskMenu extends Component {
                               date: date
                         },
                         async () => {
-                              if(this.state.reminder.time !== 'none'){
-                              await this.setReminder(this.state.reminder.time);
+                              if (this.state.reminder.time !== 'none') {
+                                    await this.setReminder(this.state.reminder.time);
                               }
                               this.props.editTaskDateProp(date, this.props.general.selectedItem.id);
 
@@ -285,7 +331,7 @@ class TaskMenu extends Component {
                         time: time
                   },
                   () => {
-                        if(this.state.reminder.time !== 'none'){
+                        if (this.state.reminder.time !== 'none') {
                               this.setReminder(this.state.reminder.time);
                         }
                         this.props.editTaskTimeProp(time, this.props.general.selectedItem.id);
@@ -311,59 +357,94 @@ class TaskMenu extends Component {
             let previousName = '';
 
             // if keyboard close and previousname and name to send are different
-            if(this.state.name){
+            if (this.state.name) {
                   this.props.editTaskNameProp(this.state.name, this.props.general.selectedItem.id, previousName);
-                  if(this.state.reminder.time !== 'none'){
+                  if (this.state.reminder.time !== 'none') {
                         this.setReminder(this.state.reminder.time, this.state.repeat);
                   }
             }
       };
 
       toggleCompletion = () => {
-            this.setState(
-                  {
-                        completed: !this.state.completed
-                  },
-                  () => {
-                        this.props.editTaskCompletionProp(
-                              this.props.task.completed,
-                              this.props.general.selectedItem.id
-                        );
-                  }
-            );
-      };
+            let { id } = this.props.general.selectedItem;
+            let date = this.props.general.dateSelectedDateMover;
+            let completedArray = this.props.general.selectedItem.completedArray
+                  ? this.props.general.selectedItem.completedArray
+                  : [];
 
-
-      deleteTasks = async () => {
-            if(this.state.reminder.time !== 'none'){
-            const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
-            if (status === 'granted') {
-                  // For back compatibility
-                  if(this.props.general.selectedItem.reminder){
-                        clearLocalNotification(this.state.reminder.id);
+            // Check if it's a repeated task because if it's the case we need to check had been done (completed)
+            if (
+                  this.props.MainScreen &&
+                  this.props.general.selectedItem !== {} &&
+                  this.props.general.dateSelectedDateMover !== ''
+            ) {
+                  // Means it's a repeated task
+                  if (this.props.general.selectedItem.date !== this.props.general.dateSelectedDateMover) {
+                        if (this.state.completed === true) {
+                              // console.log('arraytrue', completedArray);
+                              this.setState({
+                                    completed: !this.state.completed
+                              });
+                              this.props.deleteRepeatedTaskCompletionProp(id, date, completedArray);
+                        } else if (this.state.completed === false) {
+                              // console.log('arrayfalse', date);
+                              this.setState({
+                                    completed: !this.state.completed
+                              });
+                              this.props.addRepeatedTaskCompletionProp(id, date, completedArray);
+                        }
+                        return;
                   }
             }
+
+            if (
+                  !this.props.MainScreen ||
+                  this.props.general.selectedItem.date === this.props.general.dateSelectedDateMover
+            ) {
+                  this.setState(
+                        {
+                              completed: !this.state.completed
+                        },
+                        () => {
+                              this.props.editTaskCompletionProp(
+                                    this.props.task.completed,
+                                    this.props.general.selectedItem.id
+                              );
+                        }
+                  );
+            }
+      };
+
+      deleteTasks = async () => {
+            if (this.state.reminder.time !== 'none') {
+                  const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+                  if (status === 'granted') {
+                        // For back compatibility
+                        if (this.props.general.selectedItem.reminder) {
+                              clearLocalNotification(this.state.reminder.id);
+                        }
+                  }
             }
             this.props.deleteTasksProp([this.props.general.selectedItem]);
             this.props.closeTaskMenuProp();
       };
 
       deleteTaskTime = async () => {
-            if(this.state.reminder.time !== 'none'){
+            if (this.state.reminder.time !== 'none') {
                   const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
                   // For back compatibility
-                  if(this.props.general.selectedItem.reminder){
+                  if (this.props.general.selectedItem.reminder) {
                         if (status === 'granted') {
                               clearLocalNotification(this.state.reminder.id);
                         }
                   }
             }
-            
+
             let reminder = {
                   id: '',
-                  time: "none",
-                }
-            let repeat = 'never'
+                  time: 'none'
+            };
+            let repeat = 'never';
 
             this.setState({
                   time: 'No time',
@@ -374,23 +455,23 @@ class TaskMenu extends Component {
       };
 
       setReminder = async (reminderSelected, repeat = this.state.repeat) => {
-            if(this.state.time === 'No time'){
+            if (this.state.time === 'No time') {
                   Alert.alert(
                         '',
                         'You need to set a time for your task if you want to repeat it.',
                         [
                               {
                                     text: 'Cancel',
-                                    style: 'cancel',
+                                    style: 'cancel'
                               },
-                              {     
+                              {
                                     text: 'Set a time',
-                                    onPress: () => this.showTimePicker(),
+                                    onPress: () => this.showTimePicker()
                               }
                         ],
                         { cancelable: true }
                   );
-                  return
+                  return;
             }
 
             const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
@@ -403,10 +484,9 @@ class TaskMenu extends Component {
 
                   //  1- Clear the previous notif if it exist
                   // FIXME: For back compatibility
-                  if(this.props.general.selectedItem.reminder){
-                  await clearLocalNotification(reminder.id);
+                  if (this.props.general.selectedItem.reminder) {
+                        await clearLocalNotification(reminder.id);
                   }
-
 
                   let newReminderId;
                   // 2 - Set the new notification
@@ -415,10 +495,8 @@ class TaskMenu extends Component {
                               id => (newReminderId = id)
                         );
                   } else {
-                        // console.log('dont set notif');
                         newReminderId = '';
                   }
-                  // console.log('Id sent back', newReminderId);
 
                   // 3 - Get the new id returned by setLocalNotification
                   reminder.id = newReminderId;
@@ -439,66 +517,86 @@ class TaskMenu extends Component {
       };
 
       setRepeat = async repeat => {
-                  let { reminder } = this.state;
-                  this.setState(
-                        {
-                              repeat: repeat
-                        },
-                        () => {
-                              if(this.state.reminder.time !== 'none'){
-                                    this.setReminder(reminder.time, repeat);
+            if (this.state.time === 'No time') {
+                  Alert.alert(
+                        '',
+                        'You need to set a time for your task if you want to repeat it.',
+                        [
+                              {
+                                    text: 'Cancel',
+                                    style: 'cancel'
+                              },
+                              {
+                                    text: 'Set a time',
+                                    onPress: () => this.showTimePicker()
                               }
-                              this.props.setTaskRepeatProp(this.props.general.selectedItem.id, repeat);
-                        }
+                        ],
+                        { cancelable: true }
                   );
+                  return;
+            }
+            let { reminder } = this.state;
+            this.setState(
+                  {
+                        repeat: repeat
+                  },
+                  () => {
+                        if (this.state.reminder.time !== 'none') {
+                              this.setReminder(reminder.time, repeat);
+                        }
+                        this.props.setTaskRepeatProp(this.props.general.selectedItem.id, repeat);
+
+                        if (repeat === 'never') {
+                              this.props.resetRepeatedTaskCompletionProp(this.props.general.selectedItem.id);
+                        }
+                  }
+            );
       };
 
       render() {
             return (
                   <SafeAreaView
-                  style={{
-                        // backgroundColor: 'white',
-                        elevation: 15,
-                        zIndex: 99,
-                        position: 'absolute',
-                        bottom: 0,
-                        width: width,
-                        ...Platform.select({
-                              ios: {
-                                    height: this.state.menuHeight-40
-                              },
-                              android: {
-                                    
-                                    height: this.state.menuHeight,
-                              }
-                        })
-                        
-                  }}
-            >
-                  <PanGestureHandler
-                        maxPointers={1}
-                        onGestureEvent={this.onGestureEvent}
-                        onHandlerStateChange={this.onGestureEvent}
-                        minDist={10}
-                  >
-                        <Animated.View
-                              style={[
-                                    styles.container,
-                                    {
-                                          height: this.state.height,
-                                          ...Platform.select({
-                                                ios: {
-                                                      bottom: -height - 10 - this.state.iosStatusBarHeight
-                                                },
-                                                android: {
-                                                      bottom: -height - 10
-                                                }
-                                          }),
-                                          transform: [{ translateY: this.transY }]
+                        style={{
+                              // backgroundColor: 'white',
+                              elevation: 15,
+                              zIndex: 99,
+                              position: 'absolute',
+                              bottom: 0,
+                              width: width,
+                              ...Platform.select({
+                                    ios: {
+                                          height: this.state.menuHeight - 40
+                                    },
+                                    android: {
+                                          height: this.state.menuHeight
                                     }
-                              ]}
+                              })
+                        }}
+                  >
+                        <PanGestureHandler
+                              maxPointers={1}
+                              onGestureEvent={this.onGestureEvent}
+                              onHandlerStateChange={this.onGestureEvent}
+                              minDist={20}
                         >
-                        {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+                              <Animated.View
+                                    style={[
+                                          styles.container,
+                                          {
+                                                height: this.state.height,
+                                                ...Platform.select({
+                                                      ios: {
+                                                            bottom: -height - 10 - this.state.iosStatusBarHeight
+                                                      },
+                                                      android: {
+                                                            bottom: -height - 10
+                                                      }
+                                                }),
+                                                transform: [{ translateY: this.transY }]
+                                          }
+                                    ]}
+                              >
+                                    {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Header          ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
@@ -514,53 +612,63 @@ class TaskMenu extends Component {
                                           }}
                                     />
 
-                        <View style={{ flexDirection: 'row' }}>
-                              <TouchableOpacity onPress={() => this.toggleCompletion()}>
-                                    <Ionicons
-                                          name="ios-checkmark-circle-outline"
-                                          size={30}
-                                          color={this.props.task && this.props.task.completed ? 'red' : 'grey'}
-                                    />
-                              </TouchableOpacity>
+                                    <View style={{ flexDirection: 'row' }}>
+                                          <TouchableOpacity onPress={() => this.toggleCompletion()}>
+                                                <Ionicons
+                                                      name="ios-checkmark-circle-outline"
+                                                      size={30}
+                                                      color={this.state.completed ? 'red' : 'grey'}
+                                                />
+                                          </TouchableOpacity>
 
-                              <TextInput
-                                    style={{ height: 40, flex: 1, marginLeft: 8, paddingBottom: 8, fontSize: 16 }}
-                                    onChangeText={name => this.changeTaskName(name)}
-                                    value={this.state.name}
-                                    ref={c => {
-                                          this.textInputRef = c;
-                                    }}
-                                    onFocus={() => this.setState({height: height + 10 + 100})}
-                                    onBlur={() => this.setState({height: height + 10})}
-                              />
+                                          <TextInput
+                                                style={{
+                                                      height: 40,
+                                                      flex: 1,
+                                                      marginLeft: 8,
+                                                      paddingBottom: 8,
+                                                      fontSize: 16
+                                                }}
+                                                onChangeText={name => this.changeTaskName(name)}
+                                                value={this.state.name}
+                                                ref={c => {
+                                                      this.textInputRef = c;
+                                                }}
+                                                onFocus={() => this.setState({ height: height + 10 + 100 })}
+                                                onBlur={() => this.setState({ height: height + 10 })}
+                                          />
+                                    </View>
 
-                        </View>
-
-                        {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+                                    {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Date Setter         ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 }}>
-                              <View style={{ width: 100 }}>
-                                    <TouchableOpacity onPress={this.showDatePicker}>
-                                          <Text>Date:</Text>
-                                          <Text>{this.state.date}</Text>
-                                    </TouchableOpacity>
-                              </View>
+                                    <View
+                                          style={{
+                                                flexDirection: 'row',
+                                                justifyContent: 'space-around',
+                                                marginTop: 10
+                                          }}
+                                    >
+                                          <View style={{ width: 100 }}>
+                                                <TouchableOpacity onPress={this.showDatePicker}>
+                                                      <Text>Date:</Text>
+                                                      <Text>{this.state.date}</Text>
+                                                </TouchableOpacity>
+                                          </View>
 
-                              <View style={{ width: 100 }}>
-                                    <TouchableOpacity onPress={this.showTimePicker}>
-                                          <Text>Start time:</Text>
-                                          <Text>{this.state.time}</Text>
-                                    </TouchableOpacity>
+                                          <View style={{ width: 100 }}>
+                                                <TouchableOpacity onPress={this.showTimePicker}>
+                                                      <Text>Start time:</Text>
+                                                      <Text>{this.state.time}</Text>
+                                                </TouchableOpacity>
 
-                                    <TouchableOpacity onPress={() => this.deleteTaskTime()}>
-                                          <Text style={{ marginTop: 8 }}>Delete time</Text>
-                                    </TouchableOpacity>
-                              </View>
-                        </View>
-
-                        </Animated.View>
+                                                <TouchableOpacity onPress={() => this.deleteTaskTime()}>
+                                                      <Text style={{ marginTop: 8 }}>Delete time</Text>
+                                                </TouchableOpacity>
+                                          </View>
+                                    </View>
+                              </Animated.View>
                         </PanGestureHandler>
 
                         {/*/////////////////////////////////////////         Date Picker       //////////////////////////////////////////// */}
@@ -578,312 +686,265 @@ class TaskMenu extends Component {
                               onCancel={this.hideTimePicker}
                         />
 
-                                                         {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+                        {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Bottom Bar Menu        ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
-                        
-                        <Animated.View
-                                          style={[
-                                                styles.bottomBarMenu,
-                                                {
-                                                      transform: [{ translateY: this.bottomBarY }]
-                                                }
-                                          ]}
-                                    >
 
- {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+                        <Animated.View
+                              style={[
+                                    styles.bottomBarMenu,
+                                    {
+                                          transform: [{ translateY: this.bottomBarY }]
+                                    }
+                              ]}
+                        >
+                              {/* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
                         //////////////////////////////////////////         Reminder          ///////////////////////////////////////////// 
                         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */}
 
-                                          <Menu
-                                                ref={ref => (this.reminderMenu = ref)}
-                                                button={ this.state.reminder && this.state.reminder.time !== 'none' ?
-                                                (<View style={{ flexDirection: 'row' }}>
-                                                <TouchableOpacity
-                                                      onPress={() => this.reminderMenu.show()}
-                                                      style={{
-                                                            flexDirection: 'row',
-                                                            backgroundColor: '#FF2D55',
-                                                            borderRadius: 100,
-                                                            padding: 4,
-                                                            paddingHorizontal: 12,
-                                                            marginBottom: 12
-                                                      }}
-                                                >
-                                                      <Ionicons
-                                                            name="md-notifications"
-                                                            size={19}
-                                                            color="white"
-                                                      />
-                                                      <Text style={{ color: 'white', marginLeft: 8 }}>
-                                                            {getReminderText(this.state.reminder.time)}
-                                                      </Text>
+                              <Menu
+                                    ref={ref => (this.reminderMenu = ref)}
+                                    button={
+                                          this.state.reminder && this.state.reminder.time !== 'none' ? (
+                                                <View style={{ flexDirection: 'row' }}>
+                                                      <TouchableOpacity
+                                                            onPress={() => this.reminderMenu.show()}
+                                                            style={{
+                                                                  flexDirection: 'row',
+                                                                  backgroundColor: '#FF2D55',
+                                                                  borderRadius: 100,
+                                                                  padding: 4,
+                                                                  paddingHorizontal: 12,
+                                                                  marginBottom: 12
+                                                            }}
+                                                      >
+                                                            <Ionicons name="md-notifications" size={19} color="white" />
+                                                            <Text style={{ color: 'white', marginLeft: 8 }}>
+                                                                  {getReminderText(this.state.reminder.time)}
+                                                            </Text>
+                                                      </TouchableOpacity>
+                                                </View>
+                                          ) : (
+                                                <TouchableOpacity onPress={() => this.reminderMenu.show()}>
+                                                      <Ionicons name="md-notifications" size={30} color={'grey'} />
                                                 </TouchableOpacity>
-                                          </View>)
-                                                      : 
-                                                      (<TouchableOpacity onPress={() => this.reminderMenu.show()}>
-                                                      <Ionicons
-                                                            name="md-notifications"
-                                                            size={30}
-                                                            color={'grey'}
-                                                      />
-                                                </TouchableOpacity>)
-                                                }
-                                          >
-                                                <MenuItem
-                                                      onPress={() => {
-                                                            this.reminderMenu.hide();
-                                                      }}
-                                                      disabled
-                                                      children={<Text>Reminder: </Text>}
-                                                />
-                                                <MenuDivider />
-                                                <MenuItem
-                                                      onPress={() => {
-                                                            this.setReminder('none');
-                                                            this.reminderMenu.hide();
-                                                      }}
-                                                      children={<Text>None</Text>}
-                                                />
-                                                <MenuItem
-                                                      onPress={() => {
-                                                            this.setReminder('1-hour');
-                                                            this.reminderMenu.hide();
-                                                      }}
-                                                      children={<Text>1 hour before</Text>}
-                                                />
-                                                <MenuItem
-                                                      onPress={() => {
-                                                            this.setReminder('3-hour');
-                                                            this.reminderMenu.hide();
-                                                      }}
-                                                      children={<Text>3 hours before</Text>}
-                                                />
-                                                <MenuItem
-                                                      onPress={() => {
-                                                            this.setReminder('1-day');
-                                                            this.reminderMenu.hide();
-                                                      }}
-                                                      children={<Text>1 day before</Text>}
-                                                />
-                                                <MenuItem
-                                                      onPress={() => {
-                                                            this.setReminder('3-day');
-                                                            this.reminderMenu.hide();
-                                                      }}
-                                                      children={<Text>3 days before</Text>}
-                                                />
-                                          </Menu>
-                                          <RepeatButton
-                                                setRepeat={this.setRepeat}
-                                                repeat={this.state.repeat}
-                                          />
-                                          <TouchableOpacity
-                                                style={{ width: 30, alignItems: 'center' }}
-                                                onPress={this.deleteTasks}
-                                          >
-                                                <Ionicons name="md-trash" size={30} />
-                                          </TouchableOpacity>
-                                    </Animated.View>
-                                    <Animated.Code>
-                                          {() =>
-                                                block([
-                                                      cond(eq(this.openMenu, 1), [
-                                                            set(
-                                                                  this.transY,
-                                                                  cond(
-                                                                        defined(this.transY),
-                                                                        runSpring(this.clock, this.transY, 0, -420, 150)
-                                                                  )
-                                                            ),
-                                                            cond(lessThan(this.transY, -419), [
-                                                                  call([], this.setMenuHeightReduced),
-                                                                  set(this.offsetY, -420),
-                                                                  stopClock(this.clock),
-                                                                  set(this.menuReduced, 1),
-                                                                  set(this.openMenu, 0)
-                                                            ])
-                                                      ]),
+                                          )
+                                    }
+                              >
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.reminderMenu.hide();
+                                          }}
+                                          disabled
+                                          children={<Text>Reminder: </Text>}
+                                    />
+                                    <MenuDivider />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('none');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>None</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-hour');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>1 hour before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-hour');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>3 hours before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-day');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>1 day before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-day');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>3 days before</Text>}
+                                    />
+                              </Menu>
+                              <RepeatButton setRepeat={this.setRepeat} repeat={this.state.repeat} />
+                              <TouchableOpacity style={{ width: 30, alignItems: 'center' }} onPress={this.deleteTasks}>
+                                    <Ionicons name="md-trash" size={30} />
+                              </TouchableOpacity>
+                        </Animated.View>
+                        <Animated.Code>
+                              {() =>
+                                    block([
+                                          cond(eq(this.openMenu, 1), [
+                                                set(
+                                                      this.transY,
                                                       cond(
-                                                            and(
-                                                                  eq(this.gestureState, State.ACTIVE),
-                                                                  greaterOrEq(this.transY, -height),
-                                                                  eq(this.dragging, 0)
-                                                            ),
-                                                            [stopClock(this.clock), set(this.transY, this.addY)]
-                                                      ),
-                                                      cond(
-                                                            and(
-                                                                  eq(this.gestureState, State.ACTIVE),
-                                                                  lessOrEq(this.transY, -height),
-                                                                  eq(this.dragging, 0)
-                                                            ),
-                                                            [set(this.transY, -height), set(this.offsetY, -height)]
-                                                      ),
-                                                      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                      ////////////////////////////////////////////////////////// Move Menu ///////////////////////////////////////////////////////////
-                                                      cond(
-                                                            and(
-                                                                  eq(this.gestureState, State.END),
-                                                                  and(
-                                                                        lessThan(this.transY, -370),
-                                                                        greaterThan(this.transY, -470)
-                                                                  ),
-                                                                  eq(this.menuReduced, 1)
-                                                            ),
-                                                            [
-                                                                  set(
-                                                                        this.transY,
-                                                                        cond(
-                                                                              defined(this.transY),
-                                                                              runSpring(
-                                                                                    this.clock,
-                                                                                    this.transY,
-                                                                                    50,
-                                                                                    -420,
-                                                                                    150
-                                                                              )
-                                                                        )
-                                                                  )
-                                                            ]
-                                                      ),
-
-                                                      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                      //////////////////////////////////////////////////////// Close Menu /////////////////////////////////////////////////////////
-                                                      cond(
-                                                            and(
-                                                                  eq(this.gestureState, State.END),
-                                                                  greaterOrEq(this.transY, -370),
-                                                                  eq(this.menuReduced, 1)
-                                                            ),
-                                                            [
-                                                                  set(
-                                                                        this.transY,
-                                                                        cond(
-                                                                              defined(this.transY),
-                                                                              runSpring(
-                                                                                    this.clock,
-                                                                                    this.transY,
-                                                                                    50,
-                                                                                    0,
-                                                                                    20
-                                                                              )
-                                                                        )
-                                                                  ),
-                                                                  set(this.dragging, 1),
-                                                                  cond(greaterThan(this.transY, -1), [
-                                                                        call([], this.setMenuHeightClosed),
-                                                                        set(this.offsetY, 0),
-                                                                        stopClock(this.clock),
-                                                                        set(this.menuReduced, 0),
-                                                                        set(this.menuStarted, 0),
-                                                                        set(this.dragging, 0),
-                                                                        call([], this.closeMenu)
-                                                                  ])
-                                                            ]
-                                                      ),
-
-                                                      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                      //////////////////////////////////////////////////////// Expand Menu /////////////////////////////////////////////////////////
-                                                      cond(
-                                                            and(
-                                                                  eq(this.gestureState, State.END),
-                                                                  lessOrEq(this.transY, -470),
-                                                                  eq(this.menuReduced, 1)
-                                                            ),
-                                                            [
-                                                                  set(
-                                                                        this.transY,
-                                                                        cond(
-                                                                              defined(this.transY),
-                                                                              runSpring(
-                                                                                    this.clock,
-                                                                                    this.transY,
-                                                                                    50,
-                                                                                    -height,
-                                                                                    20
-                                                                              )
-                                                                        )
-                                                                  ),
-                                                                  set(this.dragging, 1),
-                                                                  cond(lessThan(this.transY, -height + 1), [
-                                                                        call([], this.setMenuHeightExpanded),
-                                                                        set(this.offsetY, -height),
-                                                                        stopClock(this.clock),
-                                                                        set(this.menuReduced, 0),
-                                                                        set(this.menuExpanded, 1),
-                                                                        set(this.dragging, 0)
-                                                                  ])
-                                                            ]
-                                                      ),
-                                                      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                      //////////////////////////////////////////////////////// Reduce Menu /////////////////////////////////////////////////////////
-                                                      cond(
-                                                            and(
-                                                                  eq(this.gestureState, State.END),
-                                                                  greaterOrEq(this.transY, -height + 20),
-                                                                  eq(this.menuExpanded, 1)
-                                                            ),
-                                                            [
-                                                                  set(
-                                                                        this.transY,
-                                                                        cond(
-                                                                              defined(this.transY),
-                                                                              runSpring(
-                                                                                    this.clock,
-                                                                                    this.transY,
-                                                                                    50,
-                                                                                    -420,
-                                                                                    20
-                                                                              )
-                                                                        )
-                                                                  ),
-                                                                  set(this.dragging, 1),
-                                                                  cond(greaterThan(this.transY, -421), [
-                                                                        call([], this.setMenuHeightReduced),
-                                                                        set(this.offsetY, -420),
-                                                                        stopClock(this.clock),
-                                                                        set(this.menuExpanded, 0),
-                                                                        set(this.menuReduced, 1),
-                                                                        set(this.dragging, 0)
-                                                                  ])
-                                                            ]
-                                                      ),
-
-                                                      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                      //////////////////////////////////////////////////////// Move Expanded Menu /////////////////////////////////////////////////////////
-                                                      cond(
-                                                            and(
-                                                                  eq(this.gestureState, State.END),
-                                                                  lessThan(this.transY, -height + 20),
-                                                                  eq(this.menuExpanded, 1)
-                                                            ),
-                                                            [
-                                                                  set(
-                                                                        this.transY,
-                                                                        cond(
-                                                                              defined(this.transY),
-                                                                              runSpring(
-                                                                                    this.clock,
-                                                                                    this.transY,
-                                                                                    50,
-                                                                                    -height,
-                                                                                    7
-                                                                              )
-                                                                        )
-                                                                  ),
-                                                                  set(this.dragging, 1),
-                                                                  cond(lessOrEq(this.transY, -height + 1), [
-                                                                        set(this.offsetY, -height),
-                                                                        stopClock(this.clock),
-                                                                        set(this.dragging, 0)
-                                                                  ])
-                                                            ]
+                                                            defined(this.transY),
+                                                            runSpring(this.clock, this.transY, 0, -420, 150)
                                                       )
+                                                ),
+                                                cond(lessThan(this.transY, -419), [
+                                                      call([], this.setMenuHeightReduced),
+                                                      set(this.offsetY, -420),
+                                                      stopClock(this.clock),
+                                                      set(this.menuReduced, 1),
+                                                      set(this.openMenu, 0)
                                                 ])
-                                          }
-                                    </Animated.Code>
-                              
+                                          ]),
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.ACTIVE),
+                                                      greaterOrEq(this.transY, -height),
+                                                      eq(this.dragging, 0)
+                                                ),
+                                                [stopClock(this.clock), set(this.transY, this.addY)]
+                                          ),
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.ACTIVE),
+                                                      lessOrEq(this.transY, -height),
+                                                      eq(this.dragging, 0)
+                                                ),
+                                                [set(this.transY, -height), set(this.offsetY, -height)]
+                                          ),
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          ////////////////////////////////////////////////////////// Move Menu ///////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      and(lessThan(this.transY, -370), greaterThan(this.transY, -470)),
+                                                      eq(this.menuReduced, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, -420, 150)
+                                                            )
+                                                      )
+                                                ]
+                                          ),
+
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          //////////////////////////////////////////////////////// Close Menu /////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      greaterOrEq(this.transY, -370),
+                                                      eq(this.menuReduced, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, 0, 20)
+                                                            )
+                                                      ),
+                                                      set(this.dragging, 1),
+                                                      cond(greaterThan(this.transY, -1), [
+                                                            call([], this.setMenuHeightClosed),
+                                                            set(this.offsetY, 0),
+                                                            stopClock(this.clock),
+                                                            set(this.menuReduced, 0),
+                                                            set(this.menuStarted, 0),
+                                                            set(this.dragging, 0),
+                                                            call([], this.closeMenu)
+                                                      ])
+                                                ]
+                                          ),
+
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          //////////////////////////////////////////////////////// Expand Menu /////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      lessOrEq(this.transY, -470),
+                                                      eq(this.menuReduced, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, -height, 20)
+                                                            )
+                                                      ),
+                                                      set(this.dragging, 1),
+                                                      cond(lessThan(this.transY, -height + 1), [
+                                                            call([], this.setMenuHeightExpanded),
+                                                            set(this.offsetY, -height),
+                                                            stopClock(this.clock),
+                                                            set(this.menuReduced, 0),
+                                                            set(this.menuExpanded, 1),
+                                                            set(this.dragging, 0)
+                                                      ])
+                                                ]
+                                          ),
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          //////////////////////////////////////////////////////// Reduce Menu /////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      greaterOrEq(this.transY, -height + 20),
+                                                      eq(this.menuExpanded, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, -420, 20)
+                                                            )
+                                                      ),
+                                                      set(this.dragging, 1),
+                                                      cond(greaterThan(this.transY, -421), [
+                                                            call([], this.setMenuHeightReduced),
+                                                            set(this.offsetY, -420),
+                                                            stopClock(this.clock),
+                                                            set(this.menuExpanded, 0),
+                                                            set(this.menuReduced, 1),
+                                                            set(this.dragging, 0)
+                                                      ])
+                                                ]
+                                          ),
+
+                                          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          //////////////////////////////////////////////////////// Move Expanded Menu /////////////////////////////////////////////////////////
+                                          cond(
+                                                and(
+                                                      eq(this.gestureState, State.END),
+                                                      lessThan(this.transY, -height + 20),
+                                                      eq(this.menuExpanded, 1)
+                                                ),
+                                                [
+                                                      set(
+                                                            this.transY,
+                                                            cond(
+                                                                  defined(this.transY),
+                                                                  runSpring(this.clock, this.transY, 50, -height, 7)
+                                                            )
+                                                      ),
+                                                      set(this.dragging, 1),
+                                                      cond(lessOrEq(this.transY, -height + 1), [
+                                                            set(this.offsetY, -height),
+                                                            stopClock(this.clock),
+                                                            set(this.dragging, 0)
+                                                      ])
+                                                ]
+                                          )
+                                    ])
+                              }
+                        </Animated.Code>
                   </SafeAreaView>
             );
       }

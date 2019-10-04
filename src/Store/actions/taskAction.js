@@ -200,6 +200,81 @@ export function editTaskCompletionAction(completion, id) {
       };
 }
 
+export const ADD_REPEATEDTASK_COMPLETION = 'ADD_REPEATEDTASK_COMPLETION';
+export function addRepeatedTaskCompletionAction(id, date, datesArray) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
+            let newDatesArray = [...datesArray];
+            newDatesArray = newDatesArray.filter(item => {
+                  return item !== date;
+            });
+            newDatesArray.push(date);
+
+            console.log('array', newDatesArray);
+
+            dispatch({
+                  type: ADD_REPEATEDTASK_COMPLETION,
+                  payload: { id, newDatesArray },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('tasks')
+                                    .doc(id)
+                                    .set({ completedArray: newDatesArray }, { merge: true })
+                        }
+                  }
+            });
+      };
+}
+
+export const DELETED_REPEATEDTASK_COMPLETION = 'DELETED_REPEATEDTASK_COMPLETION';
+export function deleteRepeatedTaskCompletionAction(id, date, datesArray) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
+            let newDatesArray = [...datesArray];
+            newDatesArray = newDatesArray.filter(item => {
+                  return item !== date;
+            });
+
+            console.log('array', newDatesArray);
+
+            dispatch({
+                  type: DELETED_REPEATEDTASK_COMPLETION,
+                  payload: { id, newDatesArray },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('tasks')
+                                    .doc(id)
+                                    .set({ completedArray: newDatesArray }, { merge: true })
+                        }
+                  }
+            });
+      };
+}
+
+export const RESET_REPEATEDTASK_COMPLETION = 'RESET_REPEATEDTASK_COMPLETION';
+export function resetRepeatedTaskCompletionAction(id) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+
+            dispatch({
+                  type: RESET_REPEATEDTASK_COMPLETION,
+                  payload: { id },
+                  meta: {
+                        offline: {
+                              effect: firestore
+                                    .collection('tasks')
+                                    .doc(id)
+                                    .set({ completedArray: [] }, { merge: true })
+                        }
+                  }
+            });
+      };
+}
+
 export const DELETE_TASKS = 'DELETE_TASKS';
 export function deleteTasksAction(tasks) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {

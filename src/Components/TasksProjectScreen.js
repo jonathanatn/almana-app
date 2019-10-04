@@ -131,6 +131,7 @@ class TasksProjectScreen extends Component {
                               text: 'Delete project',
                               onPress: () => {
                                     this.props.deleteProjectProp(id);
+                                    this.menu.hide();
                                     this.props.navigation.goBack();
                               }
                         }
@@ -237,7 +238,6 @@ class TasksProjectScreen extends Component {
                                     <MenuItem
                                           onPress={() => {
                                                 this.deleteProject(id);
-                                                this.menu.hide();
                                           }}
                                           children={<Text>Delete project</Text>}
                                     />

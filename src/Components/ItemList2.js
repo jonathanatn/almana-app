@@ -89,8 +89,21 @@ class ItemList extends Component {
             };
       }
 
+      componentDidMount() {
+            this.willFocusListener = this.props.navigation.addListener('willFocus', () => {
+                  this.setState({
+                        data: this.props.items
+                  });
+            });
+      }
+
+      componentWillUnmount() {
+            this.willFocusListener.remove();
+      }
+
       componentDidUpdate(prevProps) {
             let isFocused = this.props.navigation.isFocused();
+
             if (this.props.items !== prevProps.items && isFocused) {
                   this.setState({
                         data: this.props.items
@@ -465,7 +478,13 @@ class ItemList extends Component {
                               style={{ flex: 1 }}
                         >
                               {item.type === 'periodCategory' && <Text style={styles.periodCategory}>{item.name}</Text>}
-                              {item.type === 'task' && <Task {...item} />}
+                              {item.type === 'task' && (
+                                    <Task
+                                          {...item}
+                                          dateSelectedDateMover={this.props.general.dateSelectedDateMover}
+                                          mainScreen={true}
+                                    />
+                              )}
                               {item.type === 'event' && <Event {...item} />}
                         </TouchableOpacity>
                   </View>

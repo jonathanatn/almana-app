@@ -68,9 +68,9 @@ class TasksProjectList extends Component {
             };
       }
 
-      shouldComponentUpdate(nextProps, nextState) {
-            return nextProps.items != nextState.data;
-      }
+      // shouldComponentUpdate(nextProps, nextState) {
+      //       return nextProps.items != nextState.data;
+      // }
 
       componentDidMount() {
             this.setState({
@@ -398,13 +398,6 @@ class TasksProjectList extends Component {
                                           renderItem={this.renderItem}
                                           // FIXME:
                                           scrollEnabled={this.state.dragging ? false : true}
-                                          // scrollEnabled={
-                                          //       Platform.OS === 'android'
-                                          //             ? false
-                                          //             : this.state.dragging === true
-                                          //             ? false
-                                          //             : true
-                                          // }
                                           showsVerticalScrollIndicator={false}
                                           onLayout={event => {
                                                 let { y, height } = event.nativeEvent.layout;
