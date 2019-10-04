@@ -132,9 +132,29 @@ class TaskMenu extends Component {
             // Format the date for the DatePicker selected date
             let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
 
+            let completed = this.props.general.selectedItem.completed;
+
+            // Check if it's a repeated task because if it's the case we need to check had been done (completed)
+            if (
+                  this.props.MainScreen &&
+                  this.props.general.selectedItem !== {} &&
+                  this.props.general.dateSelectedDateMover !== ''
+            ) {
+                  if (this.props.general.selectedItem.date !== this.props.general.dateSelectedDateMover) {
+                        completed = false;
+                        // Check for back compatibility
+                        this.props.general.selectedItem.completedArray &&
+                              this.props.general.selectedItem.completedArray.map(item => {
+                                    if (item === this.props.general.selectedItem.date) {
+                                          completed = true;
+                                    }
+                              });
+                  }
+            }
+
             this.setState({
                   name: this.props.general.selectedItem.name,
-                  completed: this.props.general.selectedItem.completed,
+                  completed: completed,
                   date: this.props.general.selectedItem.date != '' ? this.props.general.selectedItem.date : 'No date',
                   time: this.props.general.selectedItem.time != '' ? this.props.general.selectedItem.time : 'No time',
                   dateFormattedForDatePicker: date,
