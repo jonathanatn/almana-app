@@ -89,6 +89,18 @@ class ItemList extends Component {
             };
       }
 
+      componentDidMount() {
+            this.willFocusListener = this.props.navigation.addListener('willFocus', () => {
+                  this.setState({
+                        data: this.props.items
+                  });
+            });
+      }
+
+      componentWillUnmount() {
+            this.willFocusListener.remove();
+      }
+
       componentDidUpdate(prevProps) {
             let isFocused = this.props.navigation.isFocused();
             if (this.props.items !== prevProps.items && isFocused) {
