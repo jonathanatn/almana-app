@@ -477,7 +477,13 @@ class ItemList extends Component {
                               style={{ flex: 1 }}
                         >
                               {item.type === 'periodCategory' && <Text style={styles.periodCategory}>{item.name}</Text>}
-                              {item.type === 'task' && <Task {...item} />}
+                              {item.type === 'task' && (
+                                    <Task
+                                          {...item}
+                                          dateSelectedDateMover={this.props.general.dateSelectedDateMover}
+                                          mainScreen={true}
+                                    />
+                              )}
                               {item.type === 'event' && <Event {...item} />}
                         </TouchableOpacity>
                   </View>
