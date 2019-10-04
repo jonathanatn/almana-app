@@ -163,48 +163,40 @@ class TaskMenu extends Component {
             });
       }
 
-      // keyboardWillHide does'nt work on Android
-      _keyboardDidHide = () => {
-            if (this.props.general.isTaskMenuOpen === true && Platform.OS === 'android') {
-                  this.confirmChangeTaskName();
-                  this.textInputRef.blur();
-            }
-      };
-
-      _keyboardWillHide = () => {
-            if (this.props.general.isTaskMenuOpen === true) {
-                  // On iOS the date picker close the keyboard which cause to unmount the component and make the date picker unavailable
-                  if (Platform.OS === 'ios') {
-                        this.confirmChangeTaskName();
-                  }
-            }
-      };
-
       componentDidUpdate(prevProps) {
             if (this.props.general.isTaskMenuOpen === true && prevProps.general.isTaskMenuOpen === false) {
                   let dateSelected = this.props.general.dateSelectedDateMover;
 
-                  // Get the day
                   let day = dateSelected.substring(3, 5);
                   let month = dateSelected.substring(0, 2);
                   let year = dateSelected.substring(6);
 
-                  let hour = 0;
-                  let minute = 0;
-                  // Get the start time
-                  if (this.props.general.selectedItem.time !== '') {
-                        let time = this.props.general.selectedItem.time;
-                        let time24h = moment(time, 'h:mm A').format('HH:mm:ss');
-                        hour = time24h.substring(0, 2);
-                        minute = time24h.substring(3, 5);
-                  }
-
                   // Format the date for the DatePicker selected date
-                  let date = new Date(year, parseInt(month, 10) - 1, day, hour, minute, 0, 0);
+                  let date = new Date(year, parseInt(month, 10) - 1, day, 0, 0, 0, 0);
+
+                  let completed = this.props.general.selectedItem.completed;
+
+                  // Check if it's a repeated task because if it's the case we need to check had been done (completed)
+                  if (
+                        this.props.MainScreen &&
+                        this.props.general.selectedItem !== {} &&
+                        this.props.general.dateSelectedDateMover !== ''
+                  ) {
+                        if (this.props.general.selectedItem.date !== this.props.general.dateSelectedDateMover) {
+                              completed = false;
+                              // Check for back compatibility
+                              this.props.general.selectedItem.completedArray &&
+                                    this.props.general.selectedItem.completedArray.map(item => {
+                                          if (item === this.props.general.dateSelectedDateMover) {
+                                                completed = true;
+                                          }
+                                    });
+                        }
+                  }
 
                   this.setState({
                         name: this.props.general.selectedItem.name,
-                        completed: this.props.general.selectedItem.completed,
+                        completed: completed,
                         date:
                               this.props.general.selectedItem.date != ''
                                     ? this.props.general.selectedItem.date
@@ -214,7 +206,6 @@ class TaskMenu extends Component {
                                     ? this.props.general.selectedItem.time
                                     : 'No time',
                         dateFormattedForDatePicker: date,
-                        timeFormattedForDatePicker: date,
                         reminder: this.props.general.selectedItem.reminder,
                         repeat: this.props.general.selectedItem.repeat
                   });
@@ -231,6 +222,23 @@ class TaskMenu extends Component {
                   Keyboard.dismiss();
             }
       }
+
+      // keyboardWillHide does'nt work on Android
+      _keyboardDidHide = () => {
+            if (this.props.general.isTaskMenuOpen === true && Platform.OS === 'android') {
+                  this.confirmChangeTaskName();
+                  this.textInputRef.blur();
+            }
+      };
+
+      _keyboardWillHide = () => {
+            if (this.props.general.isTaskMenuOpen === true) {
+                  // On iOS the date picker close the keyboard which cause to unmount the component and make the date picker unavailable
+                  if (Platform.OS === 'ios') {
+                        this.confirmChangeTaskName();
+                  }
+            }
+      };
 
       closeMenu = () => {
             this.textInputRef.blur();
