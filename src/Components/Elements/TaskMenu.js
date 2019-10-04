@@ -25,6 +25,11 @@ import { compose } from 'redux';
 import { editTaskNameAction, syncTaskNameAction, editTaskCompletionAction } from '../../Store/actions/taskAction';
 import { editTaskTimeAction, editTaskDateAction, deleteTasksAction } from '../../Store/actions/taskAction';
 import { deleteTaskTimeAction, editTaskPositionAction, setTaskRepeatAction } from '../../Store/actions/taskAction';
+import {
+      deleteRepeatedTaskCompletionAction,
+      addRepeatedTaskCompletionAction,
+      resetRepeatedTaskCompletionAction
+} from '../../Store/actions/taskAction';
 import { setTaskReminderAction } from '../../Store/actions/taskAction';
 import { closeTaskMenuAction } from '../../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
@@ -32,6 +37,11 @@ function mapDispatchToProps(dispatch) {
             editTaskNameProp: (name, id, previousName) => dispatch(editTaskNameAction(name, id, previousName)),
             syncTaskNameProp: (name, id) => dispatch(syncTaskNameAction(name, id)),
             editTaskCompletionProp: (state, id) => dispatch(editTaskCompletionAction(state, id)),
+            addRepeatedTaskCompletionProp: (id, date, datesArray) =>
+                  dispatch(addRepeatedTaskCompletionAction(id, date, datesArray)),
+            deleteRepeatedTaskCompletionProp: (id, date, datesArray) =>
+                  dispatch(deleteRepeatedTaskCompletionAction(id, date, datesArray)),
+            resetRepeatedTaskCompletionProp: id => dispatch(resetRepeatedTaskCompletionAction(id)),
             editTaskTimeProp: (hour, id) => dispatch(editTaskTimeAction(hour, id)),
             editTaskDateProp: (date, id) => dispatch(editTaskDateAction(date, id)),
             deleteTasksProp: tasks => dispatch(deleteTasksAction(tasks)),
