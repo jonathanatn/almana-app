@@ -83,7 +83,7 @@ class RepeatButton extends Component {
                               <MenuItem
                                     onPress={() => {
                                           this.setRepeat('daily');
-                                          // this.menu.hide();
+                                          this.menu.hide();
                                     }}
                                     children={<Text>Every day</Text>}
                               />

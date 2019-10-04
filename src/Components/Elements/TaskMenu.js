@@ -393,7 +393,6 @@ class TaskMenu extends Component {
       };
 
       setReminder = async (reminderSelected, repeat = this.state.repeat) => {
-            console.log(this.state.time);
             if (this.state.time === 'No time') {
                   Alert.alert(
                         '',
@@ -465,7 +464,6 @@ class TaskMenu extends Component {
                         repeat: repeat
                   },
                   () => {
-                        console.log(this.state.reminder.time);
                         if (this.state.reminder.time !== 'none') {
                               this.setReminder(reminder.time, repeat);
                         }
@@ -697,7 +695,12 @@ class TaskMenu extends Component {
                                           children={<Text>3 days before</Text>}
                                     />
                               </Menu>
-                              <RepeatButton setRepeat={this.setRepeat} repeat={this.state.repeat} />
+                              <RepeatButton
+                                    setRepeat={this.setRepeat}
+                                    repeat={this.state.repeat}
+                                    time={this.state.time}
+                                    showPicker={this.showPicker}
+                              />
                               <TouchableOpacity style={{ width: 30, alignItems: 'center' }} onPress={this.deleteTasks}>
                                     <Ionicons name="md-trash" size={30} />
                               </TouchableOpacity>
