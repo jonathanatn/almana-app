@@ -610,11 +610,7 @@ class TaskMenu extends Component {
                                                 <Ionicons
                                                       name="ios-checkmark-circle-outline"
                                                       size={30}
-                                                      color={
-                                                            this.props.task && this.props.task.completed
-                                                                  ? 'red'
-                                                                  : 'grey'
-                                                      }
+                                                      color={this.state.completed ? 'red' : 'grey'}
                                                 />
                                           </TouchableOpacity>
 
