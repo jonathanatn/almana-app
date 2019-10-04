@@ -368,17 +368,53 @@ class TaskMenu extends Component {
       };
 
       toggleCompletion = () => {
-            this.setState(
-                  {
-                        completed: !this.state.completed
-                  },
-                  () => {
-                        this.props.editTaskCompletionProp(
-                              this.props.task.completed,
-                              this.props.general.selectedItem.id
-                        );
+            let { id } = this.props.general.selectedItem;
+            let date = this.props.general.dateSelectedDateMover;
+            let completedArray = this.props.general.selectedItem.completedArray
+                  ? this.props.general.selectedItem.completedArray
+                  : [];
+
+            // Check if it's a repeated task because if it's the case we need to check had been done (completed)
+            if (
+                  this.props.MainScreen &&
+                  this.props.general.selectedItem !== {} &&
+                  this.props.general.dateSelectedDateMover !== ''
+            ) {
+                  // Means it's a repeated task
+                  if (this.props.general.selectedItem.date !== this.props.general.dateSelectedDateMover) {
+                        if (this.state.completed === true) {
+                              // console.log('arraytrue', completedArray);
+                              this.setState({
+                                    completed: !this.state.completed
+                              });
+                              this.props.deleteRepeatedTaskCompletionProp(id, date, completedArray);
+                        } else if (this.state.completed === false) {
+                              // console.log('arrayfalse', date);
+                              this.setState({
+                                    completed: !this.state.completed
+                              });
+                              this.props.addRepeatedTaskCompletionProp(id, date, completedArray);
+                        }
+                        return;
                   }
-            );
+            }
+
+            if (
+                  !this.props.MainScreen ||
+                  this.props.general.selectedItem.date === this.props.general.dateSelectedDateMover
+            ) {
+                  this.setState(
+                        {
+                              completed: !this.state.completed
+                        },
+                        () => {
+                              this.props.editTaskCompletionProp(
+                                    this.props.task.completed,
+                                    this.props.general.selectedItem.id
+                              );
+                        }
+                  );
+            }
       };
 
       deleteTasks = async () => {
