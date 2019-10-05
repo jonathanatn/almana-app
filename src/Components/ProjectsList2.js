@@ -410,13 +410,6 @@ class TasksProjectList extends Component {
                                           renderItem={this.renderItem}
                                           // FIXME:
                                           scrollEnabled={this.state.dragging ? false : true}
-                                          // scrollEnabled={
-                                          //       Platform.OS === 'android'
-                                          //             ? false
-                                          //             : this.state.dragging === true
-                                          //             ? false
-                                          //             : true
-                                          // }
                                           showsVerticalScrollIndicator={false}
                                           onLayout={event => {
                                                 let { y, height } = event.nativeEvent.layout;

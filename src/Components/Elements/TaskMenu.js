@@ -441,9 +441,7 @@ class TaskMenu extends Component {
                         }
                   }
             }
-
             let date = new Date('1992', '01', '02', '0', '0', '0', '0');
-
             let reminder = {
                   id: '',
                   time: 'none'
@@ -508,10 +506,8 @@ class TaskMenu extends Component {
                               id => (newReminderId = id)
                         );
                   } else {
-                        // console.log('dont set notif');
                         newReminderId = '';
                   }
-                  // console.log('Id sent back', newReminderId);
 
                   // 3 - Get the new id returned by setLocalNotification
                   reminder.id = newReminderId;
@@ -554,6 +550,9 @@ class TaskMenu extends Component {
                               this.setReminder(reminder.time, repeat);
                         }
                         this.props.setTaskRepeatProp(this.props.general.selectedItem.id, repeat);
+                        if (repeat === 'never') {
+                              this.props.resetRepeatedTaskCompletionProp(this.props.general.selectedItem.id);
+                        }
                   }
             );
       };
@@ -783,6 +782,7 @@ class TaskMenu extends Component {
                                     time={this.state.time}
                                     showPicker={this.showPicker}
                               />
+
                               <TouchableOpacity style={{ width: 30, alignItems: 'center' }} onPress={this.deleteTasks}>
                                     <Ionicons name="md-trash" size={30} />
                               </TouchableOpacity>

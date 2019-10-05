@@ -103,6 +103,7 @@ class ItemList extends Component {
 
       componentDidUpdate(prevProps) {
             let isFocused = this.props.navigation.isFocused();
+
             if (this.props.items !== prevProps.items && isFocused) {
                   this.setState({
                         data: this.props.items

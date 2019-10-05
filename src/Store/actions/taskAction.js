@@ -210,7 +210,6 @@ export function addRepeatedTaskCompletionAction(id, date, datesArray) {
                   return item !== date;
             });
             newDatesArray.push(date);
-
             dispatch({
                   type: ADD_REPEATEDTASK_COMPLETION,
                   payload: { id, newDatesArray },
@@ -235,7 +234,6 @@ export function deleteRepeatedTaskCompletionAction(id, date, datesArray) {
             newDatesArray = newDatesArray.filter(item => {
                   return item !== date;
             });
-
             dispatch({
                   type: DELETED_REPEATEDTASK_COMPLETION,
                   payload: { id, newDatesArray },
