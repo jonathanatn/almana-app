@@ -525,9 +525,21 @@ class TaskMenu extends Component {
                               this.props.setTaskReminderProp(id, reminder);
                         }
                   );
+                  // this.reminderMenu.hide();
             } else {
-                  // TODO: create an alert
-                  throw new Error('Notification permission not granted');
+                  Alert.alert(
+                        '',
+                        'You need to give Almana the permission to set notifications.',
+                        [
+                              {
+                                    text: 'Ok',
+                                    onPress: () => this.reminderMenu.hide(),
+                                    style: 'cancel'
+                              }
+                        ],
+                        { cancelable: false }
+                  );
+                  return;
             }
       };
 
