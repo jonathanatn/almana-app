@@ -1,9 +1,9 @@
 // STATIC UI
 import React from 'react';
 import { StyleSheet, View, Dimensions, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
-import { Platform, TouchableHighlight, TouchableNativeFeedback } from 'react-native';
-import Task from './Elements/Task';
-import Event from './Elements/Event';
+import { Platform, TouchableNativeFeedback, Keyboard } from 'react-native';
+import Task from '../Elements/Task';
+import Event from '../Elements/Event';
 
 // ANIMATED UI
 import Animated from 'react-native-reanimated';
@@ -15,20 +15,18 @@ const { diff, or, debug, startClock, lessOrEq, greaterOrEq } = Animated;
 import { firestoreConnect } from 'react-redux-firebase';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { receiveTasksAction, editTasksPositionAction, editTaskPeriodAction } from '../Store/actions/taskAction';
-import { editEventsPositionAction } from '../Store/actions/eventAction';
-import { setSelectedItemAction, openTaskMenuAction, openEventMenuAction } from '../Store/actions/generalAction';
-import { closeTaskMenuAction, closeDateMoverAction, closeEventMenuAction } from '../Store/actions/generalAction';
-import { closeTaskAdderAction } from '../Store/actions/generalAction';
+import { editTasksPositionAction } from '../../Store/actions/taskAction';
+import { editEventsPositionAction } from '../../Store/actions/eventAction';
+import { setSelectedItemAction, openTaskMenuAction, openEventMenuAction } from '../../Store/actions/generalAction';
+import { closeTaskMenuAction, closeDateMoverAction, closeEventMenuAction } from '../../Store/actions/generalAction';
+import { closeTaskAdderAction } from '../../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
             // TASKS
-            // receiveTasksProp: date => dispatch(receiveTasksAction(date)),
-            editTasksPositionProp: tasks => dispatch(editTasksPositionAction(tasks)),
-            editTaskPeriodProp: (period, id) => dispatch(editTaskPeriodAction(period, id)),
+            editTasksPositionProp: (id, position) => dispatch(editTasksPositionAction(id, position)),
 
             // EVENTS
-            editEventsPositionProp: events => dispatch(editEventsPositionAction(events)),
+            editEventsPositionProp: (id, position) => dispatch(editEventsPositionAction(id, position)),
 
             // GENERAL
             setSelectedItemProp: item => dispatch(setSelectedItemAction(item)),
@@ -41,8 +39,9 @@ function mapDispatchToProps(dispatch) {
 }
 
 // HELPERS
-import { getToday, isRepeatedItemsValid } from '../Utils/helpers';
+import { getToday, isRepeatedItemsValid } from '../../Utils/helpers';
 import moment from 'moment';
+
 const { width, height } = Dimensions.get('window');
 
 class ItemList extends React.Component {
@@ -84,20 +83,12 @@ class ItemList extends React.Component {
       };
 
       componentDidUpdate(prevProps) {
-            // console.log('component did update');
-
-            // let tasks = [...this.props.tasks]
-            //  tasks = tasks.filter(function(obj) {
-            //       return !obj.notToUpdate;
-            // });
-
-            if (!this.props.areTasksSorted && this.props.tasks.length > 3) {
-                  console.log('condition true');
+            if (!this.props.areTasksSorted && this.props.itemsToDispatch.length > 0) {
                   // if (!this.props.areTasksSorted) {
                   let tasksArray = [];
                   let eventsArray = [];
 
-                  this.props.tasks.map(item => {
+                  this.props.itemsToDispatch.map(item => {
                         if (
                               item.type === 'event'
                               // !isRepeatedItemsValid(this.props.general.dateSelectedDateMover, item)
@@ -108,12 +99,9 @@ class ItemList extends React.Component {
                         }
                   });
 
-                  // console.log('BEFORE: ', eventsArray);
-
                   // eventsArray = eventsArray.filter(function(obj) {
                   //       return !obj.notToUpdate;
                   // });
-                  // console.log('AFTER: ', eventsArray);
 
                   if (tasksArray.length > 0) {
                         this.props.editTasksPositionProp(tasksArray);
@@ -128,6 +116,17 @@ class ItemList extends React.Component {
             if (item.type === 'periodCategory') {
                   return;
             }
+            if (
+                  item.id === this.props.general.selectedItem.id &&
+                  (this.props.general.isEventMenuOpen === true || this.props.general.isTaskMenuOpen === true)
+            ) {
+                  // if (item.type === 'task') {
+                  this.props.closeTaskMenuProp();
+                  // } else if (item.type === 'event') {
+                  this.props.closeEventMenuProp();
+                  // }
+                  return;
+            }
             this.props.setSelectedItemProp(item);
 
             if (this.props.general.isDateMoverOpen === true) {
@@ -138,14 +137,21 @@ class ItemList extends React.Component {
             }
 
             // TaskMenu & EventMenu are rendered in MainScreen.js
-            if (this.props.general.isEventMenuOpen === true) {
+            if (this.props.general.isEventMenuOpen === true || this.props.general.isTaskMenuOpen === true) {
                   // If one of the item menu is open, we close it
-                  await this.props.closeTaskMenuProp();
-                  await this.props.closeEventMenuProp();
+                  this.props.closeTaskMenuProp();
+                  this.props.closeEventMenuProp();
 
-                  setTimeout(() => {
-                        this.props.openEventMenuProp();
-                  }, 100);
+                  if (item.type === 'event') {
+                        setTimeout(() => {
+                              this.props.openEventMenuProp();
+                        }, 100);
+                  } else if (item.type === 'task') {
+                        setTimeout(() => {
+                              // TODO: import
+                              this.props.openTaskMenuProp();
+                        }, 100);
+                  }
 
                   // After we open the right menu depending the item, to make the animation
                   // if (item.type !== 'event') {
@@ -155,9 +161,9 @@ class ItemList extends React.Component {
                   // }
                   // Else menu are close so we open the good one
             } else {
-                  if (item.type !== 'event') {
+                  if (item.type === 'task') {
                         this.props.openTaskMenuProp();
-                  } else {
+                  } else if (item.type === 'event') {
                         this.props.openEventMenuProp();
                   }
             }
@@ -218,6 +224,7 @@ class ItemList extends React.Component {
       };
 
       sortCalculation = ([y]) => {
+            // Forward dragging (From top to bottom)
             if (
                   this.state.dragging === true &&
                   y > 50 &&
@@ -229,6 +236,7 @@ class ItemList extends React.Component {
                   });
             }
 
+            // Backward dragging
             if (
                   this.state.dragging === true &&
                   y < -50 &&
@@ -246,62 +254,154 @@ class ItemList extends React.Component {
             this.draggedItemRef.setNativeProps({
                   opacity: 0
             });
+
             if (this.state.dragging === true) {
-                  // Superior to 3 for the day period category
-                  if (this.props.tasks.length > 0) {
-                        let tasksCopy = [...this.props.tasks];
-                        let tasksToEditPosition = [];
-                        let eventsToEditPosition = [];
+                  let allItems = [...this.props.items];
+                  let indexDragged = this.state.indexDragged;
+                  let indexToSwap = this.state.indexToSwap;
+                  let itemsToDispatch = [];
 
-                        // Means it's forward dragging
-                        if (this.state.indexDragged < this.state.indexToSwap) {
-                              // Push the dragged item
-                              tasksToEditPosition.push(tasksCopy[this.state.indexDragged]);
+                  // Means it's forward dragging (Drag from top to bottom)
+                  if (this.state.indexDragged < this.state.indexToSwap) {
+                        // TODO: If it work, create a helper function
+                        // Get the time position of the item to swap with the item dragged
+                        let itemToSwapeHour = allItems[indexToSwap].position.substring(0, 2);
+                        let itemToSwapeMinute = allItems[indexToSwap].position.substring(3, 5);
+                        let itemToSwapeSecond = allItems[indexToSwap].position.substring(6);
+                        let itemToSwapeDate = new Date(
+                              '1992',
+                              '02',
+                              '18',
+                              itemToSwapeHour,
+                              itemToSwapeMinute,
+                              itemToSwapeSecond
+                        );
+                        // Add 1 second
+                        itemToSwapeDate.setSeconds(itemToSwapeDate.getSeconds() + 1);
+                        // Format the time
+                        let formattedDate = moment(itemToSwapeDate).format('HH:mm:ss');
+                        itemHour = formattedDate.substring(0, 2);
+                        itemMinute = formattedDate.substring(3, 5);
+                        itemSecond = formattedDate.substring(6);
+                        // Set new position
+                        allItems[indexDragged].position = itemHour + ':' + itemMinute + ':' + itemSecond;
+                        // Add to item to dispatch
+                        itemsToDispatch.push(allItems[indexDragged]);
 
-                              // If we drag more than we have item, we give the item the last position
-                              if (this.state.indexToSwap >= tasksCopy.length) {
-                                    tasksToEditPosition[0].position = tasksCopy[tasksCopy.length - 1].position;
-                                    tasksToEditPosition[0].period = tasksCopy[tasksCopy.length - 1].period;
-                              } else {
-                                    tasksToEditPosition[0].position = this.state.indexToSwap;
-                                    tasksToEditPosition[0].period = tasksCopy[this.state.indexToSwap].period;
+                        // Check for conflict position with next items
+                        if (
+                              allItems[indexToSwap + 1] &&
+                              allItems[indexDragged].position === allItems[indexToSwap + 1].position &&
+                              allItems[indexToSwap + 1].time === ''
+                        ) {
+                              let itemHour = allItems[indexToSwap + 1].position.substring(0, 2);
+                              let itemMinute = allItems[indexToSwap + 1].position.substring(3, 5);
+                              let itemSecond = allItems[indexToSwap + 1].position.substring(6);
+                              let itemDate = new Date('1992', '02', '18', itemHour, itemMinute, itemSecond);
+                              itemDate.setSeconds(itemDate.getSeconds() + 1);
+                              let formattedDate = moment(itemDate).format('HH:mm:ss');
+                              itemHour = formattedDate.substring(0, 2);
+                              itemMinute = formattedDate.substring(3, 5);
+                              itemSecond = formattedDate.substring(6);
+                              allItems[indexToSwap + 1].position = itemHour + ':' + itemMinute + ':' + itemSecond;
+                              // Add to item to dispatch
+                              itemsToDispatch.push(allItems[indexToSwap + 1]);
+
+                              for (let i = indexToSwap + 1; i < allItems.length; i++) {
+                                    if (
+                                          allItems[i + 1] &&
+                                          allItems[i].position === allItems[i + 1].position &&
+                                          allItems[i + 1].time === ''
+                                    ) {
+                                          let itemHour = allItems[i + 1].position.substring(0, 2);
+                                          let itemMinute = allItems[i + 1].position.substring(3, 5);
+                                          let itemSecond = allItems[i + 1].position.substring(6);
+                                          let itemDate = new Date('1992', '02', '18', itemHour, itemMinute, itemSecond);
+                                          itemDate.setSeconds(itemDate.getSeconds() + 1);
+                                          let formattedDate = moment(itemDate).format('HH:mm:ss');
+                                          itemHour = formattedDate.substring(0, 2);
+                                          itemMinute = formattedDate.substring(3, 5);
+                                          itemSecond = formattedDate.substring(6);
+                                          allItems[i + 1].position = itemHour + ':' + itemMinute + ':' + itemSecond;
+                                          // Add to item to dispatch
+                                          itemsToDispatch.push(i + 1);
+                                    }
                               }
-
-                              tasksCopy.map((item, index) => {
-                                    if (index <= this.state.indexToSwap && index > this.state.indexDragged) {
-                                          if (item.type === 'event') {
-                                                item.position--;
-                                                eventsToEditPosition.push(item);
-                                          } else if (item.type === 'task') {
-                                                item.position--;
-                                                tasksToEditPosition.push(item);
-                                          }
-                                    }
-                              });
                         }
-
-                        if (this.state.indexDragged > this.state.indexToSwap && this.state.indexToSwap > 0) {
-                              tasksToEditPosition.push(tasksCopy[this.state.indexDragged]);
-                              tasksToEditPosition[0].position = this.state.indexToSwap;
-                              tasksToEditPosition[0].period = tasksCopy[this.state.indexToSwap - 1].period;
-
-                              tasksCopy.map((item, index) => {
-                                    if (index >= this.state.indexToSwap && index < this.state.indexDragged) {
-                                          if (item.type === 'event') {
-                                                item.position++;
-                                                eventsToEditPosition.push(item);
-                                          } else if (item.type === 'task') {
-                                                item.position++;
-                                                tasksToEditPosition.push(item);
-                                          }
-                                    }
-                              });
-                        }
-
-                        this.props.editTasksPositionProp(tasksToEditPosition);
-                        this.props.editEventsPositionProp(eventsToEditPosition);
                   }
+                  // End of forward dragging
 
+                  // Backward dragging sort
+                  if (this.state.indexDragged > this.state.indexToSwap && this.state.indexToSwap > 0) {
+                        // TODO: If it work, create a helper function
+                        // Get the time position of the item to swap with the item dragged
+                        let itemToSwapeHour = allItems[indexToSwap - 1].position.substring(0, 2);
+                        let itemToSwapeMinute = allItems[indexToSwap - 1].position.substring(3, 5);
+                        let itemToSwapeSecond = allItems[indexToSwap - 1].position.substring(6);
+                        let itemToSwapeDate = new Date(
+                              '1992',
+                              '02',
+                              '18',
+                              itemToSwapeHour,
+                              itemToSwapeMinute,
+                              itemToSwapeSecond
+                        );
+                        // Add 1 second
+                        itemToSwapeDate.setSeconds(itemToSwapeDate.getSeconds() + 1);
+                        // Format the time
+                        let formattedDate = moment(itemToSwapeDate).format('HH:mm:ss');
+                        itemHour = formattedDate.substring(0, 2);
+                        itemMinute = formattedDate.substring(3, 5);
+                        itemSecond = formattedDate.substring(6);
+                        // Set new position
+                        allItems[indexDragged].position = itemHour + ':' + itemMinute + ':' + itemSecond;
+                        // Add to item to dispatch
+                        itemsToDispatch.push(allItems[indexDragged]);
+
+                        // Check for conflict position with next items
+                        if (
+                              allItems[indexDragged].position === allItems[indexToSwap].position &&
+                              allItems[indexToSwap].time === ''
+                        ) {
+                              let itemHour = allItems[indexToSwap].position.substring(0, 2);
+                              let itemMinute = allItems[indexToSwap].position.substring(3, 5);
+                              let itemSecond = allItems[indexToSwap].position.substring(6);
+                              let itemDate = new Date('1992', '02', '18', itemHour, itemMinute, itemSecond);
+                              itemDate.setSeconds(itemDate.getSeconds() + 1);
+                              let formattedDate = moment(itemDate).format('HH:mm:ss');
+                              itemHour = formattedDate.substring(0, 2);
+                              itemMinute = formattedDate.substring(3, 5);
+                              itemSecond = formattedDate.substring(6);
+                              allItems[indexToSwap].position = itemHour + ':' + itemMinute + ':' + itemSecond;
+                              // Add to item to dispatch
+                              itemsToDispatch.push(allItems[indexToSwap]);
+
+                              for (let i = indexToSwap; i < allItems.length; i++) {
+                                    if (
+                                          allItems[i + 1] &&
+                                          allItems[i + 1].id !== allItems[indexDragged].id &&
+                                          allItems[i].position === allItems[i + 1].position &&
+                                          allItems[i + 1].time === ''
+                                    ) {
+                                          let itemHour = allItems[i + 1].position.substring(0, 2);
+                                          let itemMinute = allItems[i + 1].position.substring(3, 5);
+                                          let itemSecond = allItems[i + 1].position.substring(6);
+                                          let itemDate = new Date('1992', '02', '18', itemHour, itemMinute, itemSecond);
+                                          itemDate.setSeconds(itemDate.getSeconds() + 1);
+                                          let formattedDate = moment(itemDate).format('HH:mm:ss');
+                                          itemHour = formattedDate.substring(0, 2);
+                                          itemMinute = formattedDate.substring(3, 5);
+                                          itemSecond = formattedDate.substring(6);
+                                          allItems[i + 1].position = itemHour + ':' + itemMinute + ':' + itemSecond;
+                                          // Add to item to dispatch
+                                          itemsToDispatch.push(i + 1);
+                                    }
+                              }
+                        }
+                  }
+                  // End of backward dragging
+
+                  this.props.editTasksPositionProp(itemsToDispatch);
                   this.flatListRef.setNativeProps({
                         opacity: 0
                   });
@@ -447,7 +547,6 @@ class ItemList extends React.Component {
       };
 
       render() {
-            // console.log(this.props.tasks);
             return (
                   <View style={styles.container}>
                         {// https://github.com/kmagiera/react-native-gesture-handler/issues/732
@@ -559,7 +658,7 @@ class ItemList extends React.Component {
                               ]}
                         >
                               {this.state.indexDragged !== '' && (
-                                    <Task {...this.props.tasks[this.state.indexDragged]} />
+                                    <Task {...this.props.items[this.state.indexDragged]} />
                               )}
                         </Animated.View>
 
@@ -568,7 +667,7 @@ class ItemList extends React.Component {
                                     keyboardShouldPersistTaps="always"
                                     ref={ref => (this.flatListRef = ref)}
                                     contentContainerStyle={{ paddingBottom: 300, marginTop: -30 }}
-                                    data={this.props.tasks}
+                                    data={this.props.items}
                                     extraData={this.props}
                                     keyExtractor={(item, index) => index.toString()}
                                     renderItem={this.renderItem}
@@ -607,7 +706,7 @@ class ItemList extends React.Component {
                                     keyboardShouldPersistTaps="always"
                                     ref={ref => (this.flatListRef3 = ref)}
                                     contentContainerStyle={{ paddingBottom: 300, marginTop: -30 }}
-                                    data={this.props.tasks}
+                                    data={this.props.items}
                                     extraData={this.props}
                                     keyExtractor={(item, index) => index.toString()}
                                     renderItem={this.renderItem2}
@@ -626,167 +725,125 @@ function mapStateToProp(state, ownProps) {
       let events = state.events ? state.events : {};
 
       let allItems = [...Object.values(tasks), ...Object.values(events)];
-      let itemsArray = [];
+
+      let morningCategory = { type: 'periodCategory', name: 'Morning ', position: '00:00:00' };
+      let afternoonCategory = { type: 'periodCategory', name: 'Afternoon ', position: '12:00:00' };
+      let eveningCategory = { type: 'periodCategory', name: 'Evening ', position: '17:00:00' };
+
+      let itemsSelected = [
+            morningCategory,
+            afternoonCategory,
+            eveningCategory
+            // { type: 'periodCategory', name: 'position empty ', position: '17:00:04', time: '' },
+            // { type: 'periodCategory', name: 'a Test morning ', position: '00:00:01', time: '' },
+            // { type: 'periodCategory', name: 'position -1 ', position: '17:00:03', time: '' },
+            // { type: 'periodCategory', name: 'b Test afternoon', position: '12:00:01', time: '' },
+            // { type: 'periodCategory', name: 'c Test evening ', position: '17:00:01', time: '' },
+            // { type: 'periodCategory', name: 'position -1 B', position: '17:00:02', time: '' }
+      ];
 
       let dateSelected = state.general.dateSelectedDateMover;
 
+      // Filter and select all the items needed for that day
       for (let i = 0, len = allItems.length; i < len; i++) {
             if (allItems[i].uid === state.auth.uid) {
                   // Check if the date are similar
                   if (allItems[i].date === dateSelected) {
-                        itemsArray.push(allItems[i]);
-                  } else if (
-                        allItems[i].repeat !== 'never' &&
-                        allItems[i].repeat
-                        // We only consider repeated item that are not set for the day selected
-                        // allItems[i].date !== dateSelected
-                  ) {
+                        itemsSelected.push(allItems[i]);
+                  } else if (allItems[i].repeat !== 'never' && allItems[i].repeat) {
                         // If there are repeated items we need to check if (the day selected is a superior and valid day) of repeated items
                         if (isRepeatedItemsValid(dateSelected, allItems[i])) {
                               // allItems[i].position = -1;
                               // allItems[i].notToUpdate = true;
-                              itemsArray.push(allItems[i]);
+                              itemsSelected.push(allItems[i]);
                         }
                   }
             }
       }
 
-      let morningCategory = [{ type: 'periodCategory', name: 'Morning ', position: 0, period: 'Morning' }];
-      let afternoonCategory = [{ type: 'periodCategory', name: 'Afternoon ', position: 0, period: 'Afternoon' }];
-      let eveningCategory = [{ type: 'periodCategory', name: 'Evening ', position: 0, period: 'Evening' }];
-      let itemsToSort = [];
-
-      // let itemsToSortNotToUpdate = [];
-
-      itemsArray.map((item, index) => {
-            // We don't add the repeated item here or it will create an infinite loop
-            if (item.position === -1 && !item.notToUpdate) {
-                  itemsToSort.push(item);
+      itemsSelected.map(item => {
+            //  item.position === -1  For backward compatibility with items of previous version
+            if (item.position === '' || item.position === -1) {
+                  item.position = '23:59:59';
             }
-            // else if (item.notToUpdate) {
-            //       itemsToSortNotToUpdate.push(item);
-            // }
-            else if (item.position !== -1) {
-                  if (item.period === 'Morning') {
-                        morningCategory.push(item);
-                  } else if (item.period === 'Afternoon') {
-                        afternoonCategory.push(item);
-                  } else {
-                        eveningCategory.push(item);
+      });
+
+      // Sort by time
+      itemsSelected.sort(function(a, b) {
+            // FIXME: For backward compatibility
+            if (a.position.length > 0 && b.position.length > 0) {
+                  let aHour = a.position.substring(0, 2);
+                  let aMinute = a.position.substring(3, 5);
+                  let aSecond = a.position.substring(6);
+
+                  let bHour = b.position.substring(0, 2);
+                  let bMinute = b.position.substring(3, 5);
+                  let bSecond = b.position.substring(6);
+                  return (
+                        new Date('1992', '02', '18', aHour, aMinute, aSecond) -
+                        new Date('1992', '02', '18', bHour, bMinute, bSecond)
+                  );
+            }
+      });
+
+      let itemsToDispatch = [];
+      let previousItemDate;
+
+      // For every items that don't have time property (tasks)
+      // Sort and reset time position to be sure to not create hole
+      itemsSelected.map((item, index) => {
+            // FIXME: For backward compatibility
+            if (item.position.length > 0) {
+                  // Get the time of the previous item
+                  if (index === 0) {
+                        let hour = item.position.substring(0, 2);
+                        let minute = item.position.substring(3, 5);
+                        let second = item.position.substring(6);
+                        previousItemDate = new Date('1992', '02', '18', hour, minute, second);
+                  }
+
+                  // If the item as an empty time, it means it's a task without time prop
+                  //FIXME: That algorithm can be improved (like by using a timestamp instead of substring decomposition && without moment)
+                  if (item.time === '') {
+                        let itemHour = item.position.substring(0, 2);
+                        let itemMinute = item.position.substring(3, 5);
+                        let itemSecond = item.position.substring(6);
+                        let itemDate = new Date('1992', '02', '18', itemHour, itemMinute, itemSecond);
+
+                        previousItemDate.setSeconds(previousItemDate.getSeconds() + 1);
+                        // If previous item + 1 doesn't equal that item, we increment that item of 1 second
+                        if (itemDate.getTime() != previousItemDate.getTime()) {
+                              let formattedDate = moment(previousItemDate).format('HH:mm:ss');
+                              itemHour = formattedDate.substring(0, 2);
+                              itemMinute = formattedDate.substring(3, 5);
+                              itemSecond = formattedDate.substring(6);
+
+                              item.position = itemHour + ':' + itemMinute + ':' + itemSecond;
+
+                              itemsToDispatch.push(item);
+                        }
+                  }
+
+                  if (index !== 0) {
+                        let hour = item.position.substring(0, 2);
+                        let minute = item.position.substring(3, 5);
+                        let second = item.position.substring(6);
+                        previousItemDate = new Date('1992', '02', '18', hour, minute, second);
                   }
             }
       });
 
-      // 3 - If my local arrays are not empty, sort them by position to be sure there is no hole cause by a date moved item
-      // Make sure we will do the rest of operation on an healthy base
-      if (morningCategory.length > 1) {
-            morningCategory.sort(function(a, b) {
-                  return a.position - b.position;
-            });
-      }
-      if (afternoonCategory.length > 1) {
-            afternoonCategory.sort(function(a, b) {
-                  return a.position - b.position;
-            });
-      }
-      if (eveningCategory.length > 1) {
-            eveningCategory.sort(function(a, b) {
-                  return a.position - b.position;
-            });
-      }
-
+      // TODO: Modify that code
       // Check if there is no items to sort, to avoid component update
       let areTasksSorted = false;
-      if (itemsToSort.length === 0) {
+      if (itemsToDispatch.length === 0) {
             areTasksSorted = true;
       }
 
-      // Add itemsToSortNotToUpdate so they are not counter in the areTasksSorted
-      // itemsToSort = [...itemsToSort, ...itemsToSortNotToUpdate];
-
-      itemsToSort.map(item => {
-            // First check task with no time property
-            // We simply push it at the end of the period he is in
-            if (item.time === '') {
-                  if (item.period === 'Morning') {
-                        morningCategory.push(item);
-                  } else if (item.period === 'Afternoon') {
-                        afternoonCategory.push(item);
-                  } else {
-                        eveningCategory.push(item);
-                  }
-                  // Else the item have a time property
-            } else {
-                  if (item.period === 'Morning') {
-                        let isItemSorted = false;
-                        let time = moment(item.time, 'h:mma');
-
-                        // Check if there is an item with a time prop superior, so we splice it before
-                        morningCategory.map((itemToCompare, index) => {
-                              // That condition is to stop mapping once we have found the first item with a superior time prop
-                              if (isItemSorted === false) {
-                                    let time2 = moment(itemToCompare.time, 'h:mma');
-                                    if (time.isBefore(time2)) {
-                                          morningCategory.splice(index, 0, item);
-                                          isItemSorted = true;
-                                    }
-                              }
-                        });
-                        // If we didn't find an item with a time prop superior, we simply push the item at the end
-                        if (isItemSorted === false) {
-                              morningCategory.push(item);
-                        }
-                  } else if (item.period === 'Afternoon') {
-                        let isItemSorted = false;
-                        let time = moment(item.time, 'h:mma');
-
-                        // Check if there is an item with a time prop superior, so we splice it before
-                        afternoonCategory.map((itemToCompare, index) => {
-                              // That condition is to stop mapping once we have found the first item with a superior time prop
-                              if (isItemSorted === false) {
-                                    let time2 = moment(itemToCompare.time, 'h:mma');
-                                    if (time.isBefore(time2)) {
-                                          afternoonCategory.splice(index, 0, item);
-                                          isItemSorted = true;
-                                    }
-                              }
-                        });
-                        // If we didn't find an item with a time prop superior, we simply push the item at the end
-                        if (isItemSorted === false) {
-                              afternoonCategory.push(item);
-                        }
-                  } else {
-                        let isItemSorted = false;
-                        let time = moment(item.time, 'h:mma');
-
-                        // Check if there is an item with a time prop superior, so we splice it before
-                        eveningCategory.map((itemToCompare, index) => {
-                              // That condition is to stop mapping once we have found the first item with a superior time prop
-                              if (isItemSorted === false) {
-                                    let time2 = moment(itemToCompare.time, 'h:mma');
-                                    if (time.isBefore(time2)) {
-                                          eveningCategory.splice(index, 0, item);
-                                          isItemSorted = true;
-                                    }
-                              }
-                        });
-                        // If we didn't find an item with a time prop superior, we simply push the item at the end
-                        if (isItemSorted === false) {
-                              eveningCategory.push(item);
-                        }
-                  }
-            }
-      });
-
-      let sortedItemsComplete = [...morningCategory, ...afternoonCategory, ...eveningCategory];
-
-      sortedItemsComplete.map((item, index) => {
-            item.position = index;
-      });
-
       return {
             date: getToday,
-            tasks: sortedItemsComplete,
+            items: itemsSelected,
+            itemsToDispatch: itemsToDispatch,
             areTasksSorted: areTasksSorted,
             general: state.general,
             closeDateMoverParentProp: ownProps.closeDateMover

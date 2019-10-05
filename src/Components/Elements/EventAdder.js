@@ -47,13 +47,12 @@ class EventAdder extends Component {
       };
 
       componentDidMount() {
-            // this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
-            // this.keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', this._keyboardWillHide);
-
             this.inputRef.focus();
 
             let time = moment();
             let position;
+            let timeFormattedForDatePicker;
+            let endTimeFormattedForDatePicker;
 
             time =
                   time.minute() || time.second() || time.millisecond()
@@ -72,6 +71,10 @@ class EventAdder extends Component {
                   .add(1, 'hours')
                   .format('LT');
 
+            endTimeFormattedForDatePicker = moment(time, 'LT')
+                  .add(1, 'hours')
+                  .toDate();
+
             if (endTime.length === 7) {
                   endTime = '0' + endTime;
             }
@@ -88,6 +91,7 @@ class EventAdder extends Component {
                   date: this.props.general.dateSelectedDateMover,
                   dateFormattedForDatePicker: date,
                   timeFormattedForDatePicker: timeFormattedForDatePicker,
+                  endTimeFormattedForDatePicker: endTimeFormattedForDatePicker,
                   time,
                   endTime,
                   position: position
@@ -165,6 +169,10 @@ class EventAdder extends Component {
                   .add(1, 'hours')
                   .format('LT');
 
+            let endTimeFormattedForDatePicker = moment(time, 'LT')
+                  .add(1, 'hours')
+                  .toDate();
+
             if (endTime.length === 7) {
                   endTime = '0' + endTime;
             }
@@ -172,7 +180,9 @@ class EventAdder extends Component {
             this.setState({
                   time: time,
                   endTime: endTime,
-                  position: position
+                  position: position,
+                  timeFormattedForDatePicker: timeReceived,
+                  endTimeFormattedForDatePicker: endTimeFormattedForDatePicker
             });
 
             this.hideStartTimePicker();
@@ -180,6 +190,8 @@ class EventAdder extends Component {
 
       handleEndTimePicked = endTimeReceived => {
             let endTime = moment(endTimeReceived).format('LT');
+
+            let endTimeFormattedForDatePicker = moment(endTimeReceived, 'LT').toDate();
 
             let endTimeToCompare = moment(endTime, 'h:mma');
             let startTimeToCompare = moment(this.state.time, 'h:mma');
@@ -203,7 +215,8 @@ class EventAdder extends Component {
             } else {
                   this.setState(
                         {
-                              endTime: endTime
+                              endTime: endTime,
+                              endTimeFormattedForDatePicker: endTimeFormattedForDatePicker
                         },
                         () => {
                               this.hideEndTimePicker();
@@ -336,6 +349,7 @@ class EventAdder extends Component {
                         />
                         <DateTimePicker
                               mode={'time'}
+                              date={this.state.endTimeFormattedForDatePicker}
                               isVisible={this.state.isEndTimePickerVisible}
                               onConfirm={this.handleEndTimePicked}
                               onCancel={this.hideEndTimePicker}

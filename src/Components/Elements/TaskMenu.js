@@ -96,6 +96,7 @@ class TaskMenu extends Component {
             });
 
             this.state = {
+                  setModalVisible: false,
                   id: '',
                   name: '',
                   completed: '',
@@ -162,23 +163,6 @@ class TaskMenu extends Component {
             });
       }
 
-      // keyboardWillHide does'nt work on Android
-      _keyboardDidHide = () => {
-            if (this.props.general.isTaskMenuOpen === true && Platform.OS === 'android') {
-                  this.confirmChangeTaskName();
-                  this.textInputRef.blur();
-            }
-      };
-
-      _keyboardWillHide = () => {
-            if (this.props.general.isTaskMenuOpen === true) {
-                  // On iOS the date picker close the keyboard which cause to unmount the component and make the date picker unavailable
-                  if (Platform.OS === 'ios') {
-                        this.confirmChangeTaskName();
-                  }
-            }
-      };
-
       componentDidUpdate(prevProps) {
             if (this.props.general.isTaskMenuOpen === true && prevProps.general.isTaskMenuOpen === false) {
                   let dateSelected = this.props.general.dateSelectedDateMover;
@@ -238,6 +222,23 @@ class TaskMenu extends Component {
                   Keyboard.dismiss();
             }
       }
+
+      // keyboardWillHide does'nt work on Android
+      _keyboardDidHide = () => {
+            if (this.props.general.isTaskMenuOpen === true && Platform.OS === 'android') {
+                  this.confirmChangeTaskName();
+                  this.textInputRef.blur();
+            }
+      };
+
+      _keyboardWillHide = () => {
+            if (this.props.general.isTaskMenuOpen === true) {
+                  // On iOS the date picker close the keyboard which cause to unmount the component and make the date picker unavailable
+                  if (Platform.OS === 'ios') {
+                        this.confirmChangeTaskName();
+                  }
+            }
+      };
 
       closeMenu = () => {
             this.textInputRef.blur();
@@ -328,7 +329,8 @@ class TaskMenu extends Component {
 
             this.setState(
                   {
-                        time: time
+                        time: time,
+                        timeFormattedForDatePicker: timeReceived
                   },
                   () => {
                         if (this.state.reminder.time !== 'none') {
@@ -439,7 +441,7 @@ class TaskMenu extends Component {
                         }
                   }
             }
-
+            let date = new Date('1992', '01', '02', '0', '0', '0', '0');
             let reminder = {
                   id: '',
                   time: 'none'
@@ -449,27 +451,36 @@ class TaskMenu extends Component {
             this.setState({
                   time: 'No time',
                   reminder: reminder,
-                  repeat: repeat
+                  repeat: repeat,
+                  timeFormattedForDatePicker: date
             });
             this.props.deleteTaskTimeProp(this.props.general.selectedItem.id, reminder, repeat);
+      };
+
+      showPicker = () => {
+            this.reminderMenu.hide();
+            setTimeout(() => {
+                  this.showTimePicker();
+            }, 600);
       };
 
       setReminder = async (reminderSelected, repeat = this.state.repeat) => {
             if (this.state.time === 'No time') {
                   Alert.alert(
                         '',
-                        'You need to set a time for your task if you want to repeat it.',
+                        'You need to set a start time first if you want to set a reminder before it.',
                         [
                               {
                                     text: 'Cancel',
+                                    onPress: () => this.reminderMenu.hide(),
                                     style: 'cancel'
                               },
                               {
-                                    text: 'Set a time',
-                                    onPress: () => this.showTimePicker()
+                                    text: 'Set a start time',
+                                    onPress: () => this.showPicker()
                               }
                         ],
-                        { cancelable: true }
+                        { cancelable: false }
                   );
                   return;
             }
@@ -510,31 +521,25 @@ class TaskMenu extends Component {
                               this.props.setTaskReminderProp(id, reminder);
                         }
                   );
+                  // this.reminderMenu.hide();
             } else {
-                  // TODO: create an alert
-                  throw new Error('Notification permission not granted');
+                  Alert.alert(
+                        '',
+                        'You need to give Almana the permission to set notifications.',
+                        [
+                              {
+                                    text: 'Ok',
+                                    onPress: () => this.reminderMenu.hide(),
+                                    style: 'cancel'
+                              }
+                        ],
+                        { cancelable: false }
+                  );
+                  return;
             }
       };
 
       setRepeat = async repeat => {
-            if (this.state.time === 'No time') {
-                  Alert.alert(
-                        '',
-                        'You need to set a time for your task if you want to repeat it.',
-                        [
-                              {
-                                    text: 'Cancel',
-                                    style: 'cancel'
-                              },
-                              {
-                                    text: 'Set a time',
-                                    onPress: () => this.showTimePicker()
-                              }
-                        ],
-                        { cancelable: true }
-                  );
-                  return;
-            }
             let { reminder } = this.state;
             this.setState(
                   {
@@ -545,7 +550,6 @@ class TaskMenu extends Component {
                               this.setReminder(reminder.time, repeat);
                         }
                         this.props.setTaskRepeatProp(this.props.general.selectedItem.id, repeat);
-
                         if (repeat === 'never') {
                               this.props.resetRepeatedTaskCompletionProp(this.props.general.selectedItem.id);
                         }
@@ -577,7 +581,7 @@ class TaskMenu extends Component {
                               maxPointers={1}
                               onGestureEvent={this.onGestureEvent}
                               onHandlerStateChange={this.onGestureEvent}
-                              minDist={20}
+                              minDist={10}
                         >
                               <Animated.View
                                     style={[
@@ -681,6 +685,8 @@ class TaskMenu extends Component {
                         />
                         <DateTimePicker
                               mode={'time'}
+                              customTitleContainerIOS={<Text></Text>}
+                              date={this.state.timeFormattedForDatePicker}
                               isVisible={this.state.isTimePickerVisible}
                               onConfirm={this.handleTimePicked}
                               onCancel={this.hideTimePicker}
@@ -742,40 +748,41 @@ class TaskMenu extends Component {
                                     <MenuItem
                                           onPress={() => {
                                                 this.setReminder('none');
-                                                this.reminderMenu.hide();
                                           }}
                                           children={<Text>None</Text>}
                                     />
                                     <MenuItem
                                           onPress={() => {
                                                 this.setReminder('1-hour');
-                                                this.reminderMenu.hide();
                                           }}
                                           children={<Text>1 hour before</Text>}
                                     />
                                     <MenuItem
                                           onPress={() => {
                                                 this.setReminder('3-hour');
-                                                this.reminderMenu.hide();
                                           }}
                                           children={<Text>3 hours before</Text>}
                                     />
                                     <MenuItem
                                           onPress={() => {
                                                 this.setReminder('1-day');
-                                                this.reminderMenu.hide();
                                           }}
                                           children={<Text>1 day before</Text>}
                                     />
                                     <MenuItem
                                           onPress={() => {
                                                 this.setReminder('3-day');
-                                                this.reminderMenu.hide();
                                           }}
                                           children={<Text>3 days before</Text>}
                                     />
                               </Menu>
-                              <RepeatButton setRepeat={this.setRepeat} repeat={this.state.repeat} />
+                              <RepeatButton
+                                    setRepeat={this.setRepeat}
+                                    repeat={this.state.repeat}
+                                    time={this.state.time}
+                                    showPicker={this.showPicker}
+                              />
+
                               <TouchableOpacity style={{ width: 30, alignItems: 'center' }} onPress={this.deleteTasks}>
                                     <Ionicons name="md-trash" size={30} />
                               </TouchableOpacity>
