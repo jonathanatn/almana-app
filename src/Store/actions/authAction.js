@@ -62,7 +62,6 @@ export function signOut() {
                         dispatch({ type: SIGNOUT_SUCCESS });
                   })
                   .catch(err => {
-                        console.log(err);
                         dispatch({ type: SIGNOUT_ERROR, err });
                   });
       };

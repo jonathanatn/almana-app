@@ -4,9 +4,14 @@ import { StyleSheet, Text, View, TouchableOpacity, TextInput, ActivityIndicator 
 // DATA
 import { connect } from 'react-redux';
 import firebase from 'firebase/app';
+import { receiveTasksRepeatedAction } from '../../Store/actions/taskAction';
 import { resetAuthErrorAction } from '../../Store/actions/authAction';
 function mapDispatchToProps(dispatch) {
       return {
+            // TASKS
+            receiveTasksRepeatedProp: repeat => dispatch(receiveTasksRepeatedAction(repeat)),
+
+            // AUTH
             resetAuthErrorProp: () => dispatch(resetAuthErrorAction())
       };
 }
@@ -15,6 +20,15 @@ class LoadingScreen extends Component {
       componentDidMount() {
             this.props.resetAuthErrorProp();
             this.checkIfLoggedIn();
+      }
+
+      componentDidUpdate() {
+            // Get all repeated tasks from Firestore
+            if (this.props.auth.isLoaded) {
+                  this.props.receiveTasksRepeatedProp('daily');
+                  this.props.receiveTasksRepeatedProp('weekly');
+                  this.props.receiveTasksRepeatedProp('monthly');
+            }
       }
 
       checkIfLoggedIn = () => {

@@ -1,5 +1,7 @@
 import {
-      RECEIVE_TASKS,
+      RECEIVE_TASKS_DATE,
+      RECEIVE_TASKS_PROJECT,
+      RECEIVE_TASKS_REPEATED,
       ADD_TASK,
       ADD_TASK_ROLLBACK,
       SET_TASK_REMINDER,
@@ -28,10 +30,23 @@ import {
 
 function tasks(state = {}, action) {
       switch (action.type) {
-            case RECEIVE_TASKS:
+            case RECEIVE_TASKS_DATE:
+                  // TODO:
                   return {
                         ...state,
-                        ...action.payload.tasks
+                        ...action.tasks
+                  };
+            case RECEIVE_TASKS_PROJECT:
+                  // TODO:
+                  return {
+                        ...state,
+                        ...action.tasks
+                  };
+            case RECEIVE_TASKS_REPEATED:
+                  // TODO:
+                  return {
+                        ...state,
+                        ...action.tasks
                   };
             case ADD_TASK:
                   return {

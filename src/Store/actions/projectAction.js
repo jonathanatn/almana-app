@@ -1,3 +1,109 @@
+// Receive Projects from Firestore
+export const RECEIVE_PROJECTS = 'RECEIVE_PROJECTS';
+export function receiveProjectsAction() {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+            const userId = getState().firebase.auth.uid;
+
+            getState().offline.online &&
+                  firestore
+                        .collection('projects')
+                        .where('uid', '==', userId)
+                        .where('type', '==', 'project')
+                        .get()
+                        .catch(err => {
+                              // throw new Error('Error: Getting document:');
+                              console.log('Error: Getting document: ', err);
+                        })
+                        .then(function(querySnapshot) {
+                              let projects = {};
+                              querySnapshot.forEach(function(doc) {
+                                    projects = Object.assign(projects, { [doc.id]: doc.data() });
+                              });
+
+                              // console.log('PROJECTS: ', projects);
+                              dispatch({
+                                    type: RECEIVE_PROJECTS,
+                                    projects: projects,
+                                    uid: userId
+                              });
+                        })
+                        .catch(err => {
+                              // throw new Error(err);
+                              console.log('Error: Getting document: ', err);
+                        });
+      };
+}
+
+// Receive Projects category from Firestore
+export const RECEIVE_PROJECTS_CATEGORIES = 'RECEIVE_PROJECTS_CATEGORIES';
+export function receiveProjectsCategoriesAction() {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+            const userId = getState().firebase.auth.uid;
+
+            getState().offline.online &&
+                  firestore
+                        .collection('projects')
+                        .where('uid', '==', userId)
+                        .where('type', '==', 'projectsCategory')
+                        .get()
+                        .catch(err => {
+                              // throw new Error('Error: Getting document:');
+                              console.log('Error: Getting document: ', err);
+                        })
+                        .then(function(querySnapshot) {
+                              let projectsCategories = {};
+                              querySnapshot.forEach(function(doc) {
+                                    projectsCategories = Object.assign(projectsCategories, { [doc.id]: doc.data() });
+                              });
+                              dispatch({
+                                    type: RECEIVE_PROJECTS_CATEGORIES,
+                                    projectsCategories: projectsCategories
+                              });
+                        })
+                        .catch(err => {
+                              // throw new Error(err);
+                              console.log('Error: Getting document: ', err);
+                        });
+      };
+}
+
+// Receive Headline Projects from Firestore
+export const RECEIVE_PROJECT_HEADLINES = 'RECEIVE_PROJECT_HEADLINES';
+export function receiveProjectHeadlinesAction(projectId) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+            const userId = getState().firebase.auth.uid;
+
+            getState().offline.online &&
+                  firestore
+                        .collection('projects')
+                        .where('uid', '==', userId)
+                        .where('type', '==', 'tasksCategory')
+                        .where('project.id', '==', projectId)
+                        .get()
+                        .catch(err => {
+                              // throw new Error('Error: Getting document:');
+                              console.log('Error: Getting document: ', err);
+                        })
+                        .then(function(querySnapshot) {
+                              let projectHeadlines = {};
+                              querySnapshot.forEach(function(doc) {
+                                    projectHeadlines = Object.assign(projectHeadlines, { [doc.id]: doc.data() });
+                              });
+                              dispatch({
+                                    type: RECEIVE_PROJECT_HEADLINES,
+                                    projectHeadlines: projectHeadlines
+                              });
+                        })
+                        .catch(err => {
+                              // throw new Error(err);
+                              console.log('Error: Getting document: ', err);
+                        });
+      };
+}
+
 export const ADD_PROJECT = 'ADD_PROJECT';
 export function addProjectAction(project) {
       return (dispatch, getState, { getFirebase, getFirestore }) => {

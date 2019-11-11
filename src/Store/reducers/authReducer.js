@@ -26,7 +26,6 @@ function authReducer(state = { authError: null }, action) {
                         ...state,
                         authError: action.err.message
                   };
-
             case SIGNUP_SUCCESS:
                   return {
                         ...state,

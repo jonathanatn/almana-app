@@ -1,4 +1,5 @@
 import {
+      RECEIVE_EVENTS_DATE,
       ADD_EVENT,
       ADD_EVENT_ROLLBACK,
       SET_EVENT_REMINDER,
@@ -19,6 +20,12 @@ import {
 
 function events(state = {}, action) {
       switch (action.type) {
+            case RECEIVE_EVENTS_DATE:
+                  // TODO:
+                  return {
+                        ...state,
+                        ...action.events
+                  };
             case ADD_EVENT:
                   return {
                         ...state,

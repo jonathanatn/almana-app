@@ -16,8 +16,8 @@ const { diff, or, debug, startClock, lessOrEq, greaterOrEq, defined, Clock, stop
 import { withNavigationFocus, withNavigation } from 'react-navigation';
 import { connect } from 'react-redux';
 import { compose } from 'redux';
-import { editTasksPositionAction } from '../Store/actions/taskAction';
-import { editEventsPositionAction } from '../Store/actions/eventAction';
+import { editTasksPositionAction, receiveTasksByDateAction } from '../Store/actions/taskAction';
+import { editEventsPositionAction, receiveEventsByDateAction } from '../Store/actions/eventAction';
 import { setSelectedItemAction, openTaskMenuAction, openEventMenuAction } from '../Store/actions/generalAction';
 import { closeTaskMenuAction, closeDateMoverAction, closeEventMenuAction } from '../Store/actions/generalAction';
 import { closeTaskAdderAction } from '../Store/actions/generalAction';
@@ -25,9 +25,11 @@ function mapDispatchToProps(dispatch) {
       return {
             // TASKS
             editTasksPositionProp: (id, position) => dispatch(editTasksPositionAction(id, position)),
+            receiveTasksByDateProp: date => dispatch(receiveTasksByDateAction(date)),
 
             // EVENTS
             editEventsPositionProp: (id, position) => dispatch(editEventsPositionAction(id, position)),
+            receiveEventsByDateProp: date => dispatch(receiveEventsByDateAction(date)),
 
             // GENERAL
             setSelectedItemProp: item => dispatch(setSelectedItemAction(item)),
@@ -103,7 +105,6 @@ class ItemList extends Component {
 
       componentDidUpdate(prevProps) {
             let isFocused = this.props.navigation.isFocused();
-
             if (this.props.items !== prevProps.items && isFocused) {
                   this.setState({
                         data: this.props.items
@@ -129,6 +130,13 @@ class ItemList extends Component {
                   if (eventsArray.length > 0) {
                         this.props.editEventsPositionProp(eventsArray);
                   }
+            }
+
+            // Syncing Firestore items
+            let dateSelected = this.props.general.dateSelectedDateMover;
+            if (this.props.auth.isLoaded && dateSelected && dateSelected !== prevProps.general.dateSelectedDateMover) {
+                  this.props.receiveTasksByDateProp(dateSelected);
+                  this.props.receiveEventsByDateProp(dateSelected);
             }
       }
 
@@ -211,7 +219,6 @@ class ItemList extends Component {
                   e.touchHistory.touchBank[1].currentPageY > e.touchHistory.touchBank[1].startPageY - 10 &&
                   e.touchHistory.touchBank[1].currentPageY < e.touchHistory.touchBank[1].startPageY + 10
             ) {
-                  // console.log('pressout');
                   this.gestureState.setValue(5);
             }
             if (
@@ -219,13 +226,11 @@ class ItemList extends Component {
                   e.touchHistory.touchBank[0].currentPageY > e.touchHistory.touchBank[0].startPageY - 10 &&
                   e.touchHistory.touchBank[0].currentPageY < e.touchHistory.touchBank[0].startPageY + 10
             ) {
-                  // console.log('pressout');
                   this.gestureState.setValue(5);
             }
       };
 
       reset = () => {
-            // console.log('reset');
             this.transY.setValue(0);
             if (this.state.dispatchSort) {
                   this.dispatchSort();
@@ -716,6 +721,7 @@ function mapStateToProp(state, ownProps) {
       }
 
       return {
+            auth: state.firebase.auth,
             date: getToday,
             items: itemsSelected,
             itemsToDispatch: itemsToDispatch,
@@ -729,10 +735,6 @@ export default connect(
       mapStateToProp,
       mapDispatchToProps
 )(ItemList);
-// export default connect(
-//       mapStateToProp,
-//       mapDispatchToProps
-// )(withNavigationFocus(ItemList));
 
 const styles = StyleSheet.create({
       container: {

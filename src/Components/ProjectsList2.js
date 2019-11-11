@@ -13,10 +13,16 @@ const { diff, or, debug, startClock, lessOrEq, greaterOrEq, defined, Clock, stop
 
 // DATA
 import { connect } from 'react-redux';
-import { editPositionProjectsAction } from '../Store/actions/projectAction';
+import {
+      editPositionProjectsAction,
+      receiveProjectsAction,
+      receiveProjectsCategoriesAction
+} from '../Store/actions/projectAction';
 function mapDispatchToProps(dispatch) {
       return {
-            editPositionProjectsProp: projects => dispatch(editPositionProjectsAction(projects))
+            editPositionProjectsProp: projects => dispatch(editPositionProjectsAction(projects)),
+            receiveProjectsProp: userId => dispatch(receiveProjectsAction(userId)),
+            receiveProjectsCategoriesProp: userId => dispatch(receiveProjectsCategoriesAction(userId))
       };
 }
 
@@ -25,7 +31,7 @@ const { width, height } = Dimensions.get('window');
 
 const itemHeight = 65;
 
-class TasksProjectList extends Component {
+class ProjectList extends Component {
       constructor(props) {
             super(props);
             this.dragY = new Value(0);
@@ -68,10 +74,6 @@ class TasksProjectList extends Component {
             };
       }
 
-      // shouldComponentUpdate(nextProps, nextState) {
-      //       return nextProps.items != nextState.data;
-      // }
-
       componentDidMount() {
             this.setState({
                   data: this.props.items
@@ -89,6 +91,9 @@ class TasksProjectList extends Component {
             if (itemsToDispatch.length > 0) {
                   this.props.editPositionProjectsProp(itemsToDispatch);
             }
+
+            this.props.receiveProjectsProp();
+            this.props.receiveProjectsCategoriesProp();
       }
 
       componentDidUpdate(prevProps) {
@@ -511,7 +516,9 @@ function mapStateToProp(state, ownProps) {
             }
       }
 
-      userItems = [...userItems];
+      // console.log(userItems);
+
+      // userItems = [...userItems];
 
       let itemsToEditPosition = [];
 
@@ -543,14 +550,15 @@ function mapStateToProp(state, ownProps) {
             items: userItems,
             itemsToDispatch: itemsToEditPosition,
             areItemsSorted: areItemsSorted,
-            general: state.general
+            general: state.general,
+            uid: state.auth.uid
       };
 }
 
 export default connect(
       mapStateToProp,
       mapDispatchToProps
-)(TasksProjectList);
+)(ProjectList);
 
 const styles = StyleSheet.create({
       container: {

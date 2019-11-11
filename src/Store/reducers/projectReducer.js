@@ -1,4 +1,7 @@
 import {
+      RECEIVE_PROJECTS,
+      RECEIVE_PROJECTS_CATEGORIES,
+      RECEIVE_PROJECT_HEADLINES,
       ADD_PROJECT,
       DELETE_ITEMS_PROJECT,
       EDIT_NAME_PROJECT,
@@ -8,7 +11,38 @@ import {
 } from '../actions/projectAction';
 
 function projects(state = {}, action) {
+      let items = {};
       switch (action.type) {
+            case RECEIVE_PROJECTS:
+                  items = { ...state };
+                  for (let item in items) {
+                        if (items[item]['uid'] === action.uid && items[item]['type'] === 'project') delete items[item];
+                  }
+                  items = { ...items, ...action.projects };
+                  return {
+                        ...items
+                  };
+            case RECEIVE_PROJECTS_CATEGORIES:
+                  items = { ...state };
+                  for (let item in items) {
+                        if (items[item]['uid'] === action.uid && items[item]['type'] === 'projectsCategory')
+                              delete items[item];
+                  }
+                  items = { ...items, ...action.projects };
+                  return {
+                        ...items
+                  };
+            case RECEIVE_PROJECT_HEADLINES:
+                  items = { ...state };
+                  for (let item in items) {
+                        if (items[item]['uid'] === action.uid && items[item]['type'] === 'tasksCategory')
+                              delete items[item];
+                  }
+                  items = { ...items, ...action.projects };
+                  return {
+                        ...state,
+                        ...action.projectHeadlines
+                  };
             case ADD_PROJECT:
                   return {
                         ...state,

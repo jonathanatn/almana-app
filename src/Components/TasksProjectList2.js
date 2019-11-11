@@ -15,16 +15,18 @@ const { diff, or, debug, startClock, lessOrEq, greaterOrEq, defined, Clock, stop
 // DATA
 import { connect } from 'react-redux';
 import { compose } from 'redux';
-import { editProjectPositionTasksAction } from '../Store/actions/taskAction';
-import { editPositionTasksCategoryAction } from '../Store/actions/projectAction';
+import { editProjectPositionTasksAction, receiveTasksByProjectAction } from '../Store/actions/taskAction';
+import { editPositionTasksCategoryAction, receiveProjectHeadlinesAction } from '../Store/actions/projectAction';
 import { setSelectedItemAction, openTaskMenuAction, closeTaskMenuAction } from '../Store/actions/generalAction';
 import { closeTaskAdderAction } from '../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
             // TASKS
             editProjectPositionTasksProp: tasks => dispatch(editProjectPositionTasksAction(tasks)),
+            receiveTasksByProjectProp: projectId => dispatch(receiveTasksByProjectAction(projectId)),
             // PROJECTS
             editPositionTasksCategoryProp: tasks => dispatch(editPositionTasksCategoryAction(tasks)),
+            receiveProjectHeadlinesProp: projectId => dispatch(receiveProjectHeadlinesAction(projectId)),
 
             // GENERAL
             openTaskMenuProp: () => dispatch(openTaskMenuAction()),
@@ -104,6 +106,9 @@ class TasksProjectList extends Component {
             if (tasksCategoryToEdit.length > 0) {
                   this.props.editPositionTasksCategoryProp(tasksCategoryToEdit);
             }
+
+            this.props.receiveTasksByProjectProp(this.props.navigation.state.params.id);
+            this.props.receiveProjectHeadlinesProp(this.props.navigation.state.params.id);
       }
 
       componentDidUpdate(prevProps) {
@@ -448,13 +453,6 @@ class TasksProjectList extends Component {
                                           keyExtractor={(item, index) => index.toString()}
                                           renderItem={this.renderItem}
                                           scrollEnabled={this.state.dragging ? false : true}
-                                          // scrollEnabled={
-                                          //       Platform.OS === 'android'
-                                          //             ? false
-                                          //             : this.state.dragging === true
-                                          //             ? false
-                                          //             : true
-                                          // }
                                           showsVerticalScrollIndicator={false}
                                           onLayout={event => {
                                                 let { y, height } = event.nativeEvent.layout;

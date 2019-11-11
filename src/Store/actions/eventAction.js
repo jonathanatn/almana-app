@@ -4,6 +4,40 @@ import { Notifications } from 'expo';
 import { getPeriod, setLocalNotification } from '../../Utils/helpers';
 import moment from 'moment';
 
+// Receive events from database by date
+export const RECEIVE_EVENTS_DATE = 'RECEIVE_EVENTS_DATE';
+export function receiveEventsByDateAction(date) {
+      return (dispatch, getState, { getFirebase, getFirestore }) => {
+            const firestore = getFirestore();
+            const userId = getState().firebase.auth.uid;
+
+            getState().offline.online &&
+                  firestore
+                        .collection('events')
+                        .where('uid', '==', userId)
+                        .where('date', '==', date)
+                        .get()
+                        .catch(err => {
+                              // throw new Error('Error: Getting document:');
+                              console.log('Error: Getting document: ', err);
+                        })
+                        .then(function(querySnapshot) {
+                              let events = {};
+                              querySnapshot.forEach(function(doc) {
+                                    events = Object.assign(events, { [doc.id]: doc.data() });
+                              });
+                              dispatch({
+                                    type: RECEIVE_EVENTS_DATE,
+                                    events: events
+                              });
+                        })
+                        .catch(err => {
+                              // throw new Error(err);
+                              console.log('Error: Getting document: ', err);
+                        });
+      };
+}
+
 // Create an id based on the beginning of the user id and a mix of random characters
 // Set that id as a key for the firestore document and as a "id" field in the document for easier manipulation
 export function addEventAction(event) {
