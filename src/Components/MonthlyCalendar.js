@@ -3,7 +3,7 @@
 
 // STATIC UI
 import React, { Component, PureComponent } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, FlatList, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, Dimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 // DATA
@@ -164,7 +164,7 @@ class FlatListCalendar extends PureComponent {
                               initialNumToRender={1}
                               windowSize={5}
                               // maxToRenderPerBatch={1}
-                              removeClippedSubviews={true}
+                              removeClippedSubviews={Platform.OS === 'android' ? true : false}
                               onScrollToIndexFailed={12}
                         />
                   </View>
@@ -326,7 +326,8 @@ const styles = StyleSheet.create({
             flexDirection: 'row',
             flexWrap: 'wrap',
             width: width,
-            justifyContent: 'center'
+            justifyContent: 'center',
+            overflow: 'hidden'
       },
       dayContainer: {
             width: width / 7.2,

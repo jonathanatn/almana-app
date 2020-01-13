@@ -2,8 +2,8 @@
 import React from 'react';
 import { StyleSheet, View, Dimensions, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
 import { Platform, TouchableHighlight, TouchableNativeFeedback } from 'react-native';
-import Task from './Elements/Task';
-import Event from './Elements/Event';
+import Task from '../Elements/Task';
+import Event from '../Elements/Event';
 
 // ANIMATED UI
 import Animated from 'react-native-reanimated';
@@ -15,15 +15,11 @@ const { diff, or, debug, startClock, lessOrEq, greaterOrEq } = Animated;
 import { firestoreConnect } from 'react-redux-firebase';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { receiveTasksAction, editTasksPositionAction, editTaskPeriodAction } from '../Store/actions/taskAction';
-import { editEventsPositionAction } from '../Store/actions/eventAction';
-import { setSelectedItemAction, openTaskMenuAction, openEventMenuAction } from '../Store/actions/generalAction';
-import {
-      closeTaskMenuAction,
-      closeDateMoverAction,
-      closeEventMenuAction,
-      closeTaskAdderAction
-} from '../Store/actions/generalAction';
+import { receiveTasksAction, editTasksPositionAction, editTaskPeriodAction } from '../../Store/actions/taskAction';
+import { editEventsPositionAction } from '../../Store/actions/eventAction';
+import { setSelectedItemAction, openTaskMenuAction, openEventMenuAction } from '../../Store/actions/generalAction';
+import { closeTaskMenuAction, closeDateMoverAction, closeEventMenuAction } from '../../Store/actions/generalAction';
+import { closeTaskAdderAction } from '../../Store/actions/generalAction';
 function mapDispatchToProps(dispatch) {
       return {
             // TASKS
@@ -45,7 +41,7 @@ function mapDispatchToProps(dispatch) {
 }
 
 // HELPERS
-import { getToday } from '../Utils/helpers';
+import { getToday, isRepeatedItemsValid } from '../../Utils/helpers';
 import moment from 'moment';
 const { width, height } = Dimensions.get('window');
 
@@ -88,17 +84,36 @@ class ItemList extends React.Component {
       };
 
       componentDidUpdate(prevProps) {
+            // console.log('component did update');
+
+            // let tasks = [...this.props.tasks]
+            //  tasks = tasks.filter(function(obj) {
+            //       return !obj.notToUpdate;
+            // });
+
             if (!this.props.areTasksSorted && this.props.tasks.length > 3) {
+                  console.log('condition true');
+                  // if (!this.props.areTasksSorted) {
                   let tasksArray = [];
                   let eventsArray = [];
 
                   this.props.tasks.map(item => {
-                        if (item.type === 'event') {
+                        if (
+                              item.type === 'event'
+                              // !isRepeatedItemsValid(this.props.general.dateSelectedDateMover, item)
+                        ) {
                               eventsArray.push(item);
                         } else if (item.type === 'task') {
                               tasksArray.push(item);
                         }
                   });
+
+                  // console.log('BEFORE: ', eventsArray);
+
+                  // eventsArray = eventsArray.filter(function(obj) {
+                  //       return !obj.notToUpdate;
+                  // });
+                  // console.log('AFTER: ', eventsArray);
 
                   if (tasksArray.length > 0) {
                         this.props.editTasksPositionProp(tasksArray);
@@ -123,19 +138,24 @@ class ItemList extends React.Component {
             }
 
             // TaskMenu & EventMenu are rendered in MainScreen.js
-            if (this.props.general.isTaskMenuOpen === true || this.props.general.isEventMenuOpen === true) {
+            if (this.props.general.isEventMenuOpen === true) {
                   // If one of the item menu is open, we close it
                   await this.props.closeTaskMenuProp();
                   await this.props.closeEventMenuProp();
-                  // After we open the right menu depending the item, to make the animation
-                  if (!item.event) {
-                        this.props.openTaskMenuProp();
-                  } else {
+
+                  setTimeout(() => {
                         this.props.openEventMenuProp();
-                  }
+                  }, 100);
+
+                  // After we open the right menu depending the item, to make the animation
+                  // if (item.type !== 'event') {
+                  //       this.props.openTaskMenuProp();
+                  // } else {
+                  //       this.props.openEventMenuProp();
+                  // }
                   // Else menu are close so we open the good one
             } else {
-                  if (!item.event) {
+                  if (item.type !== 'event') {
                         this.props.openTaskMenuProp();
                   } else {
                         this.props.openEventMenuProp();
@@ -608,21 +628,45 @@ function mapStateToProp(state, ownProps) {
       let allItems = [...Object.values(tasks), ...Object.values(events)];
       let itemsArray = [];
 
+      let dateSelected = state.general.dateSelectedDateMover;
+
       for (let i = 0, len = allItems.length; i < len; i++) {
-            if (allItems[i].date === state.general.dateSelectedDateMover && allItems[i].uid === state.auth.uid) {
-                  itemsArray.push(allItems[i]);
+            if (allItems[i].uid === state.auth.uid) {
+                  // Check if the date are similar
+                  if (allItems[i].date === dateSelected) {
+                        itemsArray.push(allItems[i]);
+                  } else if (
+                        allItems[i].repeat !== 'never' &&
+                        allItems[i].repeat
+                        // We only consider repeated item that are not set for the day selected
+                        // allItems[i].date !== dateSelected
+                  ) {
+                        // If there are repeated items we need to check if (the day selected is a superior and valid day) of repeated items
+                        if (isRepeatedItemsValid(dateSelected, allItems[i])) {
+                              // allItems[i].position = -1;
+                              // allItems[i].notToUpdate = true;
+                              itemsArray.push(allItems[i]);
+                        }
+                  }
             }
       }
 
-      let morningCategory = [{ type: 'periodCategory', name: 'Morning', position: 0, period: 'Morning' }];
-      let afternoonCategory = [{ type: 'periodCategory', name: 'Afternoon', position: 0, period: 'Afternoon' }];
-      let eveningCategory = [{ type: 'periodCategory', name: 'Evening', position: 0, period: 'Evening' }];
+      let morningCategory = [{ type: 'periodCategory', name: 'Morning ', position: 0, period: 'Morning' }];
+      let afternoonCategory = [{ type: 'periodCategory', name: 'Afternoon ', position: 0, period: 'Afternoon' }];
+      let eveningCategory = [{ type: 'periodCategory', name: 'Evening ', position: 0, period: 'Evening' }];
       let itemsToSort = [];
 
+      // let itemsToSortNotToUpdate = [];
+
       itemsArray.map((item, index) => {
-            if (item.position === -1) {
+            // We don't add the repeated item here or it will create an infinite loop
+            if (item.position === -1 && !item.notToUpdate) {
                   itemsToSort.push(item);
-            } else {
+            }
+            // else if (item.notToUpdate) {
+            //       itemsToSortNotToUpdate.push(item);
+            // }
+            else if (item.position !== -1) {
                   if (item.period === 'Morning') {
                         morningCategory.push(item);
                   } else if (item.period === 'Afternoon') {
@@ -656,6 +700,9 @@ function mapStateToProp(state, ownProps) {
       if (itemsToSort.length === 0) {
             areTasksSorted = true;
       }
+
+      // Add itemsToSortNotToUpdate so they are not counter in the areTasksSorted
+      // itemsToSort = [...itemsToSort, ...itemsToSortNotToUpdate];
 
       itemsToSort.map(item => {
             // First check task with no time property

@@ -1,6 +1,9 @@
 import {
+      RECEIVE_EVENTS_DATE,
       ADD_EVENT,
       ADD_EVENT_ROLLBACK,
+      SET_EVENT_REMINDER,
+      SET_EVENT_REPEAT,
       DELETE_EVENT,
       DELETE_EVENT_ROLLBACK,
       EDIT_EVENT_NAME,
@@ -10,12 +13,19 @@ import {
       EDIT_EVENT_DATE_ROLLBACK,
       EDIT_EVENT_START_TIME,
       EDIT_EVENT_END_TIME,
+      EDIT_EVENT_POSITION,
       EDIT_EVENTS_POSITION,
       EDIT_EVENTS_POSITION_ROLLBACK
 } from '../actions/eventAction';
 
 function events(state = {}, action) {
       switch (action.type) {
+            case RECEIVE_EVENTS_DATE:
+                  // TODO:
+                  return {
+                        ...state,
+                        ...action.events
+                  };
             case ADD_EVENT:
                   return {
                         ...state,
@@ -34,6 +44,22 @@ function events(state = {}, action) {
 
                   return {
                         ...stateToRollback
+                  };
+            case SET_EVENT_REMINDER:
+                  return {
+                        ...state,
+                        [action.id]: {
+                              ...state[action.id],
+                              reminder: action.reminder
+                        }
+                  };
+            case SET_EVENT_REPEAT:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              repeat: action.payload.repeat
+                        }
                   };
             case EDIT_EVENT_NAME:
                   return {
@@ -81,8 +107,7 @@ function events(state = {}, action) {
                         ...state,
                         [action.payload.id]: {
                               ...state[action.payload.id],
-                              date: action.payload.date,
-                              position: -1
+                              date: action.payload.date
                         }
                   };
             case EDIT_EVENT_START_TIME:
@@ -91,9 +116,7 @@ function events(state = {}, action) {
                         [action.payload.id]: {
                               ...state[action.payload.id],
                               time: action.payload.time,
-                              endTime: action.payload.endTime,
-                              position: -1,
-                              period: action.payload.period
+                              endTime: action.payload.endTime
                         }
                   };
             case EDIT_EVENT_END_TIME:
@@ -101,8 +124,15 @@ function events(state = {}, action) {
                         ...state,
                         [action.payload.id]: {
                               ...state[action.payload.id],
-                              endTime: action.payload.endTime,
-                              position: -1
+                              endTime: action.payload.endTime
+                        }
+                  };
+            case EDIT_EVENT_POSITION:
+                  return {
+                        ...state,
+                        [action.payload.id]: {
+                              ...state[action.payload.id],
+                              position: action.payload.position
                         }
                   };
             case EDIT_EVENTS_POSITION:

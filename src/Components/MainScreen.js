@@ -1,11 +1,12 @@
 // STATIC UI
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, BackHandler } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Task from './Elements/Task';
 import TaskMenu from './Elements/TaskMenu';
 import EventMenu from './Elements/EventMenu';
-import ItemList from './ItemList';
+import ItemList from './ItemList2';
 import TaskAdder from './Elements/TaskAdder';
 import EventAdder from './Elements/EventAdder';
 import NavigationView from './NavigationView';
@@ -22,7 +23,6 @@ import { connect } from 'react-redux';
 import { addTaskAction, receiveTasksAction, editTasksPositionAction } from '../Store/actions/taskAction';
 import { signOut } from '../Store/actions/authAction';
 import {
-      openTaskMenuAction,
       closeTaskMenuAction,
       closeEventMenuAction,
       openTaskAdderAction,
@@ -124,6 +124,11 @@ class MainScreen extends Component {
                   this.props.closeEventAdderProp();
                   return true;
             }
+
+            if (this.state.isAddItemMenuOpen === true) {
+                  this.setState({ isAddItemMenuOpen: false });
+                  return true;
+            }
       };
 
       openAddItemMenu = () => {
@@ -184,6 +189,7 @@ class MainScreen extends Component {
 
             return (
                   <View style={styles.container}>
+                        <StatusBar backgroundColor="white" barStyle="dark-content" />
                         {/*---------------------------------------------------- ADDITEMMENU ---------------------------------------------------- */}
 
                         {this.state.isAddItemMenuOpen === true ? (
@@ -268,14 +274,23 @@ class MainScreen extends Component {
                               {/* TODO: Create a function to get the day title and put in helper */}
                               <Text style={{ fontWeight: '900', fontSize: 36 }}>
                                     {this.props.general.dateSelectedDateMover === getToday
-                                          ? 'Today'
-                                          : title.format('dddd') + ', ' + title.format('D') + ' ' + title.format('MMM')}
+                                          ? 'Today '
+                                          : title.format('dddd') +
+                                            ', ' +
+                                            title.format('D') +
+                                            ' ' +
+                                            title.format('MMM') +
+                                            ' '}
                               </Text>
                               <TouchableOpacity onPress={() => this.signOut()}>
                                     <Ionicons name="ios-log-out" size={24} color={'black'} />
                               </TouchableOpacity>
                         </View>
-                        <ItemList style={{ zIndex: 10 }} closeDateMover={this.closeDateMover} />
+                        <ItemList
+                              style={{ zIndex: 10 }}
+                              closeDateMover={this.closeDateMover}
+                              navigation={this.props.navigation}
+                        />
 
                         {/* TODO: Create a component */}
                         {/* ------------------------------------------ Add Items Button ------------------------------------------ */}
@@ -287,10 +302,12 @@ class MainScreen extends Component {
 
                         {/* ------------------------------------------------------------------------------------------------------------- */}
 
-                        {this.props.general.isTaskMenuOpen === true && <TaskMenu />}
-                        {this.props.general.isEventMenuOpen === true && <EventMenu />}
+                        {/* {this.props.general.isTaskMenuOpen === true && <TaskMenu />} */}
+                        {/* {this.props.general.isEventMenuOpen === true && <EventMenu />} */}
+                        <TaskMenu MainScreen={true} />
+                        <EventMenu />
 
-                        <NavigationView openDateMover={() => this.openDateMover()} />
+                        <NavigationView openDateMover={() => this.openDateMover()} navigation={this.props.navigation} />
 
                         {/*---------------------------------------------------- DateMover ---------------------------------------------------- */}
                         <Animated.View
@@ -315,7 +332,14 @@ class MainScreen extends Component {
                                                       backgroundColor: '#FF2D55',
                                                       position: 'relative',
                                                       right: -15,
-                                                      bottom: 13,
+                                                      ...Platform.select({
+                                                            ios: {
+                                                                  bottom: 16
+                                                            },
+                                                            android: {
+                                                                  bottom: 13
+                                                            }
+                                                      }),
                                                       borderRadius: 50
                                                 }}
                                           />
@@ -378,22 +402,27 @@ const styles = StyleSheet.create({
             alignItems: 'center',
             marginBottom: 20,
             paddingHorizontal: 12,
-            marginTop: 70
+            marginTop: 50
       },
       addButtonContainer: {
-            width: 80,
-            height: 80,
+            width: 60,
+            height: 60,
             alignItems: 'center',
             justifyContent: 'center',
             position: 'absolute',
             top: height / 2 - 60,
-            right: -30,
+            right: -20,
             zIndex: 9,
             elevation: 6
       },
       addButton: {
             width: 60,
             height: 60,
+            ...Platform.select({
+                  ios: {
+                        paddingTop: 5
+                  }
+            }),
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: '#FF2D55',

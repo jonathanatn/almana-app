@@ -4,6 +4,9 @@ import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform, Alert }
 import { TextInput, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from 'react-native-modal-datetime-picker';
+import Menu, { MenuItem, MenuDivider } from 'react-native-material-menu';
+import * as Permissions from 'expo-permissions';
+import RepeatButton from './Items/RepeatButton';
 
 // ANIMATED UI
 
@@ -19,6 +22,7 @@ function mapDispatchToProps(dispatch) {
 }
 
 // HELPERS
+
 import { getToday } from '../../Utils/helpers';
 import moment from 'moment';
 
@@ -30,6 +34,12 @@ class EventAdder extends Component {
             time: '',
             endTime: '',
             time: '',
+            position: '',
+            reminder: {
+                  id: '',
+                  time: 'none'
+            },
+            repeat: 'never',
             isDatePickerVisible: false,
             isStartTimePickerVisible: false,
             isEndTimePickerVisible: false,
@@ -37,12 +47,21 @@ class EventAdder extends Component {
       };
 
       componentDidMount() {
-            // this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
-            // this.keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', this._keyboardWillHide);
-
             this.inputRef.focus();
 
-            let time = moment().format('LT');
+            let time = moment();
+            let position;
+            let timeFormattedForDatePicker;
+            let endTimeFormattedForDatePicker;
+
+            time =
+                  time.minute() || time.second() || time.millisecond()
+                        ? time.add(1, 'hour').startOf('hour')
+                        : time.startOf('hour');
+
+            position = time.format('HH:mm:ss');
+            timeFormattedForDatePicker = time.toDate();
+            time = time.format('LT');
 
             if (time.length === 7) {
                   time = '0' + time;
@@ -51,6 +70,10 @@ class EventAdder extends Component {
             let endTime = moment(time, 'LT')
                   .add(1, 'hours')
                   .format('LT');
+
+            endTimeFormattedForDatePicker = moment(time, 'LT')
+                  .add(1, 'hours')
+                  .toDate();
 
             if (endTime.length === 7) {
                   endTime = '0' + endTime;
@@ -67,8 +90,11 @@ class EventAdder extends Component {
             this.setState({
                   date: this.props.general.dateSelectedDateMover,
                   dateFormattedForDatePicker: date,
+                  timeFormattedForDatePicker: timeFormattedForDatePicker,
+                  endTimeFormattedForDatePicker: endTimeFormattedForDatePicker,
                   time,
-                  endTime
+                  endTime,
+                  position: position
             });
       }
 
@@ -96,22 +122,17 @@ class EventAdder extends Component {
       }
 
       addEvent() {
-            let eventDate = this.state.date;
-
             if (this.state.textInput.length !== 0) {
                   const date = new Date();
                   this.props.addEventProp({
-                        event: true,
                         name: this.state.textInput,
-                        dateAdded: date,
-                        // completed: false,
                         subtask: {},
-                        date: eventDate,
+                        date: this.state.date,
                         time: this.state.time,
                         endTime: this.state.endTime,
-                        reminder: '',
-                        reccurency: '',
-                        position: -1
+                        reminder: this.state.reminder,
+                        repeat: this.state.repeat,
+                        position: this.state.position
                   });
             }
 
@@ -135,7 +156,10 @@ class EventAdder extends Component {
       };
 
       handleStartTimePicked = timeReceived => {
-            let time = moment(timeReceived).format('LT');
+            let time = moment(timeReceived);
+
+            position = time.startOf('minute').format('HH:mm:ss');
+            time = time.format('LT');
 
             if (time.length < 8) {
                   time = '0' + time;
@@ -145,13 +169,20 @@ class EventAdder extends Component {
                   .add(1, 'hours')
                   .format('LT');
 
+            let endTimeFormattedForDatePicker = moment(time, 'LT')
+                  .add(1, 'hours')
+                  .toDate();
+
             if (endTime.length === 7) {
                   endTime = '0' + endTime;
             }
 
             this.setState({
                   time: time,
-                  endTime: endTime
+                  endTime: endTime,
+                  position: position,
+                  timeFormattedForDatePicker: timeReceived,
+                  endTimeFormattedForDatePicker: endTimeFormattedForDatePicker
             });
 
             this.hideStartTimePicker();
@@ -159,6 +190,8 @@ class EventAdder extends Component {
 
       handleEndTimePicked = endTimeReceived => {
             let endTime = moment(endTimeReceived).format('LT');
+
+            let endTimeFormattedForDatePicker = moment(endTimeReceived, 'LT').toDate();
 
             let endTimeToCompare = moment(endTime, 'h:mma');
             let startTimeToCompare = moment(this.state.time, 'h:mma');
@@ -182,7 +215,8 @@ class EventAdder extends Component {
             } else {
                   this.setState(
                         {
-                              endTime: endTime
+                              endTime: endTime,
+                              endTimeFormattedForDatePicker: endTimeFormattedForDatePicker
                         },
                         () => {
                               this.hideEndTimePicker();
@@ -220,6 +254,27 @@ class EventAdder extends Component {
             this.setState({ isEndTimePickerVisible: false });
       };
 
+      setReminder = async reminderSelected => {
+            const { status, permissions } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+            if (status === 'granted') {
+                  this.setState({
+                        reminder: {
+                              id: '',
+                              time: reminderSelected
+                        }
+                  });
+            } else {
+                  // TODO: create an alert
+                  throw new Error('Location permission not granted');
+            }
+      };
+
+      setRepeat = repeat => {
+            this.setState({
+                  repeat: repeat
+            });
+      };
+
       render() {
             return (
                   <View
@@ -232,10 +287,6 @@ class EventAdder extends Component {
                         ]}
                   >
                         <View style={{ flexDirection: 'row' }}>
-                              {/* <TouchableOpacity onPress={() => this.showDatePicker()}>
-                                    <Ionicons name="ios-calendar" size={30} color={'grey'} />
-                              </TouchableOpacity> */}
-
                               <TextInput
                                     ref={ref => (this.inputRef = ref)}
                                     style={styles.textInput}
@@ -265,24 +316,20 @@ class EventAdder extends Component {
                               </View>
 
                               <View style={{ width: 100, flexDirection: 'column' }}>
-                                    <TouchableOpacity onPress={() => this.showStartTimePicker()}>
+                                    <TouchableOpacity
+                                          onPress={() => this.showStartTimePicker()}
+                                          style={{ marginBottom: 12 }}
+                                    >
                                           {/* <TouchableOpacity onPress={() => this.setState({ show: true })}> */}
-                                          <Text>Start time: {this.state.time}</Text>
+                                          <Text>Start time:</Text>
+                                          <Text>{this.state.time}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={() => this.showEndTimePicker()}>
-                                          <Text>End time: {this.state.endTime}</Text>
+                                          <Text>End time:</Text>
+                                          <Text>{this.state.endTime}</Text>
                                     </TouchableOpacity>
                               </View>
                         </View>
-
-                        <TouchableOpacity
-                              style={{ alignSelf: 'center', marginTop: 24 }}
-                              onPress={() => {
-                                    this.props.closeEventAdderProp();
-                              }}
-                        >
-                              <Text style={{ fontWeight: 'bold', fontSize: 19 }}>Cancel</Text>
-                        </TouchableOpacity>
 
                         {/*/////////////////////////////////////////         Date Picker       //////////////////////////////////////////// */}
 
@@ -295,16 +342,103 @@ class EventAdder extends Component {
                         />
                         <DateTimePicker
                               mode={'time'}
+                              date={this.state.timeFormattedForDatePicker}
                               isVisible={this.state.isStartTimePickerVisible}
                               onConfirm={this.handleStartTimePicked}
                               onCancel={this.hideStartTimePicker}
                         />
                         <DateTimePicker
                               mode={'time'}
+                              date={this.state.endTimeFormattedForDatePicker}
                               isVisible={this.state.isEndTimePickerVisible}
                               onConfirm={this.handleEndTimePicked}
                               onCancel={this.hideEndTimePicker}
                         />
+
+                        <View style={styles.bottomBarMenu}>
+                              <Menu
+                                    ref={ref => (this.reminderMenu = ref)}
+                                    button={
+                                          this.state.reminder && this.state.reminder.time !== 'none' ? (
+                                                <View style={{ flexDirection: 'row' }}>
+                                                      <TouchableOpacity
+                                                            onPress={() => this.reminderMenu.show()}
+                                                            style={{
+                                                                  flexDirection: 'row',
+                                                                  backgroundColor: '#FF2D55',
+                                                                  borderRadius: 100,
+                                                                  padding: 4,
+                                                                  paddingHorizontal: 12,
+                                                                  marginBottom: 12
+                                                            }}
+                                                      >
+                                                            <Ionicons name="md-notifications" size={19} color="white" />
+                                                            <Text style={{ color: 'white', marginLeft: 8 }}>
+                                                                  {getReminderText(this.state.reminder.time)}
+                                                            </Text>
+                                                      </TouchableOpacity>
+                                                </View>
+                                          ) : (
+                                                <TouchableOpacity onPress={() => this.reminderMenu.show()}>
+                                                      <Ionicons name="md-notifications" size={30} color={'grey'} />
+                                                </TouchableOpacity>
+                                          )
+                                    }
+                              >
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.reminderMenu.hide();
+                                          }}
+                                          disabled
+                                          children={<Text>Reminder: </Text>}
+                                    />
+                                    <MenuDivider />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('none');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>None</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-hour');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>1 hour before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-hour');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>3 hours before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('1-day');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>1 day before</Text>}
+                                    />
+                                    <MenuItem
+                                          onPress={() => {
+                                                this.setReminder('3-day');
+                                                this.reminderMenu.hide();
+                                          }}
+                                          children={<Text>3 days before</Text>}
+                                    />
+                              </Menu>
+
+                              <RepeatButton setRepeat={this.setRepeat} repeat={this.state.repeat} />
+                              <TouchableOpacity
+                                    onPress={() => {
+                                          this.props.closeEventAdderProp();
+                                    }}
+                              >
+                                    <Text style={{ fontWeight: 'bold', fontSize: 19 }}>Cancel </Text>
+                              </TouchableOpacity>
+                        </View>
                   </View>
             );
       }
@@ -354,5 +488,34 @@ const styles = StyleSheet.create({
             marginRight: 16,
             borderWidth: 1,
             borderColor: 'grey'
+      },
+      bottomBarMenu: {
+            flexDirection: 'row',
+            flex: 1,
+            justifyContent: 'space-between',
+            paddingHorizontal: 24,
+            marginTop: 24,
+            // position: 'absolute',
+            // left: 0,
+            // right: 0,
+            // bottom: 0,
+            height: 50
       }
 });
+
+function getReminderText(time) {
+      switch (time) {
+            case '1-hour':
+                  return '1h before';
+                  break;
+            case '3-hour':
+                  return '3h before';
+                  break;
+            case '1-day':
+                  return '1 day bef.';
+                  break;
+            case '3-day':
+                  return '3 days bef.';
+                  break;
+      }
+}
